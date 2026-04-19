@@ -10,8 +10,8 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-# 延迟加载User模型以避免循环导入
 def get_user_class():
+    """延迟加载User模型以避免循环导入"""
     return get_user_model()
 
 
@@ -132,13 +132,14 @@ def generate_jwt_token(user):
     """
     生成JWT token
     """
+    User = get_user_class()  # 延迟加载
     access_token_expiry = int(settings.JWT_ACCESS_TOKEN_EXPIRY)
     
     payload = {
         'user_id': str(user.id),
         'username': user.username,
         'email': user.email,
-        'role': getattr(user.role.role, 'executor') if hasattr(user, 'role') else 'executor',
+        'role': getattr(getattr(user, 'role', None), 'role', 'executor') if hasattr(user, 'role') and hasattr(user.role, 'role') else 'executor',
         'iat': datetime.utcnow(),
         'exp': datetime.utcnow() + timedelta(seconds=access_token_expiry),
         'type': 'access'

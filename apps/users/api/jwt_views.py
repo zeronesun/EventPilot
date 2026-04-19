@@ -3,15 +3,14 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
-from django.views.decorators import csrf_exempt
 
-from .authentication import generate_jwt_token, decode_jwt_token
+from ..authentication import generate_jwt_token, decode_jwt_token
 from .serializers import UserSerializer, ChangePasswordSerializer
 
 User = get_user_model()
 
 
-@csrf_exempt
+# @csrf_exempt  # Django CSRF decorator (disabled when admin is disabled)
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def jwt_login(request):
@@ -49,7 +48,7 @@ def jwt_login(request):
     
     # 确保用户有UserRole，如果没有则创建
     if not hasattr(user, 'role'):
-        from .models import UserRole
+        from ..models import UserRole
         UserRole.objects.create(user=user, role='executor')
     
     # 获取用户序列化数据
@@ -64,7 +63,6 @@ def jwt_login(request):
     }, status=status.HTTP_201_CREATED)
 
 
-@csrf_exempt
 @api_view(['POST'])
 @permission_classes([AllowAny])
 def jwt_refresh(request):

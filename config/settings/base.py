@@ -150,7 +150,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework基础配置
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        # 'apps.users.authentication.JWTAuthentication',  # JWT认证 (暂时禁用测试)
         'rest_framework.authentication.TokenAuthentication',  # Token认证 (当前使用)
     ],
     'DEFAULT_PERMISSION_CLASSES': [
@@ -242,3 +241,8 @@ REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
 REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
     'rest_framework.permissions.IsAuthenticatedOrReadOnly',
 ]
+
+# JWT配置
+JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-secret-key')
+JWT_ACCESS_TOKEN_EXPIRY = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRY', '900'))
+JWT_REFRESH_TOKEN_EXPIRY = int(os.getenv('JWT_REFRESH_TOKEN_EXPIRY', '604800'))

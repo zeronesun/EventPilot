@@ -73,3 +73,18 @@ logs/
 # Secret keys
 *.secret
 *.pem
+
+# 前端环境变量
+frontend/.env
+frontend/.env.*
+frontend/.env.*.local
+
+# 前端构建产物
+frontend/dist/
+frontend/node_modules/
+
+# 其他目录
+public/
+cache/
+storage/
+temp/
