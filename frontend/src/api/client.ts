@@ -271,3 +271,115 @@ export const tasksApi = {
   kanbanData: (eventId: string) =>
     apiClient.get<any>(`/kanban_data?event=${eventId}`),
 };
+
+// File types and API
+export interface FileMetadata {
+  id: string;
+  file_id: string;
+  original_filename: string;
+  stored_filename: string;
+  file_size: number;
+  file_type: string;
+  mime_type: string;
+  file_category: string;
+  status: 'uploading' | 'processing' | 'completed' | 'failed' | 'deleted';
+  uploaded_by: string;
+  created_at: string;
+  visibility: 'private' | 'team' | 'public' | 'shared';
+  tags: string[];
+  category?: string;
+  description?: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FileUploadRequest {
+  filename: string;
+  file_size: number;
+  mime_type: string;
+  metadata?: Record<string, unknown>;
+}
+
+export interface FileUploadInitiateResponse {
+  file_id: string;
+  upload_strategy: 'direct' | 'multipart';
+  presigned_url?: string;
+  storage_key: string;
+  upload_id?: string;
+  chunk_size: number;
+  max_chunks: number;
+  expires_in: number;
+}
+
+export interface FileDownloadResponse {
+  file_id: string;
+  filename: string;
+  file_size: number;
+  mime_type: string;
+  download_url: string;
+  expires_in: number;
+}
+
+export interface FileListResponse {
+  total: number;
+  page: number;
+  page_size: number;
+  files: FileMetadata[];
+}
+
+export const filesApi = {
+  list: (params?: Record<string, string>) => {
+    const query = new URLSearchParams(params).toString();
+    return apiClient.get<FileListResponse>(`/files/${query ? `?${query}` : ''}`);
+  },
+  get: (fileId: string) =>
+    apiClient.get<FileMetadata>(`/files/${fileId}/`),
+  initiateUpload: (data: FileUploadRequest) =>
+    apiClient.post<FileUploadInitiateResponse>('/files/', data),
+  getUploadPart: (fileId: string, partNumber: number, uploadId: string) =>
+    apiClient.post<{presigned_url: string; part_number: number; upload_id: string; expires_in: number}>(
+      `/files/${fileId}/upload_part/`,
+      { part_number: partNumber, upload_id: uploadId }
+    ),
+  completeUpload: (fileId: string, uploadId: string, parts: Array<{PartNumber: number; ETag: string}>) =>
+    apiClient.post<{file_id: string; status: string; file_size: number; etag: string}>(
+      `/files/${fileId}/complete_upload/`,
+      { file_id: fileId, upload_id: uploadId, parts }
+    ),
+  download: (fileId: string, expiresIn: number = 3600) =>
+    apiClient.post<FileDownloadResponse>(`/files/${fileId}/download/`, { file_id: fileId, expires_in: expiresIn }),
+  delete: (fileId: string) =>
+    apiClient.delete<{file_id: string; status: string; message: string}>(`/files/${fileId}/`),
+  update: (fileId: string, data: Partial<FileMetadata>) =>
+    apiClient.patch<FileMetadata>(`/files/${fileId}/`, data),
+  share: (fileId: string, settings: {
+    allow_download?: boolean;
+    allow_preview?: boolean;
+    expires_hours?: number;
+    description?: string;
+  }) =>
+    apiClient.post<{share_id: string; share_url: string; expires_at?: string; password_protected: boolean; settings: Record<string, unknown>}>(
+      `/files/${fileId}/share/`,
+      settings
+    ),
+  batchDelete: (fileIds: string[]) =>
+    apiClient.post<{success: boolean; deleted_count: number; failed_count: number; errors: Array<Record<string, string>>}>(
+      '/files/batch_delete/',
+      { file_ids: fileIds }
+    ),
+  search: (params: Record<string, string>) => {
+    const query = new URLSearchParams(params).toString();
+    return apiClient.get<FileListResponse>(`/files/search?${query}`);
+  },
+  stats: () =>
+    apiClient.get<{
+      total_files: number;
+      total_size: number;
+      by_category: Record<string, number>;
+      by_status: Record<string, number>;
+      by_type: Record<string, number>;
+      recent_uploads: number;
+      storage_used: number;
+      storage_available: number;
+      quota_percentage: number;
+    }>('/files/stats/'),
+};

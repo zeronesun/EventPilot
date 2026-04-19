@@ -28,11 +28,16 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'corsheaders',
     
+    # WebSocket支持
+    'channels',
+    
     # 本地应用 - 核心模块
     'apps.users',
     'apps.events',
     'apps.tasks',
     'apps.checklists',
+    'apps.websocket',  # WebSocket实时通讯
+    'apps.files',  # 文件上传系统
     # 'apps.profiles',  # 暂时禁用
     # 'apps.knowledge',  # 暂时禁用
     # 'apps.reviews',  # 暂时禁用
@@ -49,6 +54,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'api.middleware.RequestIDMiddleware',  # 请求追踪
+    'api.middleware.OperationLoggingMiddleware',  # 操作日志
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -101,16 +108,40 @@ else:
 # 缓存配置
 CACHES = {
     'default': {
-        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-        'LOCATION': os.getenv('REDIS_URL', 'redis://localhost:6379/0'),
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'eventpilot_cache',
         'OPTIONS': {
-            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+            'MAX_ENTRIES': 1000
         },
         'KEY_PREFIX': 'eventpilot',
         'TIMEOUT': 300,
         'VERSION': 1,
     }
 }
+
+# Channels 配置 (WebSocket实时通讯)
+ASGI_APPLICATION = 'config.asgi.application'
+
+# Channels Layers配置 - 使用Redis作为消息代理
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [(os.getenv('REDIS_HOST', '127.0.0.1'), int(os.getenv('REDIS_PORT', '6379')))],
+            "db": int(os.getenv('REDIS_DB', '0')),
+            "prefix": os.getenv('REDIS_PREFIX', 'eventpilot'),
+        },
+    },
+}
+
+# WebSocket安全配置
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
+CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in os.getenv('CSRF_TRUSTED_ORIGINS', 'localhost,127.0.0.1').split(',')]
+
+# WebSocket并发设置
+WEBSOCKET_CONCURRENT_DEVICES = 3
+WEBSOCKET_HEARTBEAT_INTERVAL = 30
+WEBSOCKET_HEARTBEAT_TIMEOUT = 90
 
 # 密码配置（使用argon2）
 PASSWORD_HASHERS = [

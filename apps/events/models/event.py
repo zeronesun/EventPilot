@@ -59,6 +59,15 @@ class Event(models.Model):
         verbose_name="负责人"
     )
     
+    # 参与者
+    participants = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        through='EventParticipant',
+        related_name='participated_events',
+        blank=True,
+        verbose_name="参与者"
+    )
+    
     # 元数据
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
@@ -77,6 +86,106 @@ class Event(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.type})"
+
+
+class EventParticipant(models.Model):
+    """活动参与者关联表"""
+    class Role(models.TextChoices):
+        PLANNER = 'planner', '策划师'
+        EXECUTOR = 'executor', '执行师'
+        DESIGNER = 'designer', '设计师'
+        COORDINATOR = 'coordinator', '协调员'
+        OBSERVER = 'observer', '观察员'
+    
+    id = models.AutoField(primary_key=True)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, verbose_name="活动")
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        verbose_name="用户"
+    )
+    role = models.CharField(
+        max_length=20,
+        choices=Role.choices,
+        default=Role.EXECUTOR,
+        verbose_name="角色"
+    )
+    joined_at = models.DateTimeField(auto_now_add=True, verbose_name="加入时间")
+    active = models.BooleanField(default=True, verbose_name="是否活跃")
+    
+    class Meta:
+        db_table = 'event_participants'
+        unique_together = ['event', 'user']
+        indexes = [
+            models.Index(fields=['event', 'user']),
+            models.Index(fields=['role']),
+        ]
+        verbose_name = '活动参与者'
+        verbose_name_plural = '活动参与者'
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.event.name} ({self.role})"
+
+
+class EventTemplate(models.Model):
+    """活动模板"""
+    class Category(models.TextChoices):
+        CONFERENCE = 'conference', '会议'
+        EXHIBITION = 'exhibition', '展会'
+        PERFORMANCE = 'performance', '演出'
+        PARTY = 'party', '派对'
+        TRAINING = 'training', '培训'
+        OTHER = 'other', '其他'
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=255, verbose_name="模板名称")
+    category = models.CharField(
+        max_length=20,
+        choices=Category.choices,
+        verbose_name="分类"
+    )
+    description = models.TextField(blank=True, verbose_name="描述")
+    
+    # 模板配置
+    default_duration_days = models.PositiveIntegerField(default=3, verbose_name="默认持续时间(天)")
+    default_budget = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        verbose_name="默认预算"
+    )
+    
+    # 任务模板（JSON格式）
+    task_templates = models.JSONField(default=list, verbose_name="任务模板")
+    
+    # 预算模板（JSON格式）
+    budget_templates = models.JSONField(default=list, verbose_name="预算模板")
+    
+    # 使用统计
+    usage_count = models.PositiveIntegerField(default=0, verbose_name="使用次数")
+    
+    # 元数据
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="创建者"
+    )
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="创建时间")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="更新时间")
+    is_active = models.BooleanField(default=True, verbose_name="是否启用")
+    
+    class Meta:
+        db_table = 'event_templates'
+        indexes = [
+            models.Index(fields=['category']),
+            models.Index(fields=['is_active']),
+        ]
+        verbose_name = '活动模板'
+        verbose_name_plural = '活动模板'
+    
+    def __str__(self):
+        return self.name
 
 
 class BudgetItem(models.Model):

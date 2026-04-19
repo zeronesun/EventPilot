@@ -9,6 +9,11 @@ Pillow==10.2.0
 gunicorn==21.2.0
 whitenoise==6.6.0
 
+# WebSocket实时通讯
+channels==4.0.0
+daphne==4.0.0
+channels-redis==4.1.0
+
 # 安全和认证
 django-guardian==2.4.0
 bcrypt==4.1.2
@@ -41,3 +46,6 @@ httpx==0.25.2
 # 时间处理
 python-dateutil==2.8.2
 pytz==2023.3
+
+# 文件存储
+boto3==1.34.0

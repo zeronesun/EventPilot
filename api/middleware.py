@@ -1,7 +1,5 @@
 import uuid
 import logging
-from django.utils.deprecation import RemovedInDjango40Warning
-from django.utils.functional import SimpleLazyObject
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +46,7 @@ class OperationLoggingMiddleware:
                 f"IP: {self._get_client_ip(request)}"
             )
         
-        return self.get_response(self)(request)
+        return self.get_response(request)
     
     def _get_client_ip(self, request):
         """
