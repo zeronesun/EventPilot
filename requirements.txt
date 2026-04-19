@@ -1,0 +1,43 @@
+# Django 核心依赖
+Django==5.0.1
+djangorestframework==3.14.0
+django-cors-headers==4.3.1
+psycopg2-binary==2.9.9
+redis==5.0.1
+django-redis==5.4.0
+Pillow==10.2.0
+gunicorn==21.2.0
+whitenoise==6.6.0
+
+# 安全和认证
+django-guardian==2.4.0
+bcrypt==4.1.2
+argon2-cffi==23.1.0
+PyJWT==2.8.0
+
+# 数据验证
+pydantic==2.5.2
+pydantic-settings==2.1.0
+
+# 环境变量管理
+python-dotenv==1.0.0
+
+# API文档
+drf-yasg==1.21.7
+
+# 日志和监控
+importlib-metadata==6.8.0
+
+# 开发工具
+django-debug-toolbar==4.2.0
+pytest==7.4.3
+pytest-django==4.7.0
+pytest-cov==4.1.0
+faker==21.0.0
+
+# HTTP客户端
+httpx==0.25.2
+
+# 时间处理
+python-dateutil==2.8.2
+pytz==2023.3
