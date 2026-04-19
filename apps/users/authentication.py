@@ -10,7 +10,9 @@ from datetime import datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
-User = get_user_model()
+# 延迟加载User模型以避免循环导入
+def get_user_class():
+    return get_user_model()
 
 
 class JWTAuthentication(authentication.BaseAuthentication):
@@ -95,18 +97,19 @@ class JWTAuthentication(authentication.BaseAuthentication):
         """
         从JWT payload中获取用户
         """
+        User = get_user_class()  # 延迟加载
         user_id = payload.get('user_id')
-        
+
         try:
             user = User.objects.get(id=user_id, is_active=True)
         except User.DoesNotExist:
             raise exceptions.AuthenticationFailed('用户不存在或已禁用')
-        
+
         # 获取用户角色
         if 'role' in payload:
             # 验证role是否正确（可选择加验证逻辑）
             pass
-        
+
         return user
 
 

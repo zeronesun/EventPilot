@@ -21,7 +21,7 @@ def health_check(request):
         "service": "EventPilot API",
         "version": "1.0.0-mvp",
         "timestamp": datetime.utcnow().isoformat() + 'Z',
-        "environment": settings.DJANGO_SETTINGS_MODULE,
+        "environment": "development",
         "features": {
             "user_management": "complete",
             "event_management": "complete",

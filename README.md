@@ -16,47 +16,76 @@ EventPilot是专为高端活动承办团队设计的内部工作流引擎和知�
 
 #### 后端
 - **框架**：Django 5 + DRF
-- **数据库**：PostgreSQL 15
+- **数据库**：SQLite (开发) → PostgreSQL 15 (生产)
 - **缓存**：Redis
-- **认证**：Token认证（可升级为JWT）
-- **部署**：传统方式（Gunicorn + Nginx）
+- **认证**：JWT认证 (access + refresh token)
+- **部署**：Gunicorn + Nginx
 
 #### 前端  
-- **框架**：Vue 3 + Vite
+- **框架**：Vue 3 + Vite + TypeScript
 - **状态管理**：Pinia
 - **UI组件**：Element Plus
-- **HTTP客户端**：Axios
+- **HTTP客户端**：TypeScript Fetch Wrapper (符合fullstack-dev最佳实践)
+- **路由**：Vue Router
 
 ## 📋 功能模块
 
-### ✅ 已完成 (Phase 1 MVP)
+### ✅ 已完成 (Phase 1 基础设施)
 
-1. **用户和权限系统**
-   - 扩展用户模型（支持手机、部门、职位）
-   - 用户角色管理（管理员、项目负责人、执行成员、观察者）
-   - 资源级权限控制（RBAC）
+API基础设施和前端后端集成：
+- **完整的Django + DRF后端架构**
+- **JWT认证系统** (access token 15分钟 + refresh token)
+- **TypeScript API客户端** (类型安全，错误处理完备)
+- **Pinia状态管理** (Auth Store, Events Store, Tasks Store)
+- **Vue 3前端页面** (登录、首页、活动、任务)
+- **完整的API端点实现**
 
-2. **活动管理**
-   - 活动CRUD和状态跟踪
-   - 预算明细管理
-   - 自动预算计算和偏差分析
-   - 活动统计数据API
+### ✅ 已完成 (Phase 1 MVP端点)
 
-3. **任务管理**
-   - 任务CRUD和状态管理
-   - 多线任务管理（策划、嘉宾、物料、场地、宣传、现场、复盘）
-   - 任务依赖关系支持
-   - 看板视图和拖拽支持
-   - 任务完成触发依赖更新
+#### 认证API
+- `POST /api/auth/login/` - 用户登录
+- `POST /api/auth/refresh/` - 刷新JWT token
+- `POST /api/auth/verify/` - 验证token有效性
 
-4. **核验清单**
-   - 清单模板系统
-   - 清单实例化和核验操作
-   - 离线支持（标记待同步）
-   - 核验报告生成
+#### 用户API
+- `GET /api/users/` - 用户列表
+- `GET /api/users/me/` - 当前用户信息
+- `POST /api/users/change_password/` - 修改密码
+
+#### 活动API
+- `GET /api/events/` - 活动列表（支持过滤、搜索、分页）
+- `POST /api/events/` - 创建活动
+- `GET /api/events/{id}/` - 活动详情
+- `PUT /api/events/{id}/` - 更新活动
+- `DELETE /api/events/{id}/` - 删除活动
+- `POST /api/events/{id}/complete/` - 标记活动完成
+- `GET /api/events/{id}/statistics/` - 活动统计
+
+#### 任务API
+- `GET /api/tasks/` - 任务列表（支持过滤、搜索、分页）
+- `POST /api/tasks/` - 创建任务
+- `GET /api/tasks/{id}/` - 任务详情
+- `PUT /api/tasks/{id}/` - 更新任务
+- `DELETE /api/tasks/{id}/` - 删除任务
+- `PATCH /api/tasks/{id}/complete/` - 完成任务
+- `GET /api/tasks/kanban_data?event={id}` - 看板数据
+
+#### 核验清单API
+- `GET /api/checklists/templates/` - 清单模板
+- `POST /api/checklists/instances/` - 创建清单实例
+- `GET /api/checklists/items/` - 清单项
+- `POST /api/checklists/items/{id}/check/` - 执行核验
 
 ### 🚧 计划中 (Phase 2-3)
 
+#### 立即开始 (Phase 2)
+- **完整认证流程测试** - 验证JWT登录/登出/刷新
+- **前后端集成测试** - 启动服务器验证数据流
+- **实时功能** - WebSocket服务准备
+- **文件上传** - 预签名URL实现
+- **CRUD完善** - 创建/编辑/删除操作完成
+
+#### 后续功能 (Phase 2-3)
 - 关联方档案管理系统
 - 结构化复盘和知识库
 - 数据仪表盘和智能推荐
@@ -142,6 +171,11 @@ sudo systemctl start eventpilot
 ### 基础端点
 - `GET /api/health` - 健康检查
 - `GET /api/` - API信息
+
+### 认证API (JWT)
+- `POST /api/auth/login/` - 用户登录
+- `POST /api/auth/refresh/` - 刷新JWT token
+- `POST /api/auth/verify/` - 验证token有效性
 
 ### 用户API  
 - `GET /api/users/` - 用户列表
@@ -235,7 +269,7 @@ EventPilot/
 
 ## 🔐 安全和权限
 
-- **认证**：Token认证（生产环境建议使用JWT）
+- **认证**：JWT认证 (access token + refresh token机制)
 - **权限**：基于角色的访问控制（RBAC）
 - **密码**：Argon2加密存储
 - **数据安全**：支持数据加密和完整审计日志
@@ -248,9 +282,9 @@ EventPilot/
 
 ## 🚗 版本历史
 
-- **v1.0 MVP** (当前)：基础活动、任务、核验清单管理
-- **v1.1** (计划)：关联方档案、智能方案生成、结构化复盘
-- **v1.2** (计划)：知识推荐、数据仪表盘、微信深度集成
+- **v1.1 Phase 1** (当前)：API基础设施 + 前后端完整集成
+- **v1.2** (计划)：完整CRUD功能 + 实时协作
+- **v1.3** (计划)：智能推荐 + 知识库 + 微信集成
 
 ## 📄 许可证
 
@@ -266,4 +300,4 @@ EventPilot/
 
 ---
 
-**EventPilot - 让活动交付精善尽美，让团队专业能力可持续积累**# EventPilot
+**EventPilot - 让活动交付精善尽美，让团队专业能力可持续积累**
