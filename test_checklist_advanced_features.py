@@ -148,7 +148,7 @@ def test_checklist_export_import():
         )
         
         # 获取或创建测试模板
-        template = ChecklistTemplate.objects.filter(name__contains='测试')).first()
+        template = ChecklistTemplate.objects.filter(name__contains=\'测试\').first()
         if not template:
             print("✗ 未找到测试模板")
             return False

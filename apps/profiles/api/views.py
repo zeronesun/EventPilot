@@ -1,149 +1,417 @@
+"""
+关联方档案管理API视图
+提供完整的CRUD功能和智能推荐能力
+"""
+
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticatedOrReadOnly
+from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
+from django.utils import timezone
+import logging
 
-from .models import Profile, ProfileEventAssociation
-from .serializers import (
-    ProfileSerializer, ProfileSimpleSerializer, ProfileEventAssociationSerializer, 
-    ProfileListSerializer
+from apps.profiles.models import (
+    ContactProfile, ContactPerson, 
+    InteractionHistory, ProfileEvaluation
+)
+from apps.profiles.api.serializers import (
+    ContactProfileSerializer, ContactProfileCreateSerializer,
+    ContactProfileListSerializer, ContactPersonSerializer,
+    InteractionHistorySerializer, ProfileEvaluationSerializer,
+    RecommendationRequestSerializer, RecommendationResponseSerializer,
+    SearchRequestSerializer, AnalyticsResponseSerializer
+)
+from apps.profiles.services import (
+    ContactProfileService, InteractionService, 
+    EvaluationService, IntelligentRecommender,
+    ProfileAnalytics
 )
 
+logger = logging.getLogger(__name__)
 
-class ProfileViewSet(viewsets.ModelViewSet):
-    """关联方档案视图集"""
-    serializer_class = ProfileSerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    filterset_fields = ['profile_type', 'rating', 'created_by']
-    search_fields = ['name', 'contact_info', 'cooperation_history']
-    ordering_fields = ['-created_at', 'created_at', '-rating', 'rating']
-    
-    def get_serializer_class(self):
-        """根据操作选择序列化器"""
-        if self.action == 'list':
-            return ProfileListSerializer
-        return ProfileSerializer
+
+class ContactProfileViewSet(viewsets.ModelViewSet):
+    """
+    关联方档案视图集
+    提供档案管理的完整CRUD功能
+    """
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        """获取档案查询集"""
-        return Profile.objects.select_related('created_by').prefetch_related('event_associations')
+        """获取档案列表，支持权限过滤"""
+        user = self.request.user
+        
+        # 超级用户可以访问所有档案
+        if user.is_superuser:
+            base_queryset = ContactProfile.objects.filter(is_deleted=False)
+        # 普通用户只能访问自己拥有的档案
+        else:
+            base_queryset = ContactProfile.objects.filter(
+                owner=user,
+                is_deleted=False
+            )
+        
+        # 支持多个过滤参数
+        profile_type = self.request.query_params.get('profile_type')
+        if profile_type:
+            base_queryset = base_queryset.filter(profile_type=profile_type)
+        
+        status = self.request.query_params.get('status')
+        if status:
+            base_queryset = base_queryset.filter(status=status)
+        
+        risk_level = self.request.query_params.get('risk_level')
+        if risk_level:
+            base_queryset = base_queryset.filter(risk_level=risk_level)
+        
+        min_credit_score = self.request.query_params.get('min_credit_score')
+        if min_credit_score:
+            try:
+                min_credit_score = int(min_credit_score)
+                base_queryset = base_queryset.filter(credit_score__gte=min_credit_score)
+            except (ValueError, TypeError):
+                pass
+        
+        max_credit_score = self.request.query_params.get('max_credit_score')
+        if max_credit_score:
+            try:
+                max_credit_score = int(max_credit_score)
+                base_queryset = base_queryset.filter(credit_score__lte=max_credit_score)
+            except (ValueError, TypeError):
+                pass
+        
+        # 搜索支持
+        search = self.request.query_params.get('search')
+        if search:
+            base_queryset = base_queryset.filter(
+                Q(name__icontains=search) |
+                Q(company_name__icontains=search) |
+                Q(industry__icontains=search) |
+                Q(tags__icontains=search)
+            )
+        
+        # 预加载相关数据
+        base_queryset = base_queryset.select_related('owner').prefetch_related('contacts')
+        
+        # 支持排序
+        ordering = self.request.query_params.get('ordering', '-created_at')
+        if ordering:
+            try:
+                base_queryset = base_queryset.order_by(ordering)
+            except:
+                # 排序字段无效，使用默认排序
+                base_queryset = base_queryset.order_by('-created_at')
+        
+        return base_queryset
+    
+    def get_serializer_class(self):
+        """根据操作返回不同的序列化器"""
+        if self.action == 'list':
+            return ContactProfileListSerializer
+        elif self.action == 'create':
+            return ContactProfileCreateSerializer
+        else:
+            return ContactProfileSerializer
     
     def perform_create(self, serializer):
-        """创建档案时的额外处理"""
-        serializer.save(created_by=self.request.user)
+        """创建档案时保存所有者和创建者"""
+        instance = serializer.save(owner=self.request.user)
+        logger.info(f"Profile created: {instance.id} by {self.request.user.username}")
+        return instance
+    
+    def perform_update(self, serializer):
+        """更新档案时记录更新者"""
+        instance = serializer.save()
+        logger.info(f"Profile updated: {instance.id} by {self.request.user.username}")
+        return instance
+    
+    def destroy(self, request, *args, **kwargs):
+        """软删除档案"""
+        profile = self.get_object()
+        profile.soft_delete(request.user)
+        logger.info(f"Profile soft deleted: {profile.id} by {self.request.user.username}")
+        return Response(status=status.HTTP_204_NO_CONTENT)
     
     @action(detail=True, methods=['get'])
-    def events(self, request, pk=None):
-        """获取档案关联的活动列表"""
+    def contacts(self, request, pk=None):
+        """
+        获取档案的所有联系人
+        GET /api/profiles/{id}/contacts/
+        """
         profile = self.get_object()
-        associations = profile.event_associations.select_related('event')
-        
-        events_data = []
-        for assoc in associations:
-            events_data.append({
-                'event_id': str(assoc.event.id),
-                'event_name': assoc.event.name,
-                'event_date': assoc.event.start_date.isoformat() if assoc.event.start_date else None,
-                'role': assoc.role,
-                'created_at': assoc.created_at.isoformat()
-            })
-        
-        return Response(events_data)
+        contacts = profile.contacts.filter(is_active=True)
+        serializer = ContactPersonSerializer(contacts, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': len(serializer.data)
+        })
     
     @action(detail=True, methods=['post'])
-    def add_to_event(self, request, pk=None):
-        """将档案添加到活动"""
+    def contact(self, request, pk=None):
+        """
+        为档案添加联系人
+        POST /api/profiles/{id}/contact/
+        """
         profile = self.get_object()
-        event_id = request.data.get('event_id')
-        event_role = request.data.get('role', '')
+        serializer = ContactPersonSerializer(data=request.data)
         
-        if not event_id:
+        if serializer.is_valid():
+            # 检查是否已经有主要联系人
+            is_primary = serializer.validated_data.get('is_primary', False)
+            if is_primary:
+                profile.contacts.filter(is_primary=True).update(is_primary=False)
+            
+            serializer.save(profile=profile)
+            logger.info(f"Contact added to profile {profile.id} by {request.user.username}")
             return Response(
-                {'message': '需要指定event_id'},
-                status=status.HTTP_400_BAD_REQUEST
+                ContactPersonSerializer(serializer.instance).data,
+                status=status.HTTP_201_CREATED
             )
         
-        from apps.events.models import Event
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['put'], url_path='contact/(?P<contact_id>[^/.]+)')
+    def update_contact(self, request, pk=None, contact_id=None):
+        """
+        更新指定联系人
+        PUT /api/profiles/{id}/contact/{contact_id}/
+        """
+        profile = self.get_object()
         try:
-            event = Event.objects.get(id=event_id)
-        except Event.DoesNotExist:
+            contact = profile.contacts.get(id=contact_id)
+        except ContactPerson.DoesNotExist:
             return Response(
-                {'message': '活动不存在'},
+                {'error': 'Contact not found'},
                 status=status.HTTP_404_NOT_FOUND
             )
         
-        # 检查是否已经关联
-        if profile.event_associations.filter(event=event).exists():
+        serializer = ContactPersonSerializer(contact, data=request.data, partial=True)
+        
+        if serializer.is_valid():
+            is_primary = serializer.validated_data.get('is_primary', False)
+            if is_primary and not contact.is_primary:
+                profile.contacts.filter(is_primary=True).update(is_primary=False)
+            
+            serializer.save()
+            logger.info(f"Contact {contact_id} updated by {request.user.username}")
+            return Response(serializer.data)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['delete'], url_path='contact/(?P<contact_id>[^/.]+)')
+    def delete_contact(self, request, pk=None, contact_id=None):
+        """
+        删除指定联系人
+        DELETE /api/profiles/{id}/contact/{contact_id}/
+        """
+        profile = self.get_object()
+        try:
+            contact = profile.contacts.get(id=contact_id)
+        except ContactPerson.DoesNotExist:
             return Response(
-                {'message': '档案已经关联到该活动'},
-                status=status.HTTP_400_BAD_REQUEST
+                {'error': 'Contact not found'},
+                status=status.HTTP_404_NOT_FOUND
             )
         
-        # 创建关联
-        ProfileEventAssociation.objects.create(
+        contact.delete()
+        logger.info(f"Contact {contact_id} deleted by {request.user.username}")
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=True, methods=['get'])
+    def interactions(self, request, pk=None):
+        """
+        获取档案的交互历史
+        GET /api/profiles/{id}/interactions/
+        """
+        profile = self.get_object()
+        interactions = profile.interactions.all()
+        
+        # 支持分页
+        page_size = int(request.query_params.get('page_size', 20))
+        interactions = interactions[:page_size]
+        
+        serializer = InteractionHistorySerializer(interactions, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': len(serializer.data)
+        })
+    
+    @action(detail=True, methods=['post'])
+    def interaction(self, request, pk=None):
+        """
+        记录新的交互
+        POST /api/profiles/{id}/interaction/
+        """
+        profile = self.get_object()
+        interaction, errors = InteractionService.record_interaction(
             profile=profile,
-            event=event,
-            role=event_role
+            data=request.data,
+            user=request.user,
+            request=request
         )
         
-        return Response({'message': '档案已添加到活动'})
+        if errors:
+            return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
+        
+        logger.info(f"Interaction recorded for profile {profile.id} by {request.user.username}")
+        return Response(
+            InteractionHistorySerializer(interaction).data,
+            status=status.HTTP_201_CREATED
+        )
+    
+    @action(detail=True, methods=['get'])
+    def evaluations(self, request, pk=None):
+        """
+        获取档案的评估记录
+        GET /api/profiles/{id}/evaluations/
+        """
+        profile = self.get_object()
+        evaluations = profile.evaluations.all()
+        serializer = ProfileEvaluationSerializer(evaluations, many=True)
+        return Response({
+            'results': serializer.data,
+            'count': len(serializer.data)
+        })
     
     @action(detail=True, methods=['post'])
-    def remove_from_event(self, request, pk=None):
-        """将档案从活动中移除"""
+    def evaluation(self, request, pk=None):
+        """
+        提交新的评估
+        POST /api/profiles/{id}/evaluation/
+        """
         profile = self.get_object()
-        event_id = request.data.get('event_id')
+        evaluation, errors = EvaluationService.create_evaluation(
+            profile=profile,
+            data=request.data,
+            user=request.user,
+            request=request
+        )
         
-        if not event_id:
-            return Response(
-                {'message': '需要指定event_id'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+        if errors:
+            return Response({'errors': errors}, status=status.HTTP_400_BAD_REQUEST)
         
-        try:
-            association = profile.event_associations.get(event_id=event_id)
-            association.delete()
-        except ProfileEventAssociation.DoesNotExist:
-            return Response(
-                {'message': '关联不存在'},
-                status=status.HTTP_404_NOT_FOUND
-            )
+        logger.info(f"Evaluation created for profile {profile.id} by {request.user.username}")
+        return Response(
+            ProfileEvaluationSerializer(evaluation).data,
+            status=status.HTTP_201_CREATED
+        )
+    
+    @action(detail=True, methods=['get'])
+    def comprehensive_assessment(self, request, pk=None):
+        """
+        获取档案的综合评估
+        GET /api/profiles/{id}/comprehensive_assessment/
+        """
+        profile = self.get_object()
+        assessment = ContactProfileService.assess_profile_comprehensive(profile)
+        return Response(assessment)
+
+
+class RecommendationsViewSet(viewsets.GenericViewSet):
+    """
+    智能推荐视图
+    基于规则引擎提供档案推荐
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['post'])
+    def suppliers(self, request):
+        """
+        智能供应商推荐
+        POST /api/profiles/recommendations/suppliers/
         
-        return Response({'message': '档案已从活动移除'})
+        请求体:
+        {
+            "event_type": "大型商务会议",
+            "min_credit_score": 60,
+            "max_risk_level": "medium",
+            "limit": 10
+        }
+        """
+        serializer = RecommendationRequestSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        event_requirements = {
+            'type': serializer.validated_data.get('event_type', ''),
+            'min_credit_score': serializer.validated_data.get('min_credit_score', 0),
+            'max_risk_level': serializer.validated_data.get('max_risk_level', 'high'),
+            'limit': serializer.validated_data.get('limit', 10)
+        }
+        
+        # 调用智能推荐引擎
+        recommendations = IntelligentRecommender.recommend_suppliers(
+            event_requirements=event_requirements,
+            limit=event_requirements['limit']
+        )
+        
+        return Response({
+            'event_requirements': event_requirements,
+            'recommendations': recommendations,
+            'count': len(recommendations)
+        })
+
+
+class SearchViewSet(viewsets.GenericViewSet):
+    """
+    智能搜索视图
+    提供基于多维匹配的档案搜索
+    """
+    permission_classes = [IsAuthenticated]
+    
+    @action(detail=False, methods=['post'])
+    def profiles(self, request):
+        """
+        智能档案搜索
+        POST /api/profiles/search/profiles/
+        
+        请求体:
+        {
+            "query": "科技",
+            "profile_type": "supplier",
+            "limit": 10
+        }
+        """
+        serializer = SearchRequestSerializer(data=request.data)
+        
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        results = IntelligentRecommender.recommend_profiles(
+            query=serializer.validated_data['query'],
+            profile_type=serializer.validated_data.get('profile_type'),
+            limit=serializer.validated_data.get('limit', 10)
+        )
+        
+        return Response({
+            'query': serializer.validated_data['query'],
+            'results': results,
+            'count': len(results)
+        })
+
+
+class AnalyticsViewSet(viewsets.GenericViewSet):
+    """
+    分析视图
+    提供档案管理和业务分析数据
+    """
+    permission_classes = [IsAuthenticated]
     
     @action(detail=False, methods=['get'])
-    def search(self, request):
-        """高级档案搜索"""
-        query = request.query_params.get('q', '')
-        profile_type = request.query_params.get('profile_type')
-        
-        queryset = Profile.objects.filter(is_verified=True)
-        
-        # 构建搜索条件
-        if query:
-            queryset = queryset.filter(
-                Q(name__icontains=query) |
-                Q(contact_info__icontains=query) |
-                Q(cooperation_history__icontains=query) |
-                Q(tags__contains=query)
+    def dashboard(self, request):
+        """
+        获取仪表盘统计
+        GET /api/profiles/analytics/dashboard/
+        """
+        try:
+            stats = ProfileAnalytics.get_dashboard_stats(request.user)
+            serializer = AnalyticsResponseSerializer(stats)
+            return Response(serializer.data)
+        except Exception as e:
+            logger.error(f"Dashboard stats error for {request.user.username}: {e}")
+            return Response(
+                {'error': 'Failed to retrieve dashboard statistics'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
-        if profile_type:
-            queryset = queryset.filter(profile_type=profile_type)
-        
-        # 按评分排序
-        queryset = queryset.order_by('-rating', '-created_at')
-        
-        serializer = ProfileSimpleSerializer(queryset, many=True)
-        return Response(serializer.data)
-    
-    @action(detail=True, methods=['post'])
-    def increment_popularity(self, request, pk=None):
-        """增加档案流行度（用户查看时调用）"""
-        profile = self.get_object()
-        profile.rating = min(5, profile.rating + 1) if profile.rating else 1
-        profile.save()
-        
-        serializer = self.get_serializer(profile)
-        return Response(serializer.data)

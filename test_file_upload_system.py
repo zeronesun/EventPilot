@@ -35,12 +35,19 @@ class FileUploadSystemTest(TestCase):
     def setUp(self):
         """设置测试环境"""
         self.client = Client()
-        self.user = User.objects.create_user(
+        self.user, created = User.objects.get_or_create(
             username='testuser',
-            email='test@example.com',
-            password='testpassword123',
-            is_active=True
+            defaults={
+                'email': 'test@example.com',
+                'password': 'testpassword123',
+                'is_active': True
+            }
         )
+        if not created:
+            self.user.email = 'test@example.com'
+            self.user.set_password('testpassword123')
+            self.user.is_active = True
+            self.user.save()
         
         # 创建测试用户以获取token
         response = self.client.post('/api/auth/login/', {

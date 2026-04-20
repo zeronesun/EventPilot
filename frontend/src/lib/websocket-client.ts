@@ -120,7 +120,7 @@ export class WebSocketClient {
         this.ws.onmessage = (event) => {
           try {
             const message: WebSocketMessage = JSON.parse(event.data);
-            this handleMessage(message);
+            this.handleMessage(message);
           } catch (error) {
             console.error('[WebSocket] Failed to parse message:', error);
           }
@@ -393,14 +393,12 @@ export function getWebSocketClient(): WebSocketClient {
       reconnectAttempts: 10,
       reconnectInterval: 3000,
       heartbeatInterval: 30000,
-      maxOfflineMessages: 100,
     });
   }
-  
   return wsClient;
 }
 
-export function initializeWebSocket(token: string): Promise<void> {
+export function initializeWebSocket(token?: string): Promise<void> {
   const client = getWebSocketClient();
   return client.connect(token);
 }
@@ -411,26 +409,47 @@ export function disconnectWebSocket(): void {
   }
 }
 
-// 便捷方法
-export function onNotification(handler: (notification: NotificationData) => void): void {
+// 事件监听器包装函数
+let notificationCallback: ((notification: NotificationData) => void) | null = null;
+let presenceCallback: ((status: PresenceStatus) => void) | null = null;
+let collaborationCallback: ((data: Record<string, unknown>) => void) | null = null;
+
+export function onNotification(callback: (notification: NotificationData) => void): void {
+  notificationCallback = callback;
   const client = getWebSocketClient();
-  client.on('notification', (message) => {
-    if (message.notification) {
-      handler(message.notification);
+  client.on('notification', (message: WebSocketMessage) => {
+    if (message.notification && notificationCallback) {
+      notificationCallback(message.notification);
     }
   });
 }
 
-export function onPresenceUpdate(handler: (status: PresenceStatus) => void): void {
+export function onPresenceUpdate(callback: (status: PresenceStatus) => void): void {
+  presenceCallback = callback;
   const client = getWebSocketClient();
-  client.on('user_status', (message) => {
-    handler(message as unknown as PresenceStatus);
+  client.on('presence', (message: WebSocketMessage) => {
+    if (message.data && presenceCallback) {
+      presenceCallback(message.data as PresenceStatus);
+    }
   });
 }
 
-export function onCollaborationEvent(handler: (data: Record<string, unknown>) => void): void {
+export function onCollaborationEvent(callback: (data: Record<string, unknown>) => void): void {
+  collaborationCallback = callback;
   const client = getWebSocketClient();
-  client.on('collaboration', (message) => {
-    handler(message.data || message as unknown as Record<string, unknown>);
+  client.on('collaboration', (message: WebSocketMessage) => {
+    if (message.data && collaborationCallback) {
+      collaborationCallback(message.data as Record<string, unknown>);
+    }
   });
+}
+
+export function resetWebSocketClient(): void {
+  if (wsClient) {
+    wsClient.disconnect();
+    wsClient = null;
+  }
+  notificationCallback = null;
+  presenceCallback = null;
+  collaborationCallback = null;
 }

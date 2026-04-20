@@ -4,6 +4,10 @@ import Home from '../views/Home.vue'
 import Login from '../views/Login.vue'
 import Events from '../views/Events.vue'
 import Tasks from '../views/Tasks.vue'
+import Users from '../views/Users.vue'
+import Checklists from '../views/Checklists.vue'
+import Files from '../views/Files.vue'
+import Profiles from '../views/Profiles.vue'
 
 const routes = [
   {
@@ -27,6 +31,30 @@ const routes = [
     path: '/tasks',
     name: 'tasks',
     component: Tasks,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/users',
+    name: 'users',
+    component: Users,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/checklists',
+    name: 'checklists',
+    component: Checklists,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/files',
+    name: 'files',
+    component: Files,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profiles',
+    name: 'profiles',
+    component: Profiles,
     meta: { requiresAuth: true }
   }
 ]

@@ -38,7 +38,7 @@ INSTALLED_APPS = [
     'apps.checklists',
     'apps.websocket',  # WebSocket实时通讯
     'apps.files',  # 文件上传系统
-    # 'apps.profiles',  # 暂时禁用
+    'apps.profiles',  # Phase 3 - 关联方档案管理
     # 'apps.knowledge',  # 暂时禁用
     # 'apps.reviews',  # 暂时禁用
 ]

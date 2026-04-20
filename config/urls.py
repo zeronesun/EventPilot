@@ -16,7 +16,7 @@ urlpatterns = [
     path('api/', include('apps.tasks.api.urls')),
     path('api/', include('apps.checklists.api.urls')),
     path('api/', include('apps.files.api.urls')),  # 文件上传系统
-    # path('api/', include('apps.profiles.api.urls')),
+    path('api/', include('apps.profiles.api.urls')),  # Phase 3 - 关联方档案管理
     # path('api/', include('apps.knowledge.api.urls')),
     # path('api/', include('apps.reviews.api.urls')),
 

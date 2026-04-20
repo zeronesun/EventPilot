@@ -404,7 +404,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
 // Error message helper
 function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiErrorHandler) {
+  if (error instanceof ApiError) {
     const body = error.body;
     if (body && typeof body === 'object') {
       if (body instanceof Array && body.length > 0) {
