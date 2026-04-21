@@ -3,13 +3,21 @@
     <div class="page-header">
       <h1>关联方档案管理</h1>
       <div class="header-actions">
+        <el-button @click="showRecommendations = true">
+          <el-icon><Star /></el-icon>
+          智能推荐
+        </el-button>
+        <el-button @click="showAdvancedSearch = true">
+          <el-icon><Search /></el-icon>
+          高级搜索
+        </el-button>
+        <el-button @click="showAnalytics = true">
+          <el-icon><Trend-chart /></el-icon>
+          数据分析
+        </el-button>
         <el-button type="primary" @click="showCreateDialog = true">
           <el-icon><Plus /></el-icon>
           新建档案
-        </el-button>
-        <el-button @click="fetchDashboardStats">
-          <el-icon><Refresh /></el-icon>
-          刷新数据
         </el-button>
       </div>
     </div>
@@ -204,15 +212,48 @@
         </el-button>
       </template>
     </el-dialog>
+
+    <!-- 智能推荐对话框 -->
+    <el-dialog
+      v-model="showRecommendations"
+      title="智能推荐"
+      width="80%"
+      top="5vh"
+    >
+      <IntelligentRecommendations />
+    </el-dialog>
+
+    <!-- 高级搜索对话框 -->
+    <el-dialog
+      v-model="showAdvancedSearch"
+      title="高级搜索"
+      width="80%"
+      top="5vh"
+    >
+      <AdvancedSearch />
+    </el-dialog>
+
+    <!-- 数据分析对话框 -->
+    <el-dialog
+      v-model="showAnalytics"
+      title="数据分析"
+      width="90%"
+      top="3vh"
+    >
+      <AnalyticsDashboard />
+    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
-import { Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { Plus, Refresh, Search, Star, TrendChart } from '@element-plus/icons-vue';
 import { useProfilesStore } from '@/stores/profiles';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { ContactProfile, ProfileType } from '@/lib/profiles-client';
+import IntelligentRecommendations from '@/components/IntelligentRecommendations.vue';
+import AdvancedSearch from '@/components/AdvancedSearch.vue';
+import AnalyticsDashboard from '@/components/AnalyticsDashboard.vue';
 
 const profilesStore = useProfilesStore();
 
@@ -224,6 +265,11 @@ const showCreateDialog = ref(false);
 const isEditing = ref(false);
 const submitLoading = ref(false);
 const profileFormRef = ref();
+
+// Dialog states for new components
+const showRecommendations = ref(false);
+const showAdvancedSearch = ref(false);
+const showAnalytics = ref(false);
 
 const searchForm = reactive({
   search: '',

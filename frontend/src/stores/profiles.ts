@@ -178,14 +178,52 @@ export const useProfilesStore = defineStore('profiles', () => {
     }
   }
   
-  async function addContact(profileId: string, data: Partial<ContactPerson>) {
+  async function fetchContacts(profileId: string) {
+    try {
+      const response = await profilesApi.getContacts(profileId);
+      state.value.contacts = (response as any).results || [];
+      return { success: true, data: state.value.contacts };
+    } catch (err: any) {
+      state.value.error = getErrorMessage(err);
+      return { success: false, error: getErrorMessage(err) };
+    }
+  }
+
+  async function createContact(profileId: string, data: Partial<ContactPerson>) {
     try {
       const contact = await profilesApi.addContact(profileId, data);
       state.value.contacts.push(contact);
-      return contact;
+      return { success: true, data: contact };
     } catch (err: any) {
       state.value.error = getErrorMessage(err);
-      return null;
+      return { success: false, error: getErrorMessage(err) };
+    }
+  }
+
+  async function updateContact(profileId: string, contactId: string, data: Partial<ContactPerson>) {
+    try {
+      const contact = await profilesApi.updateContact(profileId, contactId, data);
+      // Update in list
+      const index = state.value.contacts.findIndex(c => c.id === contactId);
+      if (index !== -1) {
+        state.value.contacts[index] = contact;
+      }
+      return { success: true, data: contact };
+    } catch (err: any) {
+      state.value.error = getErrorMessage(err);
+      return { success: false, error: getErrorMessage(err) };
+    }
+  }
+
+  async function deleteContact(profileId: string, contactId: string) {
+    try {
+      await profilesApi.deleteContact(profileId, contactId);
+      // Remove from list
+      state.value.contacts = state.value.contacts.filter(c => c.id !== contactId);
+      return { success: true };
+    } catch (err: any) {
+      state.value.error = getErrorMessage(err);
+      return { success: false, error: getErrorMessage(err) };
     }
   }
   
@@ -276,6 +314,10 @@ export const useProfilesStore = defineStore('profiles', () => {
     updateProfile,
     deleteProfile,
     selectProfile,
+    fetchContacts,
+    createContact,
+    updateContact,
+    deleteContact,
     addContact,
     addInteraction,
     addEvaluation,

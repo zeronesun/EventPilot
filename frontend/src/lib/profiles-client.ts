@@ -211,8 +211,14 @@ export const profilesApi = {
   getContacts: (id: string) => 
     apiClient.get<{ results: ContactPerson[]; count: number }>(`/profiles/${id}/contacts/`),
     
-  addContact: (id: string, data: Partial<ContactPerson>) => 
+  addContact: (id: string, data: Partial<ContactPerson>) =>
     apiClient.post<ContactPerson>(`/profiles/${id}/contact/`, data),
+
+  updateContact: (profileId: string, contactId: string, data: Partial<ContactPerson>) =>
+    apiClient.put<ContactPerson>(`/profiles/${profileId}/contact/${contactId}/`, data),
+
+  deleteContact: (profileId: string, contactId: string) =>
+    apiClient.delete(`/profiles/${profileId}/contact/${contactId}/`),
     
   getInteractions: (id: string) => 
     apiClient.get<{ results: InteractionHistory[]; count: number }>(`/profiles/${id}/interactions/`),

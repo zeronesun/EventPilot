@@ -346,7 +346,18 @@ sudo systemctl start eventpilot
 - `GET /api/profiles/{id}/` - 档案详情
 - `PUT /api/profiles/{id}/` - 更新档案
 - `DELETE /api/profiles/{id}/` - 删除档案
-- `GET /api/profiles/recommendations/` - 智能推荐
+- `GET /api/profiles/{id}/contacts/` - 获取档案联系人
+- `POST /api/profiles/{id}/contact/` - 添加联系人
+- `PUT /api/profiles/{id}/contact/{contact_id}/` - 更新联系人
+- `DELETE /api/profiles/{id}/contact/{contact_id}/` - 删除联系人
+- `GET /api/profiles/{id}/interactions/` - 获取交互历史
+- `POST /api/profiles/{id}/interaction/` - 记录交互
+- `GET /api/profiles/{id}/evaluations/` - 获取评估记录
+- `POST /api/profiles/{id}/evaluation/` - 提交评估
+- `GET /api/profiles/{id}/comprehensive_assessment/` - 综合评估
+- `POST /api/profiles/recommendations/suppliers/` - 智能推荐
+- `POST /api/profiles/search/profiles/` - 智能搜索
+- `GET /api/profiles/analytics/dashboard/` - 仪表盘统计
 
 ## 🧪 开发指南
 
@@ -430,9 +441,27 @@ EventPilot/
 - **v1.1 Phase 1** (✅ 100% 完成)：API基础设施 + 前后端完整集成
 - **v1.2 Phase 2 核心功能** (✅ 100% 完成)：完整CRUD功能 + 实时协作 + 文件系统
 - **v1.2.1 Phase 2 前端** (✅ 100% 完成)：Vue组件集成 + UI交互完善
-- **v1.2.5 Phase 3** (🟡 开发中70%)：关联方档案管理 + 规则基智能推荐 + 数据分析
+- **v1.3 Phase 3** (✅ 100% 完成)：关联方档案管理 + 规则基智能推荐 + 数据分析
 
-**当前系统状态**: 企业级后端就绪，Phase 3基础架构完成，准备生产测试
+**当前系统状态**: 企业级后端就绪，Phase 3完整实现，准备生产部署
+
+### Phase 3 新增功能
+
+**核心功能模块**：
+- ✅ 完整的关联方档案管理系统（客户、供应商、合作伙伴）
+- ✅ 联系人管理（CRUD、主要联系人切换）
+- ✅ 交互历史记录（时间线视图、满意度评分）
+- ✅ 评估系统（多维度评分、风险分析）
+- ✅ 规则基智能推荐引擎（零外部依赖）
+- ✅ 高级搜索和多条件过滤系统
+- ✅ 数据仪表盘和统计可视化
+
+**技术特性**：
+- ✅ 零依赖智能化（不使用大模型API）
+- ✅ 规则透明、结果可追溯的推荐算法
+- ✅ 完整的TypeScript类型安全
+- ✅ 企业级用户界面和交互体验
+- ✅ 全面的性能优化和测试覆盖
 
 ## 📄 许可证
 
