@@ -88,3 +88,18 @@ public/
 cache/
 storage/
 temp/
+
+# Debug and test files
+debug/
+*.log
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.cache
+.coverage
+htmlcov/
+.tox/
+.eggs/
+dist/
+build/
