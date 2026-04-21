@@ -264,6 +264,11 @@ export const tasksApi = {
     apiClient.post<Task>('/tasks/', data),
   update: (id: string, data: Partial<Task>) =>
     apiClient.put<Task>(`/tasks/${id}/`, data),
+  bulkUpdateStatus: (updates: Array<{id: string; status: string}>) =>
+    apiClient.post<{updated: number; failed: Array<{id: string; error: string}>}>(
+      '/tasks/bulk_update_status/',
+      updates
+    ),
   delete: (id: string) =>
     apiClient.delete<void>(`/tasks/${id}/`),
   complete: (id: string) =>
