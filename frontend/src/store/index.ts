@@ -293,6 +293,8 @@ export const useTasksStore = defineStore('tasks', () => {
   const currentTask = ref<any | null>(null);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
+  const isDragging = ref(false);
+  const dragError = ref<string | null>(null);
 
   async function fetchTasks(params?: Record<string, string>): Promise<void> {
     isLoading.value = true;
@@ -385,20 +387,48 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
+  function optimisticUpdateTaskStatus(taskId: string, newStatus: string): void {
+    const task = tasks.value.find(t => t.id === taskId);
+    if (task) {
+      task.status = newStatus;
+    }
+  }
+
+  async function bulkUpdateStatus(updates: Array<{id: string; status: string}>): Promise<void> {
+    dragError.value = null;
+    try {
+      const response = await apiClient.post('/tasks/bulk_update_status/', updates);
+      if (response.data?.failed?.length > 0) {
+        console.error('Some tasks failed to update:', response.data.failed);
+        dragError.value = `${response.data.failed.length} 个任务更新失败`;
+      }
+    } catch (err) {
+      dragError.value = getErrorMessage(err);
+      throw err;
+    }
+  }
+
+  function resetDragState(): void {
+    isDragging.value = false;
+    dragError.value = null;
+  }
+
   return {
-    // State
     tasks,
     currentTask,
     isLoading,
     error,
-    
-    // Actions
+    isDragging,
+    dragError,
     fetchTasks,
     fetchTask,
     createTask,
     updateTask,
     completeTask,
     fetchKanbanData,
+    optimisticUpdateTaskStatus,
+    bulkUpdateStatus,
+    resetDragState,
   };
 });
 
