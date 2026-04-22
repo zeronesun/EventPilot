@@ -153,7 +153,7 @@
               <!-- 推荐原因 -->
               <div class="recommendation-reasons">
                 <div class="reasons-label">
-                  <el-icon><Reason /></el-icon>
+                  <el-icon><Document /></el-icon>
                   推荐原因
                 </div>
                 <div class="reasons-list">
@@ -229,13 +229,12 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { 
-  Refresh, Search, Trophy, Reason,
-  FolderOpened, DocumentChecked, 
+import {
+  Refresh, Search, Trophy,
+  FolderOpened, DocumentChecked,
   Briefcase, Star, Monitor
 } from '@element-plus/icons-vue';
-import profilesApi, { type RecommendationResult } from '@/lib/profiles-client';
-import type { RecommendationRequest } from '@/lib/profiles-client';
+import { profilesApi, type RecommendationResult, type RecommendationRequest } from '@/lib/profiles-client';
 
 // 默认配置
 const defaultConfig: RecommendationRequest = {

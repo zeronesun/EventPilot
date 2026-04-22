@@ -247,7 +247,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, onMounted, computed } from 'vue';
-import { Plus, Refresh, Search, Star, TrendChart } from '@element-plus/icons-vue';
+import { Plus, Refresh, Search, Star } from '@element-plus/icons-vue';
 import { useProfilesStore } from '@/stores/profiles';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { ContactProfile, ProfileType } from '@/lib/profiles-client';

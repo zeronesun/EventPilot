@@ -1,6 +1,8 @@
 // 关联方档案管理接口定义
 // 遵循fullstack-dev最佳实践
 
+import { apiClient } from '@/api/client';
+
 export type ProfileType = 'client' | 'supplier' | 'partner';
 
 export interface ContactInfo {

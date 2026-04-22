@@ -153,13 +153,13 @@
             <el-table-column prop="trend" label="趋势" width="80">
               <template #default="{ row }">
                 <el-icon v-if="row.trend === 'up'" color="#67C23A">
-                  <Trend-up />
+                  <ArrowUp />
                 </el-icon>
                 <el-icon v-else-if="row.trend === 'down'" color="#F56C6C">
-                  <Trend-down />
+                  <ArrowDown />
                 </el-icon>
                 <el-icon v-else color="#909399">
-                  <Trend-up />
+                  <ArrowUp />
                 </el-icon>
               </template>
             </el-table-column>
@@ -202,7 +202,7 @@
           </template>
           <div class="alerts-list">
             <div v-for="i in 3" :key="i" class="alert-item warning">
-              <el-icon><Warning-filled /></el-icon>
+              <el-icon><Warning /></el-icon>
               <div class="alert-details">
                 <div class="alert-title">风险档案 - 测试公司 {{ i }}</div>
                 <div class="alert-desc">信用评分下降至 55，建议跟进</div>
@@ -219,9 +219,9 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { 
+import {
   User, Star, Trophy, Warning, Refresh, Document,
-  Trend-up, Trend-down, Warning-filled
+  ArrowUp, ArrowDown
 } from '@element-plus/icons-vue';
 import { useProfilesStore } from '@/stores/profiles';
 import type { AnalyticsDashboard } from '@/lib/profiles-client';

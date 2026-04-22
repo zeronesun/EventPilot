@@ -193,7 +193,13 @@ export const useWebSocketStore = defineStore('websocket', () => {
     const client = getWebSocketClient();
     client.sendCollaborationEvent(action, data);
   }
-  
+
+  // 发送消息
+  function send(message: WebSocketMessage) {
+    const client = getWebSocketClient();
+    client.send(message);
+  }
+
   return {
     state,
     connected,
@@ -220,6 +226,7 @@ export const useWebSocketStore = defineStore('websocket', () => {
     unsubscribe,
     updateMyStatus,
     sendCollaboration,
+    send,
   };
 }, {
   persist: true // 持久化到localStorage

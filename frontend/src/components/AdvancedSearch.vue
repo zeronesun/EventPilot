@@ -78,7 +78,7 @@
                 <el-option label="高风险" value="high" />
               </el-select>
             </el-form-item>
-          </el.col>
+          </el-col>
         </el-row>
 
         <el-divider content-position="left">评分筛选</el-divider>
@@ -158,7 +158,7 @@
                 clearable
               >
                 <template #prefix>
-                  <el-icon><Office-building /></el-icon>
+                  <el-icon><OfficeBuilding /></el-icon>
                 </template>
               </el-input>
             </el-form-item>
@@ -172,7 +172,7 @@
                 clearable
               >
                 <template #prefix>
-                  <el-icon><Price-tag /></el-icon>
+                  <el-icon><PriceTag /></el-icon>
                 </template>
               </el-input>
             </el-form-item>
@@ -216,7 +216,7 @@
             <el-dropdown @command="handleSort">
               <el-button>
                 排序方式
-                <el-icon><Arrow-down /></el-icon>
+                <el-icon><ArrowDown /></el-icon>
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -338,9 +338,9 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue';
 import { ElMessage } from 'element-plus';
-import { 
-  Search, Refresh, Star, Arrow-down,
-  Office-building, Price-tag
+import {
+  Search, Refresh, Star, ArrowDown,
+  OfficeBuilding, PriceTag
 } from '@element-plus/icons-vue';
 import { useProfilesStore } from '@/stores/profiles';
 import type { SearchResult } from '@/lib/profiles-client';

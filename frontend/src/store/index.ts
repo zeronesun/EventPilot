@@ -378,6 +378,23 @@ export const useTasksStore = defineStore('tasks', () => {
     }
   }
 
+  async function deleteTask(id: string): Promise<void> {
+    isLoading.value = true;
+    error.value = null;
+    try {
+      await apiClient.delete(`/tasks/${id}/`);
+      tasks.value = tasks.value.filter(t => t.id !== id);
+      if (currentTask.value?.id === id) {
+        currentTask.value = null;
+      }
+    } catch (err) {
+      error.value = getErrorMessage(err);
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   async function fetchKanbanData(eventId: string): Promise<any> {
     try {
       return await apiClient.get(`/kanban_data?event=${eventId}`);
@@ -425,6 +442,7 @@ export const useTasksStore = defineStore('tasks', () => {
     createTask,
     updateTask,
     completeTask,
+    deleteTask,
     fetchKanbanData,
     optimisticUpdateTaskStatus,
     bulkUpdateStatus,

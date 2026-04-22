@@ -63,7 +63,7 @@
             <div class="card-header">
               <div class="header-left">
                 <h3>我的文件 ({{ filteredFiles.length }})</h3>
-                <span class="storage-used">已用 {{ formatBytes(totalSize }} / {{ formatBytes(quota) }}</span>
+                <span class="storage-used">已用 {{ formatBytes(totalSize) }} / {{ formatBytes(quota) }}</span>
               </div>
               <div class="header-right">
                 <el-button @click="viewMode = 'grid'" :type="viewMode === 'grid' ? 'primary' : 'default'" circle>
@@ -250,7 +250,7 @@ import {
   Document,
   Picture,
   VideoPlay,
-  Headphones,
+  Microphone,
   FolderOpened
 } from '@element-plus/icons-vue'
 import FileUploader from '../components/FileUploader.vue'
@@ -350,7 +350,7 @@ function getFileIconComponent(fileType) {
   if (fileType.startsWith('image/')) return Picture
   if (fileType.includes('pdf')) return Document
   if (fileType.includes('video')) return VideoPlay
-  if (fileType.includes('audio')) return Headphones
+  if (fileType.includes('audio')) return Microphone
   return Document
 }
 

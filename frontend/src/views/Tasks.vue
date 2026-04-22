@@ -16,32 +16,38 @@
     </div>
 
     <!-- 看板视图 -->
-    <div v-if="showKanbanView" class="kanban-view">
-      <el-row :gutter="20" v-loading="tasksStore.isLoading">
+    <div v-if="showKanbanView" class="kanban-view" v-loading="tasksStore.isLoading">
+      <el-row :gutter="20">
         <el-col :span="6" v-for="status in kanbanStatuses" :key="status.value">
-          <el-card class="kanban-column">
+          <el-card class="kanban-column-card">
             <template #header>
               <div class="kanban-column-header">
                 <span class="status-name">{{ status.name }}</span>
                 <el-badge :value="getTasksByStatus(status.value).length" class="status-badge" />
               </div>
             </template>
-            <div class="kanban-tasks">
-              <div 
-                v-for="task in getTasksByStatus(status.value)" 
-                :key="task.id"
-                class="kanban-task-card"
-                @click="handleEdit(task)"
-              >
-                <div class="task-title">{{ task.title }}</div>
-                <div class="task-meta">
-                  <el-tag size="small" :type="getPriorityType(task.priority)">
-                    {{ getPriorityText(task.priority) }}
-                  </el-tag>
-                  <span class="task-assignee">{{ task.assignee?.username || '未分配' }}</span>
+
+            <KanbanColumn
+              :tasks="getTasksByStatus(status.value)"
+              :status="status.value"
+              :disabled="tasksStore.isDragging"
+              @dragEnd="handleDragEnd"
+              @cardClick="handleEdit"
+            >
+              <template #card="{ task, click }">
+                <div @click="click(task)">
+                  <div class="task-title">{{ task.title }}</div>
+                  <div class="task-meta">
+                    <el-tag size="small" :type="getPriorityType(task.priority)">
+                      {{ getPriorityText(task.priority) }}
+                    </el-tag>
+                    <span class="task-assignee">
+                      {{ task.assignee_name || task.assignee?.username || '未分配' }}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </div>
+              </template>
+            </KanbanColumn>
           </el-card>
         </el-col>
       </el-row>
@@ -122,10 +128,10 @@
             <el-button link type="primary" size="small" @click="handleEdit(row)">
               编辑
             </el-button>
-            <el-button 
-              link 
-              type="success" 
-              size="small" 
+            <el-button
+              link
+              type="success"
+              size="small"
               v-if="row.status !== 'completed'"
               @click="handleComplete(row)"
             >
@@ -211,9 +217,16 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useTasksStore } from '../store'
+import { useWebSocketStore } from '../stores/websocket'
+import { useAuthStore } from '../store'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { tasksApi } from '../api/client'
+import notification from '../services/notification'
+import KanbanColumn from '../components/KanbanColumn.vue'
 
 const tasksStore = useTasksStore()
+const wsStore = useWebSocketStore()
+const authStore = useAuthStore()
 
 const showKanbanView = ref(false)
 const dialogVisible = ref(false)
@@ -252,9 +265,9 @@ const taskRules = {
 
 const filteredTasks = computed(() => {
   return tasksStore.tasks.filter(task => {
-    const matchSearch = !searchQuery.value || 
+    const matchSearch = !searchQuery.value ||
       task.title.toLowerCase().includes(searchQuery.value.toLowerCase())
-    const matchStatus = !filterStatus.value || 
+    const matchStatus = !filterStatus.value ||
       task.status === filterStatus.value
     return matchSearch && matchStatus
   })
@@ -328,6 +341,89 @@ function handleSearch() {
   // 搜索逻辑由computed filteredTasks处理
 }
 
+// 拖拽结束处理
+async function handleDragEnd(event) {
+  const { item, to, from, added, removed } = event;
+
+  // 只处理跨栏拖拽
+  if (!added && !removed) {
+    return;
+  }
+
+  const task = item.__draggable_context?.element;
+  if (!task) {
+    notification.notify({
+      type: 'error',
+      message: '拖拽数据错误，请重试',
+    });
+    return;
+  }
+
+  const originalStatus = from?.dataset?.status || task.status;
+  const newStatus = to?.dataset?.status;
+
+  if (originalStatus === newStatus) {
+    return;
+  }
+
+  tasksStore.isDragging = true;
+
+  try {
+    try {
+      // 1. 乐观更新：本地先更新 UI
+      tasksStore.optimisticUpdateTaskStatus(task.id, newStatus);
+
+      // 2. 设置超时（10 秒）
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+      // 3. 调用 API
+
+      await tasksApi.update(task.id, { status: newStatus });
+
+      clearTimeout(timeoutId);
+
+      // 4. 成功通知
+      notification.toast({
+        type: 'success',
+        message: '状态已更新',
+      });
+
+      // 5. WebSocket 广播
+      if (wsStore.connected) {
+        wsStore.send({
+          type: 'task_status_changed',
+          data: {
+            task_id: task.id,
+            status: newStatus,
+            user: authStore.username,
+            timestamp: new Date().toISOString(),
+          },
+        });
+      }
+
+    } catch (error) {
+      // 6. 错误处理：UI 回滚
+      tasksStore.optimisticUpdateTaskStatus(task.id, originalStatus);
+
+      const errorMsg = error.message || '网络错误';
+      notification.notify({
+        type: 'error',
+        message: `更新失败：${errorMsg}，已自动回滚`,
+        duration: 5000,
+      });
+
+      console.error('Drag update failed:', error);
+
+    } finally {
+      tasksStore.isDragging = false;
+    }
+  } catch (err) {
+    console.error('Drag error:', err);
+    tasksStore.isDragging = false;
+  }
+}
+
 async function handleComplete(task) {
   try {
     await tasksStore.completeTask(task.id)
@@ -352,7 +448,7 @@ async function handleDelete(task) {
     await ElMessageBox.confirm(`确定要删除任务 "${task.title}" 吗？`, '确认删除', {
       type: 'warning'
     })
-    
+
     await tasksStore.deleteTask(task.id)
     ElMessage.success('任务删除成功')
   } catch (error) {
@@ -379,11 +475,11 @@ function showCreateDialog() {
 
 async function handleSubmit() {
   if (!taskFormRef.value) return
-  
+
   try {
     await taskFormRef.value.validate()
     submitting.value = true
-    
+
     if (isEdit.value) {
       await tasksStore.updateTask(taskForm.id, taskForm)
       ElMessage.success('更新成功')
@@ -391,7 +487,7 @@ async function handleSubmit() {
       await tasksStore.createTask(taskForm)
       ElMessage.success('创建成功')
     }
-    
+
     dialogVisible.value = false
     showCreateDialog() // 重置表单
   } catch (error) {
@@ -437,41 +533,26 @@ onMounted(async () => {
 }
 
 .kanban-view {
-  margin-top: 20px;
+  min-height: 400px;
 }
 
-.kanban-column {
-  min-height: 500px;
+.kanban-column-card {
+  min-height: 120px;
 }
 
 .kanban-column-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-weight: bold;
 }
 
 .status-name {
-  font-size: 16px;
+  font-weight: 500;
+  font-size: 14px;
 }
 
-.kanban-tasks {
-  margin-top: 15px;
-}
-
-.kanban-task-card {
-  background: #f5f7fa;
-  padding: 15px;
-  margin-bottom: 10px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.kanban-task-card:hover {
-  background: #e4e7ed;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+.status-badge {
+  min-width: 20px;
 }
 
 .task-title {
@@ -498,12 +579,5 @@ onMounted(async () => {
 
 .filter-section {
   display: flex;
-  gap: 10px;
-}
-
-.table-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 </style>

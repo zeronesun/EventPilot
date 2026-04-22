@@ -137,8 +137,8 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from '../store'
-import { useWebSocketStore } from '../stores/websocket'
+import { useAuthStore } from './store'
+import { useWebSocketStore } from './stores/websocket'
 import {
   HomeFilled,
   List,
