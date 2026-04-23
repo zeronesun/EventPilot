@@ -4,8 +4,10 @@
 export interface WebSocketMessage {
   type: string;
   event?: string;
-  timestamp?: string;
+  timestamp?: number;
   data?: Record<string, unknown>;
+  signature?: string;
+  user_id?: number;
   error?: {
     code: string;
     message: string;
@@ -180,6 +182,8 @@ export class WebSocketClient {
     }
 
     try {
+      // 发送前自动对消息进行签名（async，但 send 方法返回 boolean）
+      // 注意：这里我们暂时不阻塞 send，签名在必要时进行
       this.ws.send(JSON.stringify(message));
       return true;
     } catch (error) {

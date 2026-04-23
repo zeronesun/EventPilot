@@ -17,6 +17,7 @@ from apps.tasks.models import Task
 from apps.websocket.connection_manager import ConnectionManager
 from apps.websocket.notification_service import NotificationService, NotificationType, NotificationPriority
 from apps.websocket.status_manager import StatusManager, UserStatus
+from apps.websocket.message_validator import WebSocketMessageValidator
 
 logger = logging.getLogger(__name__)
 
@@ -243,6 +244,17 @@ class EventPilotConsumer(AsyncJsonWebsocketConsumer):
             # 更新最后活跃时间
             connection_manager = self.get_connection_manager()
             await connection_manager.update_heartbeat(self.connection_id)
+            
+            # 消息验证（安全检查）
+            if message_type not in ['ping', 'pong']:
+                validator = WebSocketMessageValidator()
+                if not validator.validate_message(content, self.user_id):
+                    await self.send_error(
+                        code='MESSAGE_VALIDATION_FAILED',
+                        message='Message validation failed'
+                    )
+                    logger.warning(f"Message validation failed: {message_type} from {self.connection_id}")
+                    return
             
             # 分发消息处理
             await self._handle_message(message_type, content)
