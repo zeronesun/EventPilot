@@ -91,12 +91,17 @@ export function verifyTimestamp(timestamp?: number, maxAge: number = 60): boolea
 /**
  * 验证消息基本结构
  */
-export function validateMessage(message: any): boolean {
+export function validateMessage(message: any, allowedTypes?: Set<string>): boolean {
   if (!message || typeof message !== 'object') {
     return false
   }
   
   if (!message.type || typeof message.type !== 'string') {
+    return false
+  }
+
+  // 验证 type 是否在白名单中（如果提供了白名单）
+  if (allowedTypes && allowedTypes.size > 0 && !allowedTypes.has(message.type)) {
     return false
   }
   

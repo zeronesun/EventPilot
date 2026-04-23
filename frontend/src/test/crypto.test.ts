@@ -98,18 +98,20 @@ describe('Crypto Utils', () => {
   })
 
   describe('validateMessage', () => {
+    const allowedTypes = new Set(['notification', 'task_update', 'error'])
+
     it('should accept valid message', () => {
       const message = {
         type: 'notification',
         timestamp: Date.now() / 1000,
         user_id: 1,
       }
-      expect(validateMessage(message)).toBe(true)
+      expect(validateMessage(message, allowedTypes)).toBe(true)
     })
 
     it('should reject message without type', () => {
       const message = { timestamp: Date.now() / 1000 }
-      expect(validateMessage(message)).toBe(false)
+      expect(validateMessage(message, allowedTypes)).toBe(false)
     })
 
     it('should reject invalid message type', () => {
@@ -117,7 +119,7 @@ describe('Crypto Utils', () => {
         type: 'invalid_type',
         timestamp: Date.now() / 1000,
       }
-      expect(validateMessage(message)).toBe(false)
+      expect(validateMessage(message, allowedTypes)).toBe(false)
     })
 
     it('should reject message without timestamp', () => {
@@ -125,7 +127,7 @@ describe('Crypto Utils', () => {
         type: 'notification',
         user_id: 1,
       }
-      expect(validateMessage(message)).toBe(false)
+      expect(validateMessage(message, allowedTypes)).toBe(false)
     })
 
     it('should reject expired timestamp', () => {
@@ -133,7 +135,7 @@ describe('Crypto Utils', () => {
         type: 'notification',
         timestamp: Date.now() / 1000 - 120,
       }
-      expect(validateMessage(message)).toBe(false)
+      expect(validateMessage(message, allowedTypes)).toBe(false)
     })
   })
 
