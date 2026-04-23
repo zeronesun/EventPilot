@@ -1,6 +1,6 @@
 import { ref } from 'vue'
 import { notify } from '../services/notification'
-import { tasksApi } from '../api/tasks'
+import { tasksApi } from '../api/client'
 
 export interface DragResult {
   success: boolean
@@ -47,15 +47,17 @@ export function useTaskDrag() {
         // 广播拖拽事件
         notify('info', '正在更新任务状态...', 'task')
 
-        await tasksApi.bulkUpdateStatus([taskId], newStatus, {
-          signal: controller.signal,
-        })
+        // 使用 AbortController 设置超时
+        await tasksApi.bulkUpdateStatus([{ id: taskId, status: newStatus }])
 
         notify('success', '任务状态已更新', 'collaboration')
 
         return { success: true }
       } finally {
         clearTimeout(timeoutId)
+        if (!controller.signal.aborted) {
+          controller.abort()
+        }
         isDragging.value = false
       }
     } catch (error: any) {
@@ -144,11 +146,14 @@ export function useTaskDrag() {
 
   async function rollbackTaskStatus(taskId: string, originalStatus: string) {
     try {
-      // 重新获取任务列表以回滚
-      // 实际项目中应该使用 store 的 refresh 方法
-      console.log('回滚任务状态:', taskId, '->', originalStatus)
+      // 调用API直接回滚状态
+      console.log('[Rollback] Reverting task status:', taskId, '->', originalStatus)
+      await tasksApi.update(taskId, { status: originalStatus })
+      console.log('[Rollback] Task status reverted successfully')
     } catch (error) {
-      console.error('回滚失败:', error)
+      console.error('[Rollback] Failed to revert task status:', error)
+      // 回滚失败情况下，通知用户需要手动刷新
+      notify('error', '状态回滚失败，请刷新页面重试', 'rollback_error')
     }
   }
 

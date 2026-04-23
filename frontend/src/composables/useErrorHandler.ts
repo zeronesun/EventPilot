@@ -149,13 +149,17 @@ export function useErrorHandler(options: ErrorHandlerOptions = {}) {
    * 记录错误日志
    */
   function logError(error: Error, context?: ErrorContext): void {
+    // 确保 contexts are defined in browsers. In non-browser environments (server-side rendering),
+    // these will be undefined but the error will still be logged to console.
+    const isBrowser = typeof window !== 'undefined' && typeof navigator !== 'undefined'
+
     const logData = {
       message: error.message,
       stack: error.stack,
       context,
       timestamp: new Date().toISOString(),
-      url: window.location.href,
-      userAgent: navigator.userAgent,
+      url: isBrowser ? window.location.href : 'SSR',
+      userAgent: isBrowser ? navigator.userAgent : 'SSR',
     }
 
     console.error('[ErrorHandler]', logData)

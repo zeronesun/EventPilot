@@ -27,6 +27,9 @@ export function useWebSocketHeartbeat(options: Partial<HeartbeatOptions> = {}) {
   let missedBeats = 0
   const MAX_MISSED_BEATS = 3
 
+  // 保存回调函数引用，用于 reset 时重新使用
+  let currentSendPing: (() => void | boolean) | null = null
+
   function start(
     sendPing: () => void | boolean
   ): void {
@@ -34,13 +37,22 @@ export function useWebSocketHeartbeat(options: Partial<HeartbeatOptions> = {}) {
       return
     }
 
+    // 保存回调函数引用
+    currentSendPing = sendPing
     isRunning = true
     missedBeats = 0
 
     const intervalId = setInterval(() => {
       try {
         // 发送 PING
-        const result = sendPing()
+        // 注意：使用保存的 currentSendPing 而不是参数中的 sendPing
+        if (!currentSendPing) {
+          console.error('[Heartbeat] No sendPing callback available')
+          handleConnectionLost()
+          return
+        }
+
+        const result = currentSendPing()
 
         if (result === false) {
           // 发送失败，连接可能已断开
@@ -122,8 +134,16 @@ export function useWebSocketHeartbeat(options: Partial<HeartbeatOptions> = {}) {
   }
 
   function reset(): void {
+    if (!currentSendPing) {
+      console.warn('[Heartbeat] Cannot reset: no sendPing callback stored, call start() first')
+      return
+    }
+
+    // 停止旧的心跳
     stop()
-    start(() => true) // 重新启动，需要重新传入 sendPing
+
+    // 使用保存的回调函数重启
+    start(currentSendPing)
   }
 
   function getMissedBeats(): number {
