@@ -17,7 +17,7 @@ export class ApiErrorHandler extends Error {
 }
 
 // API configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = '/api';
 const API_TIMEOUT = 30000; // 30 seconds
 
 // Type definitions for API responses
@@ -215,6 +215,12 @@ export const apiClient = {
     }),
   delete: <T>(path: string, options?: RequestInit) =>
     api<T>(path, { ...options, method: 'DELETE' }),
+  setAuthToken: (token: string) => {
+    currentToken = token;
+    localStorage.setItem('eventpilot_token', token);
+  },
+  getAuthToken: () => getAuthToken(),
+  clearAuthToken: () => clearAuthToken(),
 };
 
 // Domain-specific API methods

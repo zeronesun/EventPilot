@@ -1,54 +1,80 @@
 <template>
   <div id="app">
     <!-- 全局布局 -->
-    <el-container v-if="layout === 'app'" class="app-layout">
-      <el-aside width="250px" class="sidebar">
+    <div v-if="isAuthenticated" class="app-layout">
+      <!-- 侧边栏 -->
+      <div class="sidebar">
         <div class="logo-section">
           <h2>EventPilot</h2>
           <p>活动领航系统</p>
         </div>
-        
-        <el-menu
-          :default-active="activeMenu"
-          class="sidebar-menu"
-          router
-        >
-          <el-menu-item index="/">
+
+        <div class="sidebar-menu">
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/' }"
+            @click="$router.push('/')"
+          >
             <el-icon><HomeFilled /></el-icon>
             <span>工作台</span>
-          </el-menu-item>
-          <el-menu-item index="/events">
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/events' }"
+            @click="$router.push('/events')"
+          >
             <el-icon><HomeFilled /></el-icon>
             <span>活动管理</span>
-          </el-menu-item>
-          <el-menu-item index="/tasks">
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/tasks' }"
+            @click="$router.push('/tasks')"
+          >
             <el-icon><List /></el-icon>
             <span>任务管理</span>
-          </el-menu-item>
-          <el-menu-item index="/users">
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/users' }"
+            @click="$router.push('/users')"
+          >
             <el-icon><User /></el-icon>
             <span>用户管理</span>
-          </el-menu-item>
-          <el-menu-item index="/checklists">
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/checklists' }"
+            @click="$router.push('/checklists')"
+          >
             <el-icon><DocumentChecked /></el-icon>
             <span>清单管理</span>
-          </el-menu-item>
-          <el-menu-item index="/files">
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/files' }"
+            @click="$router.push('/files')"
+          >
             <el-icon><Folder /></el-icon>
             <span>文件管理</span>
-          </el-menu-item>
-          
+          </div>
+
           <div class="menu-divider"></div>
-          
-          <el-menu-item index="/settings">
+
+          <div
+            class="menu-item"
+            @click="$router.push('/settings')"
+          >
             <el-icon><Setting /></el-icon>
             <span>系统设置</span>
-          </el-menu-item>
-        </el-menu>
-      </el-aside>
+          </div>
+        </div>
+      </div>
 
-      <el-container>
-        <el-header class="main-header">
+      <!-- 主内容区 -->
+      <div class="main-content">
+        <!-- 顶部导航 -->
+        <div class="main-header">
           <div class="header-left">
             <el-breadcrumb>
               <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
@@ -67,36 +93,40 @@
               <div class="user-avatar">
                 <el-avatar :size="32">{{ userInitial }}</el-avatar>
               </div>
-              <el-dropdown-menu slot="dropdown">
-                <el-dropdown-item disabled>
-                  <span>{{ authStore.username }}</span>
-                </el-dropdown-item>
-                <el-dropdown-item divided>
-                  <el-icon></el-icon>
-                  个人资料
-                </el-dropdown-item>
-                <el-dropdown-item>
-                  <el-icon></el-icon>
-                  系统设置
-                </el-dropdown-item>
-                <el-dropdown-item @command="handleLogout">
-                  <el-icon><SwitchButton /></el-icon>
-                  退出登录
-                </el-dropdown-item>
-              </el-dropdown-menu>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item disabled>
+                    <span>{{ authStore.username }}</span>
+                  </el-dropdown-item>
+                  <el-dropdown-item divided>
+                    <el-icon></el-icon>
+                    个人资料
+                  </el-dropdown-item>
+                  <el-dropdown-item>
+                    <el-icon></el-icon>
+                    系统设置
+                  </el-dropdown-item>
+                  <el-dropdown-item @command="handleLogout">
+                    <el-icon><SwitchButton /></el-icon>
+                    退出登录
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
             </el-dropdown>
           </div>
-        </el-header>
+        </div>
 
-        <el-main>
+        <!-- 页面内容 -->
+        <div class="page-content">
           <router-view v-slot="{ Component, route }">
             <transition name="fade-transform" mode="out-in">
               <component :is="Component" :key="route.path" />
             </transition>
           </router-view>
-        </el-main>
+        </div>
 
-        <el-footer height="40px" class="main-footer">
+        <!-- 底部 -->
+        <div class="main-footer">
           <div class="footer-content">
             <span>© 2026 EventPilot - 活动领航系统 v1.2 Phase 2</span>
             <a href="https://github.com/eventpilot" target="_blank">
@@ -104,33 +134,14 @@
               GitHub
             </a>
           </div>
-        </el-footer>
-      </el-container>
-    </el-container>
+        </div>
+      </div>
+    </div>
 
     <!-- 登录页面布局 -->
     <div v-else class="login-layout">
       <router-view />
     </div>
-
-    <!-- 全局通知和加载状态 -->
-    <el-backtop :right="40" :bottom="40" />
-    
-    <!-- WebSocket连接状态指示器 -->
-    <div v-if="websocketStore.isConnected" class="websocket-status">
-      <el-tag type="success" effect="dark" size="small">
-        <el-icon><Connection /></el-icon>
-        实时连接
-      </el-tag>
-    </div>
-    <div v-else class="websocket-status disconnected">
-      <el-tag type="danger" effect="dark" size="small">
-        <el-icon><Connection /></el-icon>
-        连接断开
-      </el-tag>
-    </div>
-
-    <el-backtop />
   </div>
 </template>
 
@@ -138,7 +149,6 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from './store'
-import { useWebSocketStore } from './stores/websocket'
 import {
   HomeFilled,
   List,
@@ -148,32 +158,25 @@ import {
   Setting,
   Bell,
   SwitchButton,
-  Link,
-  Connection
+  Link
 } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
 const authStore = useAuthStore()
-const webSocketStore = useWebSocketStore()
 
-const layout = ref('app')
 const activeMenu = ref('/')
 const currentPage = ref('首页')
 const unreadCount = ref(0)
-const userInitial = computed(() => 
+const userInitial = computed(() =>
   authStore.currentUser?.username?.charAt(0)?.toUpperCase() || 'U'
 )
+const isAuthenticated = computed(() => authStore.isAuthenticated)
 
 // 监听路由变化
 watch(() => route.path, (newPath) => {
-  if (newPath === '/login') {
-    layout.value = 'login'
-  } else {
-    layout.value = 'app'
-    activeMenu.value = newPath
-    currentPage.value = getPageTitle(newPath)
-  }
+  activeMenu.value = newPath
+  currentPage.value = getPageTitle(newPath)
 }, { immediate: true })
 
 function getPageTitle(path) {
@@ -190,11 +193,10 @@ function getPageTitle(path) {
 }
 
 function showNotifications() {
-  const count = webSocketStore.notifications.filter(n => !n.read).length
-  if (count === 0) {
+  if (unreadCount.value === 0) {
     ElMessage.info('暂未读通知')
   } else {
-    ElMessage.success(`有 ${count} 条未读通知`)
+    ElMessage.success(`有 ${unreadCount.value} 条未读通知`)
   }
 }
 
@@ -205,7 +207,6 @@ function handleUserMenu(command) {
 async function handleLogout() {
   try {
     await authStore.logout()
-    webSocketStore.disconnect()
     ElMessage.success('已退出登录')
     router.push('/login')
   } catch (error) {
@@ -216,32 +217,41 @@ async function handleLogout() {
 
 onMounted(async () => {
   authStore.initialize()
-  // 根据初始路由设置布局
-  layout.value = route.path === '/login' ? 'login' : 'app'
-  
-  try {
-    await webSocketStore.connect()
-  } catch (error) {
-    console.error('WebSocket connection failed:', error)
+
+  // 检查认证状态并重定向
+  if (!isAuthenticated.value && route.path !== '/login') {
+    router.push('/login')
   }
 })
 
 onUnmounted(() => {
-  webSocketStore.disconnect()
+  // Clean up if needed
 })
 </script>
 
 <style scoped>
 .app-layout {
+  display: flex;
   height: 100vh;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 250px;
+  background: #fff;
+  border-right: 1px solid #e4e7ed;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 
 .logo-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   padding: 20px;
   text-align: center;
+  flex-shrink: 0;
 }
 
 .logo-section h2 {
@@ -256,36 +266,45 @@ onUnmounted(() => {
   font-size: 12px;
 }
 
-.sidebar {
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
-  height: 100vh;
-  overflow-y: auto;
-  flex-shrink: 0;
-}
-
 .sidebar-menu {
-  border-right: none;
+  padding: 10px 0;
 }
 
-.sidebar-menu .el-menu-item {
-  margin: 5px 10px;
-  border-radius: 4px;
+.menu-item {
+  padding: 12px 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #606266;
+  transition: all 0.3s;
+  border-radius: 6px;
+  margin: 4px 10px;
 }
 
-.sidebar-menu .el-menu-item.is-active {
-  background: #ecf5ff;
+.menu-item:hover {
+  background: #f5f7fa;
   color: #409eff;
 }
 
-.sidebar-menu .el-menu-item:hover:not(.is-active) {
-  background: #f5f7fa;
+.menu-item.active {
+  background: #ecf5ff;
+  color: #409eff;
+  font-weight: 500;
 }
 
 .menu-divider {
   height: 1px;
   background: #e4e7ed;
-  margin: 20px 0;
+  margin: 15px 10px;
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .main-header {
@@ -296,6 +315,7 @@ onUnmounted(() => {
   justify-content: space-between;
   padding: 0 20px;
   height: 60px;
+  flex-shrink: 0;
 }
 
 .header-left {
@@ -324,10 +344,12 @@ onUnmounted(() => {
   right: -2px;
 }
 
-.el-main {
+.page-content {
+  flex: 1;
   background: #f5f7fa;
   padding: 20px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .main-footer {
@@ -338,6 +360,8 @@ onUnmounted(() => {
   justify-content: center;
   font-size: 12px;
   color: #999;
+  height: 40px;
+  flex-shrink: 0;
 }
 
 .footer-content {
@@ -345,6 +369,7 @@ onUnmounted(() => {
   justify-content: space-between;
   align-items: center;
   width: 100%;
+  padding: 0 40px;
 }
 
 .footer-content a {
@@ -376,21 +401,13 @@ onUnmounted(() => {
   transform: translateX(-20px);
 }
 
-.websocket-status {
-  position: fixed;
-  bottom: 80px;
-  right: 40px;
-  z-index: 1000;
-}
-
-.websocket-status.disconnected {
-  bottom: 80px;
-}
-
 #app {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
 }
 </style>

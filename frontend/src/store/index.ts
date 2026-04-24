@@ -6,7 +6,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import type { User, LoginRequest, LoginResponse } from '@/api/client';
-import { authApi, apiClient, type ApiError } from '@/api/client';
+import { authApi, usersApi, apiClient, type ApiError } from '@/api/client';
 
 // Auth Store
 export const useAuthStore = defineStore('auth', () => {
@@ -46,15 +46,16 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const response = await authApi.login(credentials);
-      
+
       // Store token
       token.value = response.data.token;
       localStorage.setItem('eventpilot_token', response.data.token);
-      
-      // Store user
+
+      // Store user (directly from login response)
       currentUser.value = response.data.user;
       localStorage.setItem('eventpilot_user', JSON.stringify(response.data.user));
-      
+      error.value = null;
+
     } catch (err) {
       error.value = getErrorMessage(err);
       throw err;
@@ -89,7 +90,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     isLoading.value = true;
     try {
-      const user = await authApi.me();
+      const user = await usersApi.me();
       currentUser.value = user;
       localStorage.setItem('eventpilot_user', JSON.stringify(user));
     } catch (err) {
