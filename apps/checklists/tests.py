@@ -241,8 +241,9 @@ class ChecklistInstanceTestCase(TestCase):
             'template_id': str(self.template.id),
             'name': '测试实例'
         }
-        
-        success, instance, _ = ChecklistService.create_instance(data, self.user)
+
+        instance, errors = ChecklistService.create_instance(data, self.user)
+        self.assertEqual(len(errors), 0)
         return instance
 
 
@@ -287,14 +288,15 @@ class ChecklistItemTestCase(TestCase):
         )
         
         from apps.checklists.services.checklist_service import ChecklistService
-        
+
         data = {
             'event_id': str(self.event.id),
             'template_id': str(self.template.id),
             'name': '测试实例'
         }
-        
-        success, self.instance, _ = ChecklistService.create_instance(data, self.user)
+
+        self.instance, errors = ChecklistService.create_instance(data, self.user)
+        self.assertEqual(len(errors), 0)
         self.item = self.instance.items.first()
     
     def test_update_item_status(self):

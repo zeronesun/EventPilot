@@ -32,14 +32,15 @@ def authenticated_client(api_client, user):
 
 
 @pytest.fixture
-def event():
+def event(user):
     """测试活动"""
     return Event.objects.create(
         name='测试活动',
+        type='conference',
         description='这是一个测试活动',
-        start_time='2026-04-20T10:00:00Z',
-        end_time='2026-04-20T18:00:00Z',
-        location='测试地点'
+        start_date='2026-04-20T10:00:00Z',
+        end_date='2026-04-20T18:00:00Z',
+        owner=user,
     )
 
 
