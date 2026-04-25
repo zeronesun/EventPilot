@@ -1,0 +1,312 @@
+{
+  "page:Checklists": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Checklists.vue",
+    "buttons": [
+      "showTemplates = false",
+      "showTemplates = true",
+      "showCreateDialog",
+      "handleInstantiate(row)",
+      "handleEditTemplate(row)",
+      "handleDeleteTemplate(row)",
+      "handleVerify(row)",
+      "handleViewDetails(row)",
+      "handleDeleteInstance(row)",
+      "removeTemplateItem(index)",
+      "addTemplateItem",
+      "templateDialogVisible = false",
+      "submitTemplate",
+      "viewAttachment(item.attachment_url)",
+      "verificationDialogVisible = false",
+      "submitVerification"
+    ],
+    "inputs": 9,
+    "tables": 14,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Events": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Events.vue",
+    "buttons": [
+      "showCreateDialog",
+      "handleEdit(row)",
+      "handleDelete(row)"
+    ],
+    "inputs": 0,
+    "tables": 6,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Files": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Files.vue",
+    "buttons": [
+      "showUploadDialog",
+      "viewMode = ",
+      "viewMode = ",
+      "handleFileClick(file)",
+      "handlePreview(row)",
+      "handleDownload(row)",
+      "handleDownload(previewFile)"
+    ],
+    "inputs": 3,
+    "tables": 6,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Home": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Home.vue",
+    "buttons": [
+      "router.push("
+    ],
+    "inputs": 0,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Login": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Login.vue",
+    "buttons": [
+      "handleLogin"
+    ],
+    "inputs": 2,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Profiles": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Profiles.vue",
+    "buttons": [
+      "showRecommendations = true",
+      "showAdvancedSearch = true",
+      "showAnalytics = true",
+      "showCreateDialog = true",
+      "handleSearch",
+      "showCreateDialog = false",
+      "submitProfile"
+    ],
+    "inputs": 11,
+    "tables": 9,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Tasks-modernized": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Tasks-modernized.vue",
+    "buttons": [
+      "showKanbanView = false",
+      "showKanbanView = true",
+      "showCreateDialog",
+      "click(task)",
+      "handleEdit(row)",
+      "handleComplete(row)",
+      "handleDelete(row)",
+      "dialogVisible = false",
+      "handleSubmit"
+    ],
+    "inputs": 8,
+    "tables": 9,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Tasks": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Tasks.vue",
+    "buttons": [
+      "showKanbanView = false",
+      "showKanbanView = true",
+      "showCreateDialog",
+      "click(task)",
+      "handleEdit(row)",
+      "handleComplete(row)",
+      "handleDelete(row)",
+      "dialogVisible = false",
+      "handleSubmit"
+    ],
+    "inputs": 8,
+    "tables": 9,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:TestPage": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/TestPage.vue",
+    "buttons": [],
+    "inputs": 0,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "page:Users": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/views/Users.vue",
+    "buttons": [
+      "dialogVisible = true",
+      "handleSearch",
+      "handleReset",
+      "handleEdit(row)",
+      "handleDelete(row)",
+      "dialogVisible = false",
+      "handleSubmit"
+    ],
+    "inputs": 9,
+    "tables": 9,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:AdvancedSearch": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/AdvancedSearch.vue",
+    "buttons": [
+      "resetSearch",
+      "performSearch",
+      "resetSearch",
+      "saveSearch",
+      "resetSearch",
+      "viewResult(result)",
+      "showSaveDialog = false",
+      "confirmSave"
+    ],
+    "inputs": 10,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:AnalyticsDashboard": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/AnalyticsDashboard.vue",
+    "buttons": [
+      "refreshData"
+    ],
+    "inputs": 0,
+    "tables": 8,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:ContactsManager": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/ContactsManager.vue",
+    "buttons": [
+      "showAddDialog = true",
+      "editContact(row)",
+      "setAsPrimary(row)",
+      "deleteContact(row)",
+      "showAddDialog = false",
+      "submitForm"
+    ],
+    "inputs": 8,
+    "tables": 8,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:ErrorBoundary": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/ErrorBoundary.vue",
+    "buttons": [
+      "handleReload",
+      "handleReport",
+      "toggleDetails"
+    ],
+    "inputs": 0,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:EvaluationsManager": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/EvaluationsManager.vue",
+    "buttons": [
+      "showAddDialog = true",
+      "viewDetails(evaluation)",
+      "editEvaluation(evaluation)",
+      "deleteEvaluation(evaluation)",
+      "showAddDialog = false",
+      "submitForm"
+    ],
+    "inputs": 8,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:FileManager": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/FileManager.vue",
+    "buttons": [
+      "handleUpload",
+      "handleBatchDownload",
+      "handleBatchDelete",
+      "handleUpload",
+      "handleDownload(row)",
+      "handleShare(row)",
+      "toggleFileSelection(file.file_id)",
+      "handleDownload(file)",
+      "handleShare(file)",
+      "shareDialogVisible = false",
+      "confirmShare"
+    ],
+    "inputs": 6,
+    "tables": 9,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:FileUploader": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/FileUploader.vue",
+    "buttons": [
+      "triggerFileInput",
+      "removeFile",
+      "clearQueue"
+    ],
+    "inputs": 0,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:IntelligentRecommendations": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/IntelligentRecommendations.vue",
+    "buttons": [
+      "resetRecommendations",
+      "getRecommendations",
+      "getRecommendations",
+      "viewProfile(recommendation)",
+      "viewContacts(recommendation)",
+      "selectSupplier(recommendation)",
+      "applyPreset(preset)"
+    ],
+    "inputs": 3,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:InteractionsManager": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/InteractionsManager.vue",
+    "buttons": [
+      "showAddDialog = true",
+      "editInteraction(interaction)",
+      "deleteInteraction(interaction)",
+      "showAddDialog = false",
+      "submitForm"
+    ],
+    "inputs": 12,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  },
+  "component:KanbanColumn": {
+    "file": "/mnt/d/projects/sourcecode/EventPilot/frontend/src/components/KanbanColumn.vue",
+    "buttons": [
+      "onCardClick(task)"
+    ],
+    "inputs": 0,
+    "tables": 0,
+    "router_actions": [],
+    "methods": [],
+    "computed": []
+  }
+}

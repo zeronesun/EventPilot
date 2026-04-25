@@ -181,7 +181,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework基础配置
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.TokenAuthentication',  # Token认证 (当前使用)
+        'apps.users.authentication.JWTAuthentication',  # JWT认证 (主要认证方式)
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.IsAuthenticatedOrReadOnly',
@@ -266,13 +266,9 @@ AUTHENTICATION_BACKENDS = (
     'guardian.backends.ObjectPermissionBackend',
 )
 
-# Token认证（临时方案，后续替换为JWT）
-REST_FRAMEWORK['DEFAULT_AUTHENTICATION_CLASSES'] = [
-    'rest_framework.authentication.TokenAuthentication',
-]
-REST_FRAMEWORK['DEFAULT_PERMISSION_CLASSES'] = [
-    'rest_framework.permissions.IsAuthenticatedOrReadOnly',
-]
+# JWT认证配置（主认证方式）
+# 注意：上方L182已经配置了JWTAuthentication作为DEFAULT_AUTHENTICATION_CLASSES
+# 这里不再重复配置，避免冲突
 
 # JWT配置
 JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-secret-key')

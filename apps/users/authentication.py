@@ -31,9 +31,9 @@ class JWTAuthentication(authentication.BaseAuthentication):
             payload = self.decode_jwt_token(auth_header)
             user = self.get_user_from_payload(payload)
             return (user, payload)
-        except jwt.ExpiredSignature:
+        except jwt.ExpiredSignatureError:
             raise exceptions.AuthenticationFailed('Token已过期')
-        except jwt.DecodeError:
+        except jwt.InvalidSignatureError:
             raise exceptions.AuthenticationFailed('Token无效')
         except User.DoesNotExist:
             raise exceptions.AuthenticationFailed('用户不存在')
@@ -70,26 +70,23 @@ class JWTAuthentication(authentication.BaseAuthentication):
             
             # 验证有效期
             if 'exp' in payload:
-                exp_time = datetime.fromtimestamp(payload['exp'])
+                exp_time = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)
                 if exp_time < timezone.now():
                     raise jwt.ExpiredSignatureError('Token已过期')
-            
+
             # 验证签发时间
             if 'iat' in payload:
-                iat_time = datetime.fromtimestamp(payload['iat'])
+                iat_time = datetime.fromtimestamp(payload['iat'], tz=timezone.utc)
                 # Token签发时间不能早于服务器时间太多（防止时钟不同步）
                 if iat_time < timezone.now() - timedelta(minutes=5):
-                    raise jwt.DecodeError('Token签发时间无效')
+                    raise jwt.InvalidSignatureError('Token签发时间无效')
             
             return payload
             
-        except jwt.ExpiredSignature:
+        except jwt.ExpiredSignatureError:
             logger.info("JWT token已过期")
             raise
-        except jwt.ImmatureSignatureError:
-            logger.info("JWT token未成熟")
-            raise jwt.DecodeError('Token无效')
-        except jwt.DecodeError as e:
+        except jwt.InvalidSignatureError:
             logger.error(f"JWT解码失败: {str(e)}")
             raise
     
@@ -140,8 +137,8 @@ def generate_jwt_token(user):
         'username': user.username,
         'email': user.email,
         'role': getattr(getattr(user, 'role', None), 'role', 'executor') if hasattr(user, 'role') and hasattr(user.role, 'role') else 'executor',
-        'iat': datetime.utcnow(),
-        'exp': datetime.utcnow() + timedelta(seconds=access_token_expiry),
+        'iat': datetime.now(tz=timezone.utc),
+        'exp': datetime.now(tz=timezone.utc) + timedelta(seconds=access_token_expiry),
         'type': 'access'
     }
     
@@ -160,9 +157,9 @@ def decode_jwt_token(token):
             algorithms=['HS256']
         )
         return payload
-    except jwt.ExpiredSignature:
+    except jwt.ExpiredSignatureError:
         raise exceptions.AuthenticationFailed('Token已过期')
-    except jwt.DecodeError:
+    except jwt.InvalidSignatureError:
         raise exceptions.AuthenticationFailed('Token无效')
 
 
