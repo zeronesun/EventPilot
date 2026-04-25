@@ -162,12 +162,12 @@ class VueComponentAuditor:
         print("="*80)
 
         # 保存完整报告
-        output_file = Path('/mnt/d/projects/sourcecode/EventPilot/devdoc/VUE_AUDIT_REPORT.json')
+        output_file = Path(__file__).parent.parent / 'devdoc' / 'VUE_AUDIT_REPORT.json'
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(findings, f, ensure_ascii=False, indent=2)
 
         print(f"\n完整报告已保存到: {output_file}")
 
 if __name__ == '__main__':
-    auditor = VueComponentAuditor('/mnt/d/projects/sourcecode/EventPilot/frontend/src')
+    auditor = VueComponentAuditor(str(Path(__file__).parent.parent / 'frontend' / 'src'))
     auditor.print_summary()
