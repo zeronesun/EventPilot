@@ -7,19 +7,28 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+
+# Virtual environments
 venv/
 ENV/
 env/
 .venv/
 
 # Django
-*.log
-local_settings.py
 db.sqlite3
 *.pot
-*.pyc
+*.log
+local_settings.py
+
+# Testing
 .pytest_cache/
+.tox/
+.coverage
 coverage/
+htmlcov/
+.nyc_output/
+*.cover
+*.lcov
 
 # Environment variables
 .env
@@ -43,6 +52,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+lerna-debug.log*
 
 # Frontend - Vue
 *.suo
@@ -51,55 +61,44 @@ pnpm-debug.log*
 *.sln
 *.sw?
 
-# Build
+# Frontend - Build cache
+.vite/
+cache/
+.tsbuildinfo
+
+# Frontend - Testing
+.vitest/
+
+# Build artifacts
 *.egg-info/
 .installed.cfg
 *.egg
 MANIFEST
+build/
 
-# Static files
+# Django static & media
 staticfiles/
 static/
 assets/
-
-# Media
 media/
 uploads/
 
 # Logs
 logs/
-*.log
+*.log.*
 
 # Secret keys
 *.secret
 *.pem
+*.key
 
-# 前端环境变量
-frontend/.env
-frontend/.env.*
-frontend/.env.*.local
-
-# 前端构建产物
-frontend/dist/
-frontend/node_modules/
-
-# 其他目录
-public/
-cache/
-storage/
+# Temporary files
 temp/
+tmp/
+*.tmp
+*.bak
+*.swp
 
-# Debug and test files
-debug/
-*.log
-*.pyc
-__pycache__/
-*.pyo
-*.pyd
-.cache
-.coverage
-htmlcov/
-.tox/
-.eggs/
-dist/
-build/
+# System
+Thumbs.db
+.DS_Store
