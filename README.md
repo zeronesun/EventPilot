@@ -116,12 +116,34 @@ EventPilot是专为高端活动承办团队设计的内部工作流引擎和知�
 - **在线状态** - 状态追踪 + 活跃监控 + 跨设备同步 + 离线检测
 - **实时协作** - 状态同步 + 更新广播 + 操作日志 + 冲突检测
 
-#### 文件上传系统
-- **预签名URL架构** - 安全高效的文件处理
-- **上传服务** - 预签名生成 + 类型验证 + 大小限制 + 权限检查
-- **文件管理** - 元数据存储 + 版本管理 + 索引搜索 + 共享功能
-- **前端集成** - 通用组件 + 拖拽上传 + 进度显示 + 错误处理
-- **存储集成** - S3兼容 + 对象管理 + 缓存策略 + 清理机制
+#### 文件上传系统 API
+- `GET /api/files/` - 文件列表（支持过滤、搜索、分页）
+- `POST /api/files/` - 上传文件
+- `GET /api/files/{id}/` - 文件详情
+- `PUT /api/files/{id}/` - 更新文件
+- `DELETE /api/files/{id}/` - 删除文件
+- `GET /api/files/stats/` - 存储统计
+- `GET /api/files/search/` - 搜索文件
+
+#### 知识库 API
+- `GET /api/knowledge/` - 知识条目列表（支持过滤、搜索、分页）
+- `POST /api/knowledge/` - 创建知识条目
+- `GET /api/knowledge/{id}/` - 知识条目详情
+- `PUT /api/knowledge/{id}/` - 更新知识条目
+- `DELETE /api/knowledge/{id}/` - 删除知识条目
+
+#### 复盘管理 API
+- `GET /api/reviews/` - 复盘列表（支持过滤、搜索、分页）
+- `POST /api/reviews/` - 创建复盘
+- `GET /api/reviews/{id}/` - 复盘详情
+- `PUT /api/reviews/{id}/` - 更新复盘
+- `PATCH /api/reviews/{id}/` - 部分更新复盘
+- `DELETE /api/reviews/{id}/` - 删除复盘
+
+#### 活动数据分析 API
+- `GET /api/events/dashboard_analytics/` - 活动数据分析仪表盘
+  - 支持按状态、类型、日期范围过滤
+  - 返回总体统计、状态分布、类型分布、任务分布、月度趋势、高风险活动、即将到期、负责人排名等
 
 ### ✅ Phase 3 - 关联方档案管理系统 (100% 完成)
 

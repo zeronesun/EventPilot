@@ -58,6 +58,22 @@
             <el-icon><Folder /></el-icon>
             <span>文件管理</span>
           </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/budget' }"
+            @click="$router.push('/budget')"
+          >
+            <el-icon><Coin /></el-icon>
+            <span>预算管理</span>
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/profiles' }"
+            @click="$router.push('/profiles')"
+          >
+            <el-icon><User /></el-icon>
+            <span>关联方档案</span>
+          </div>
 
           <div class="menu-divider"></div>
 
@@ -155,6 +171,7 @@ import {
   User,
   DocumentChecked,
   Folder,
+  Coin,
   Setting,
   Bell,
   SwitchButton,

@@ -324,19 +324,29 @@ class ChecklistService:
             
             # 获取活动
             event_id = data.get('event_id') or data.get('event')
-            try:
-                event = Event.objects.get(id=event_id)
-            except Event.DoesNotExist:
-                errors.append('活动不存在')
-                return None, errors
+            
+            # 如果已经是Event对象，直接使用
+            if isinstance(event_id, Event):
+                event = event_id
+            else:
+                try:
+                    event = Event.objects.get(id=event_id)
+                except Event.DoesNotExist:
+                    errors.append('活动不存在')
+                    return None, errors
             
             # 获取模板
             template_id = data.get('template_id') or data.get('template')
-            try:
-                template = ChecklistTemplate.objects.get(id=template_id)
-            except ChecklistTemplate.DoesNotExist:
-                errors.append('模板不存在')
-                return None, errors
+            
+            # 如果已经是ChecklistTemplate对象,直接使用
+            if isinstance(template_id, ChecklistTemplate):
+                template = template_id
+            else:
+                try:
+                    template = ChecklistTemplate.objects.get(id=template_id)
+                except ChecklistTemplate.DoesNotExist:
+                    errors.append('模板不存在')
+                    return None, errors
             
             # 创建实例
             instance = ChecklistInstance.objects.create(
@@ -626,9 +636,13 @@ class ChecklistService:
         """获取过滤后的模板列表"""
         queryset = ChecklistTemplate.objects.select_related('created_by').prefetch_related('items')
         
-        # 权限过滤：用户只能看到自己创建的或默认模板
-        if not user.is_superuser:
-            queryset = queryset.filter(Q(created_by=user) | Q(is_default=True))
+        # 权限过滤：默认模板对所有用户可见，登录用户可看到自己创建的，超级用户可看到所有
+        if user.is_authenticated:
+            if not user.is_superuser:
+                queryset = queryset.filter(Q(created_by=user) | Q(is_default=True))
+        else:
+            # 未认证用户只能看到默认模板
+            queryset = queryset.filter(is_default=True)
         
         # 应用过滤
         if filters:
@@ -662,9 +676,13 @@ class ChecklistService:
             'template', 'event'
         ).prefetch_related('items')
         
-        # 权限过滤
-        if not user.is_superuser:
-            queryset = queryset.filter(event__owner=user)
+        # 权限过滤：未认证用户无法访问实例
+        if user.is_authenticated:
+            if not user.is_superuser:
+                queryset = queryset.filter(event__owner=user)
+        else:
+            # 未认证用户无权访问实例，返回空查询集
+            return queryset.none()
         
         # 应用过滤
         if filters:

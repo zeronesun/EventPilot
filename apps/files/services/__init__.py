@@ -587,8 +587,8 @@ class FileService:
                 status__in=['uploading', 'processing']
             ).count()
             
-            if active_uploads >= FileUploadConfig.MAX_concurrentUploads:
-                return False, f"超过并发上传限制 ({FileUploadConfig.MAX_concurrentUploads})"
+            if active_uploads >= FileUploadConfig.MAX_CONCURRENT_UPLOADS:
+                return False, f"超过并发上传限制 ({FileUploadConfig.MAX_CONCURRENT_UPLOADS})"
             
             return True, ""
             

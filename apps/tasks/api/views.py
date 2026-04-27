@@ -176,10 +176,21 @@ class TaskViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         """删除任务 - 使用服务层"""
         task_id = kwargs.get('pk')
-        
+
         try:
             result = TaskService.delete_task(task_id, request.user)
-            return Response(result, status=status.HTTP_200_OK)
+
+            # 清理相关缓存
+            from django.core.cache import cache
+            try:
+                cache.delete(f'tasks:detail:{task_id}')
+                # 尝试清理列表缓存（标记为过期）
+                cache.set('tasks:cache_version', cache.get('tasks:cache_version', 0) + 1)
+            except:
+                pass  # 缓存清理失败不应阻止删除操作
+
+            # DELETE 请求应该返回 204 No Content
+            return Response(status=status.HTTP_204_NO_CONTENT)
         except ValidationError as e:
             return Response(
                 {'error': str(e)},

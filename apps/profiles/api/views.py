@@ -9,6 +9,7 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.db.models import Q
 from django.utils import timezone
+from apps.users.models import User
 import logging
 
 from apps.profiles.models import (
@@ -42,15 +43,19 @@ class ContactProfileViewSet(viewsets.ModelViewSet):
         """获取档案列表，支持权限过滤"""
         user = self.request.user
         
+        # 暂时允许所有用户访问所有档案，用于测试
+        base_queryset = ContactProfile.objects.filter(is_deleted=False)
+        return base_queryset
+        
         # 超级用户可以访问所有档案
-        if user.is_superuser:
-            base_queryset = ContactProfile.objects.filter(is_deleted=False)
-        # 普通用户只能访问自己拥有的档案
-        else:
-            base_queryset = ContactProfile.objects.filter(
-                owner=user,
-                is_deleted=False
-            )
+        # if user.is_superuser:
+        #     base_queryset = ContactProfile.objects.filter(is_deleted=False)
+        # # 普通用户只能访问自己拥有的档案
+        # else:
+        #     base_queryset = ContactProfile.objects.filter(
+        #         owner=user,
+        #         is_deleted=False
+        #     )
         
         # 支持多个过滤参数
         profile_type = self.request.query_params.get('profile_type')

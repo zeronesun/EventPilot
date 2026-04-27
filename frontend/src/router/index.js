@@ -8,6 +8,10 @@ import Users from '../views/Users.vue'
 import Checklists from '../views/Checklists.vue'
 import Files from '../views/Files.vue'
 import Profiles from '../views/Profiles.vue'
+import Budget from '../views/Budget.vue'
+import Knowledge from '../views/Knowledge.vue'
+import Reviews from '../views/Reviews.vue'
+import Analytics from '../views/Analytics.vue'
 
 const routes = [
   {
@@ -62,6 +66,30 @@ const routes = [
     path: '/profiles',
     name: 'profiles',
     component: Profiles,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/budget',
+    name: 'budget',
+    component: Budget,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/knowledge',
+    name: 'knowledge',
+    component: Knowledge,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/reviews',
+    name: 'reviews',
+    component: Reviews,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/analytics',
+    name: 'analytics',
+    component: Analytics,
     meta: { requiresAuth: true }
   }
 ]

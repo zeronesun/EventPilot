@@ -14,6 +14,8 @@ def get_user_class():
     """延迟加载User模型以避免循环导入"""
     return get_user_model()
 
+User = get_user_class()  # 定义User类
+
 
 class JWTAuthentication(authentication.BaseAuthentication):
     """JWT认证类"""
@@ -67,22 +69,11 @@ class JWTAuthentication(authentication.BaseAuthentication):
                 settings.JWT_SECRET_KEY,
                 algorithms=['HS256']
             )
-            
-            # 验证有效期
-            if 'exp' in payload:
-                exp_time = datetime.fromtimestamp(payload['exp'], tz=timezone.utc)
-                if exp_time < timezone.now():
-                    raise jwt.ExpiredSignatureError('Token已过期')
 
-            # 验证签发时间
-            if 'iat' in payload:
-                iat_time = datetime.fromtimestamp(payload['iat'], tz=timezone.utc)
-                # Token签发时间不能早于服务器时间太多（防止时钟不同步）
-                if iat_time < timezone.now() - timedelta(minutes=5):
-                    raise jwt.InvalidSignatureError('Token签发时间无效')
-            
+            # PyJWT 自动验证 exp 和 iat，无需手动验证
+
             return payload
-            
+
         except jwt.ExpiredSignatureError:
             logger.info("JWT token已过期")
             raise
@@ -131,17 +122,19 @@ def generate_jwt_token(user):
     """
     User = get_user_class()  # 延迟加载
     access_token_expiry = int(settings.JWT_ACCESS_TOKEN_EXPIRY)
-    
+
+    now = timezone.now()
+    # 使用timestamp(PKR)int)确保跨版本兼容性
     payload = {
         'user_id': str(user.id),
         'username': user.username,
         'email': user.email,
         'role': getattr(getattr(user, 'role', None), 'role', 'executor') if hasattr(user, 'role') and hasattr(user.role, 'role') else 'executor',
-        'iat': datetime.now(tz=timezone.utc),
-        'exp': datetime.now(tz=timezone.utc) + timedelta(seconds=access_token_expiry),
+        'iat': int(now.timestamp()),
+        'exp': int((now + timedelta(seconds=access_token_expiry)).timestamp()),
         'type': 'access'
     }
-    
+
     token = jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm='HS256')
     return token
 

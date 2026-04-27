@@ -120,6 +120,7 @@ class ChecklistTemplateViewSet(viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 class ChecklistItemTemplateViewSet(viewsets.ModelViewSet):
     """核验清单项模板视图集"""
+    serializer_class = ChecklistItemTemplateSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
     filterset_fields = ['template', 'required', 'status']
     

@@ -5,7 +5,7 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 from django.db.models import Q
 from django.utils import timezone
 
-from .models import Review
+from apps.reviews.models import Review
 from .serializers import (
     ReviewSerializer, ReviewSimpleSerializer, ReviewUpdateSerializer
 )
@@ -55,31 +55,30 @@ class ReviewViewSet(viewsets.ModelViewSet):
         # 自动提取经验到知识库
         self._extract_to_knowledge(review)
         
-        return Response({'message': '复盘已完成，相关经验已提取到知识库'})
-    
     def _extract_to_knowledge(self, review):
-        """提取复盘中的经验到知识库"""
-        from .models import KnowledgeEntry
-        
+        """
+        提取复盘中的经验到知识库
+        """
+        from apps.knowledge.models import KnowledgeEntry
+
         # 提取成功经验
         if review.successes:
             KnowledgeEntry.objects.create(
                 entry_type='best_practice',
                 title=f"{review.event.name}成功经验",
                 content=review.successes,
-                related_events=[review.event.id],
-                event_type=review.event.type,
+                related_events=[str(review.event.id)],
+                tags=[review.event.type],
                 created_by=review.created_by
             )
-        
+
         # 提取待改进项
         if review.improvements:
             KnowledgeEntry.objects.create(
                 entry_type='issue',
                 title=f"{review.event.name}需改进项",
                 content=review.improvements,
-                related_events=[review.event.id],
-                event_type=review.event.type,
+                related_events=[str(review.event.id)],
                 tags=['improvement', review.event.type],
                 created_by=review.created_by
             )

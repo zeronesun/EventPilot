@@ -715,3 +715,180 @@ class EventService:
             logger.error(f"变更活动状态失败: {e}")
             errors.append(f"变更活动状态失败: {str(e)}")
             return False, errors
+    
+    @staticmethod
+    def get_dashboard_analytics(user, filters: Dict = None) -> Dict[str, Any]:
+        """
+        获取活动数据分析仪表盘
+        用于跨活动统计、趋势分析、对比分析
+        """
+        try:
+            # 获取用户权限范围内的活动
+            if user.is_superuser:
+                base_query = Event.objects.select_related('owner').prefetch_related('tasks', 'budget_items')
+            else:
+                base_query = Event.objects.select_related('owner').prefetch_related('tasks', 'budget_items').filter(
+                    Q(owner=user) | Q(participants=user)
+                ).distinct()
+            
+            # 应用过滤
+            if filters:
+                if 'status' in filters:
+                    base_query = base_query.filter(status=filters['status'])
+                if 'type' in filters:
+                    base_query = base_query.filter(type=filters['type'])
+                if 'start_date_from' in filters:
+                    base_query = base_query.filter(start_date__gte=filters['start_date_from'])
+                if 'start_date_to' in filters:
+                    base_query = base_query.filter(start_date__lte=filters['start_date_to'])
+            
+            all_events = base_query
+            
+            # 1. 总体统计
+            total_events = all_events.count()
+            total_tasks = Task.objects.filter(event__in=all_events).count()
+            total_budget = all_events.aggregate(
+                total=Sum('estimated_budget')
+            )['total'] or 0
+            total_actual_budget = all_events.aggregate(
+                total=Sum('actual_budget')
+            )['total'] or 0
+            
+            # 2. 按状态统计
+            status_stats = {}
+            for status_choice in Event.Status.values:
+                count = all_events.filter(status=status_choice).count()
+                status_stats[status_choice] = {
+                    'count': count,
+                    'percentage': round(count / total_events * 100, 2) if total_events > 0 else 0
+                }
+            
+            # 3. 按类型统计
+            type_stats = {}
+            for type_key, type_name in EventService.EVENT_TYPES.items():
+                count = all_events.filter(type=type_key).count()
+                if count > 0:
+                    type_stats[type_key] = {
+                        'name': type_name,
+                        'count': count,
+                        'percentage': round(count / total_events * 100, 2) if total_events > 0 else 0
+                    }
+            
+            # 4. 任务完成率统计
+            completed_tasks = Task.objects.filter(
+                event__in=all_events,
+                status='completed'
+            ).count()
+            task_completion_rate = round(
+                completed_tasks / total_tasks * 100, 2
+            ) if total_tasks > 0 else 0
+            
+            # 5. 预算分析
+            budget_variance = total_budget - total_actual_budget
+            budget_variance_rate = round(
+                (budget_variance / total_budget * 100) if total_budget > 0 else 0, 2
+            )
+            
+            # 6. 活动趋势（按月统计）
+            from django.db.models.functions import TruncMonth
+            monthly_stats = all_events.annotate(
+                month=TruncMonth('created_at')
+            ).values('month').annotate(
+                count=Count('id'),
+                total_budget=Sum('estimated_budget')
+            ).order_by('month')[-12:]  # 最近12个月
+            
+            monthly_trend = [
+                {
+                    'month': item['month'].strftime('%Y-%m') if item['month'] else None,
+                    'count': item['count'],
+                    'total_budget': float(item['total_budget'] or 0)
+                }
+                for item in monthly_stats
+            ]
+            
+            # 7. 高风险活动
+            high_risk_events = []
+            for event in all_events.filter(status='executing'):
+                risk = EventService.assess_event_risk(event)
+                if risk['level'] == 'high':
+                    high_risk_events.append({
+                        'id': str(event.id),
+                        'name': event.name,
+                        'risk_level': risk['level'],
+                        'factors_count': len(risk['factors'])
+                    })
+            
+            # 8. 即将到期活动
+            upcoming_deadlines = []
+            threshold_date = timezone.now() + timedelta(days=7)
+            for event in all_events.filter(status='executing', end_date__lte=threshold_date):
+                days_remaining = (event.end_date.date() - timezone.now().date()).days
+                upcoming_deadlines.append({
+                    'id': str(event.id),
+                    'name': event.name,
+                    'end_date': event.end_date.isoformat() if event.end_date else None,
+                    'days_remaining': days_remaining
+                })
+            
+            # 9. TOP活跃负责人
+            owner_stats = all_events.values('owner__username').annotate(
+                count=Count('id'),
+                total_budget=Sum('estimated_budget')
+            ).order_by('-count')[:5]
+            
+            top_owners = [
+                {
+                    'username': stat['owner__username'] or '未知',
+                    'event_count': stat['count'],
+                    'total_budget': float(stat['total_budget'] or 0)
+                }
+                for stat in owner_stats
+            ]
+            
+            # 10. 任务类型分布
+            task_type_stats = {}
+            for task_type in Task.TaskType.values:
+                count = Task.objects.filter(
+                    event__in=all_events,
+                    task_type=task_type
+                ).count()
+                task_type_stats[task_type] = {
+                    'count': count,
+                    'percentage': round(count / total_tasks * 100, 2) if total_tasks > 0 else 0
+                }
+            
+            return {
+                'overview': {
+                    'total_events': total_events,
+                    'total_tasks': total_tasks,
+                    'completed_tasks': completed_tasks,
+                    'task_completion_rate': task_completion_rate,
+                    'total_estimated_budget': float(total_budget),
+                    'total_actual_budget': float(total_actual_budget),
+                    'budget_variance': float(budget_variance),
+                    'budget_variance_rate': budget_variance_rate,
+                },
+                'status_distribution': status_stats,
+                'type_distribution': type_stats,
+                'task_type_distribution': task_type_stats,
+                'monthly_trend': monthly_trend,
+                'high_risk_events': high_risk_events,
+                'upcoming_deadlines': upcoming_deadlines,
+                'top_owners': top_owners,
+                'generated_at': timezone.now().isoformat(),
+            }
+            
+        except Exception as e:
+            logger.error(f"获取活动仪表盘数据失败: {e}")
+            return {
+                'overview': {},
+                'status_distribution': {},
+                'type_distribution': {},
+                'task_type_distribution': {},
+                'monthly_trend': [],
+                'high_risk_events': [],
+                'upcoming_deadlines': [],
+                'top_owners': [],
+                'error': str(e)
+            }

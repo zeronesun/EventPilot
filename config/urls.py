@@ -8,19 +8,17 @@ urlpatterns = [
     # path('admin/', admin.site.urls),
 
     # 健康检查和系统信息（api 模块）
-    path('api/health/', include('api.urls')),
+    path('api/', include('api.urls')),
 
-    # 应用API路由 - 直接注册
-    path('api/', include('apps.users.api.urls')),
-    path('api/', include('apps.events.api.urls')),
-    path('api/', include('apps.tasks.api.urls')),
-    path('api/', include('apps.checklists.api.urls')),
-    path('api/', include('apps.files.api.urls')),        # 文件上传系统
-    path('api/', include('apps.profiles.api.urls')),      # Phase 3 - 关联方档案管理
-
-    # 未启用的模块
-    # path('api/', include('apps.knowledge.api.urls')),
-    # path('api/', include('apps.reviews.api.urls')),
+    # 应用API路由 - 各模块独立路径前缀
+    path('api/', include('apps.users.api.urls')),  # 包含auth/, users/等
+    path('api/', include('apps.events.api.urls')),  # 包含events/等
+    path('api/', include('apps.tasks.api.urls')),  # 包含tasks/等
+    path('api/', include('apps.checklists.api.urls')),  # 包含templates/, instances/等
+    path('api/', include('apps.files.api.urls')),  # 文件上传系统，包含files/等
+    path('api/', include('apps.profiles.api.urls')),  # Phase 3 包含profiles/等
+    path('api/', include('apps.knowledge.api.urls')),  # 知识库模块
+    path('api/', include('apps.reviews.api.urls')),  # 复盘模块
 
     # API文档（后续集成）
     # path('api/docs/', include('rest_framework.urls')),

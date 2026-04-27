@@ -394,3 +394,73 @@ export const filesApi = {
       quota_percentage: number;
     }>('/files/stats/'),
 };
+
+export interface KnowledgeEntry {
+  id: string;
+  title: string;
+  entry_type: 'issue' | 'experience' | 'best_practice';
+  content: string;
+  category?: string;
+  tags: string[];
+  related_events: string[];
+  related_tasks: string[];
+  is_public: boolean;
+  is_verified: boolean;
+  popularity: number;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const knowledgeApi = {
+  list: (params?: Record<string, string>) => {
+    const query = new URLSearchParams(params).toString();
+    return apiClient.get<PaginatedResponse<KnowledgeEntry>>(`/knowledge/${query ? `?${query}` : ''}`);
+  },
+  get: (id: string) =>
+    apiClient.get<KnowledgeEntry>(`/knowledge/${id}/`),
+  create: (data: Partial<KnowledgeEntry>) =>
+    apiClient.post<KnowledgeEntry>('/knowledge/', data),
+  update: (id: string, data: Partial<KnowledgeEntry>) =>
+    apiClient.put<KnowledgeEntry>(`/knowledge/${id}/`, data),
+  delete: (id: string) =>
+    apiClient.delete<void>(`/knowledge/${id}/`),
+};
+
+export interface Review {
+  id: string;
+  event: string;
+  event_name?: string;
+  title: string;
+  status: 'draft' | 'in_progress' | 'completed';
+  goal_achievement?: string;
+  process_execution?: string;
+  cost_control?: string;
+  customer_feedback?: string;
+  team_collaboration?: string;
+  successes?: string;
+  improvements?: string;
+  action_items?: string;
+  related_issues: string[];
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+}
+
+export const reviewsApi = {
+  list: (params?: Record<string, string>) => {
+    const query = new URLSearchParams(params).toString();
+    return apiClient.get<PaginatedResponse<Review>>(`/reviews/${query ? `?${query}` : ''}`);
+  },
+  get: (id: string) =>
+    apiClient.get<Review>(`/reviews/${id}/`),
+  create: (data: Partial<Review>) =>
+    apiClient.post<Review>('/reviews/', data),
+  update: (id: string, data: Partial<Review>) =>
+    apiClient.put<Review>(`/reviews/${id}/`, data),
+  patch: (id: string, data: Partial<Review>) =>
+    apiClient.patch<Review>(`/reviews/${id}/`, data),
+  delete: (id: string) =>
+    apiClient.delete<void>(`/reviews/${id}/`),
+};

@@ -8,6 +8,9 @@ urlpatterns = [
     path('health/', views.health_check, name='health'),
     path('', views.api_info, name='api-info'),
     
+    # 首页统计
+    path('dashboard/stats/', views.dashboard_stats, name='dashboard-stats'),
+    
     # API文档（后续添加）
     # path('docs/', views.api_schema, name='api-docs'),
     

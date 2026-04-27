@@ -49,7 +49,7 @@ class ChecklistTemplateSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'checklist_type', 'event_types', 
             'version', 'status', 'category', 'tags', 'metadata',
             'is_default', 'created_by', 'created_by_name', 'created_at', 'updated_at',
-            'items_count', 'statistics'
+            'items', 'items_count', 'statistics'
         ]
         read_only_fields = ['id', 'created_at', 'updated_at', 'items_count', 'statistics']
     
@@ -211,9 +211,9 @@ class ChecklistInstanceSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         """创建清单实例"""
-        success, instance, errors = ChecklistService.create_instance(validated_data, self.context['request'].user)
+        instance, errors = ChecklistService.create_instance(validated_data, self.context['request'].user)
         
-        if not success:
+        if not instance:
             raise serializers.ValidationError({'errors': errors})
         
         return instance

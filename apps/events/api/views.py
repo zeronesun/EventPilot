@@ -6,6 +6,9 @@ from rest_framework.permissions import IsAuthenticated
 from django.db.models import Count, Sum, Q, F
 from django.core.cache import cache
 from django.utils import timezone
+import logging
+
+logger = logging.getLogger(__name__)
 
 from apps.events.models import Event, BudgetItem, EventParticipant, EventTemplate
 from apps.events.services.event_service import EventService
@@ -480,11 +483,47 @@ class EventViewSet(viewsets.ModelViewSet):
             EventService._refresh_event_budget(event)
             
             return Response({'message': '模板应用成功'})
-            
+
         except Exception as e:
             logger.error(f"应用模板失败: {e}")
             return Response(
                 {'error': {'code': 'TEMPLATE_ERROR', 'message': str(e)}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
+    @action(detail=False, methods=['get'])
+    def dashboard_analytics(self, request):
+        """
+        获取活动数据分析仪表盘
+        包含跨活动统计、趋势分析、对比分析
+        """
+        try:
+            # 获取过滤参数
+            filters = {}
+            if 'status' in request.query_params:
+                filters['status'] = request.query_params['status']
+            if 'type' in request.query_params:
+                filters['type'] = request.query_params['type']
+            if 'start_date_from' in request.query_params:
+                filters['start_date_from'] = request.query_params['start_date_from']
+            if 'start_date_to' in request.query_params:
+                filters['start_date_to'] = request.query_params['start_date_to']
+            
+            # 获取仪表盘数据
+            analytics = EventService.get_dashboard_analytics(request.user, filters)
+            
+            if 'error' in analytics:
+                return Response(
+                    {'error': {'code': 'ANALYTICS_ERROR', 'message': analytics['error']}},
+                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                )
+            
+            return Response(analytics)
+            
+        except Exception as e:
+            logger.error(f"获取活动分析数据失败: {e}")
+            return Response(
+                {'error': {'code': 'ANALYTICS_ERROR', 'message': str(e)}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
