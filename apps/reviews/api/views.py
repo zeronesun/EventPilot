@@ -53,14 +53,27 @@ class ReviewViewSet(viewsets.ModelViewSet):
         review.save()
         
         # 自动提取经验到知识库
-        self._extract_to_knowledge(review)
+        extracted_count = self._extract_to_knowledge(review)
+        
+        return Response(
+            {
+                'message': '复盘已完成',
+                'extracted_knowledge_entries': extracted_count
+            },
+            status=status.HTTP_200_OK
+        )
         
     def _extract_to_knowledge(self, review):
         """
         提取复盘中的经验到知识库
+        
+        Returns:
+            int: 创建的知识条目数量
         """
         from apps.knowledge.models import KnowledgeEntry
-
+        
+        extracted_count = 0
+        
         # 提取成功经验
         if review.successes:
             KnowledgeEntry.objects.create(
@@ -71,6 +84,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 tags=[review.event.type],
                 created_by=review.created_by
             )
+            extracted_count += 1
 
         # 提取待改进项
         if review.improvements:
@@ -82,6 +96,9 @@ class ReviewViewSet(viewsets.ModelViewSet):
                 tags=['improvement', review.event.type],
                 created_by=review.created_by
             )
+            extracted_count += 1
+        
+        return extracted_count
     
     @action(detail=False, methods=['get'])
     def dashboard_data(self, request):

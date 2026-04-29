@@ -195,7 +195,7 @@ python3 scripts/test_api.py
 ## 报告文件结构
 
 ```
-devdoc/
+development/
 ├── COMPLETE_AUDIT_REPORT_2025-04-25.md（1万字，详细审计）
 ├── EXECUTION_LOG_2025-04-25.md（执行时间线）
 ├── ISSUES_AND_GAPS.md（问题清单）

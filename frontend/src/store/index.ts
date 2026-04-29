@@ -367,7 +367,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
   async function completeTask(id: string): Promise<void> {
     try {
-      await apiClient.patch(`/tasks/${id}/complete/`);
+      await apiClient.post(`/tasks/${id}/complete/`)
       const task = tasks.value.find(t => t.id === id);
       if (task) {
         task.status = 'completed';

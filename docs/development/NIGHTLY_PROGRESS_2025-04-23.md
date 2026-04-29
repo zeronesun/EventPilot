@@ -143,11 +143,11 @@ AssertionError: 404 != 201 (or 200)
 ## 项目文件变更记录
 
 ### 新增文件
-- `/devdoc/TEST_REPORT_2025-04-23.md` - 完整测试报告
-- `/devdoc/TEST_RESULTS_2025-04-23.md` - 测试执行结果
-- `/devdoc/TEST_STRATEGY_v1.0.md` - 测试策略
-- `/devdoc/BUGLOG_2025-04-23.md` - Bug 日志
-- `/devdoc/NIGHTLY_PROGRESS_2025-04-23.md` - 本文档
+- `/development/TEST_REPORT_2025-04-23.md` - 完整测试报告
+- `/development/TEST_RESULTS_2025-04-23.md` - 测试执行结果
+- `/development/TEST_STRATEGY_v1.0.md` - 测试策略
+- `/development/BUGLOG_2025-04-23.md` - Bug 日志
+- `/development/NIGHTLY_PROGRESS_2025-04-23.md` - 本文档
 
 ### 修改文件
 - `frontend/src/test/setup.ts` - crypto mock 修复

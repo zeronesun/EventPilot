@@ -366,9 +366,9 @@ REST_FRAMEWORK配置在settings/base.py中有两处，后者覆盖前者。
 - 组件审计: `/scripts/audit_vue_components.py`
 
 ### 日志
-- 审计报告: `/devdoc/FUNCTIONALITY_AUDIT_DETAILED.md`
-- 问题清单: `/devdoc/ISSUES_AND_GAPS.md`
-- 组件统计JSON: `/devdoc/VUE_AUDIT_REPORT.json`
+- 审计报告: `/development/FUNCTIONALITY_AUDIT_DETAILED.md`
+- 问题清单: `/development/ISSUES_AND_GAPS.md`
+- 组件统计JSON: `/development/VUE_AUDIT_REPORT.json`
 
 ---
 

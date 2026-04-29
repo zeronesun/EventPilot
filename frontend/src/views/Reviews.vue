@@ -343,7 +343,7 @@ const saveReview = async () => {
 const completeReview = async (review) => {
   try {
     await ElMessageBox.confirm('确定要完成该复盘吗？', '确认完成', { type: 'success' })
-    await apiClient.patch(`/reviews/${review.id}/`, { status: 'completed' })
+    await apiClient.post(`/reviews/${review.id}/complete/`)
     ElMessage.success('复盘已完成')
     loadReviews()
   } catch (error) {

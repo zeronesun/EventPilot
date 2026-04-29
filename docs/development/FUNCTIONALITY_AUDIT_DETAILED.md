@@ -121,9 +121,9 @@
 
 ## 输出产物
 
-1. `devdoc/FUNCTIONALITY_AUDIT_REPORT.md` - 详细测试报告
-2. `devdoc/MISSING_FEATURES.md` - 缺失功能清单
-3. `devdoc/BUGS_FOUND.md` - 发现的Bug清单
+1. `development/FUNCTIONALITY_AUDIT_REPORT.md` - 详细测试报告
+2. `development/MISSING_FEATURES.md` - 缺失功能清单
+3. `development/BUGS_FOUND.md` - 发现的Bug清单
 4. 测试代码（frontend/src/test/）
 5. 修复代码（按照TDD实现）
 

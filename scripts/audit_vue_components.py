@@ -162,7 +162,9 @@ class VueComponentAuditor:
         print("="*80)
 
         # 保存完整报告
-        output_file = Path(__file__).parent.parent / 'devdoc' / 'VUE_AUDIT_REPORT.json'
+        output_file = Path(__file__).parent.parent / 'logs' / 'VUE_AUDIT_REPORT.json'
+        # 确保logs目录存在
+        output_file.parent.mkdir(parents=True, exist_ok=True)
         with open(output_file, 'w', encoding='utf-8') as f:
             json.dump(findings, f, ensure_ascii=False, indent=2)
 

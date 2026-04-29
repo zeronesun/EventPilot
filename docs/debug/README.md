@@ -252,9 +252,10 @@ python debug/verification/automated_acceptance.py
 
 ## 📚 相关文档
 
-- [Phase 1完成验证](../devdoc/PHASE1_COMPLETION.md)
-- [Phase 2完成报告](../devdoc/Phase2_COMPLETION_REPORT.md)
-- [Phase 3完成报告](../devoc/Phase3_Completion_Report.md)
+- [Phase 1完成验证](../development/PHASE1_COMPLETION.md)
+- [Phase 2完成报告](../development/Phase2_COMPLETION_REPORT.md)
+- [Phase 3完成报告](../development/Phase3_Completion_Report.md)
+- [项目最终报告](../FINAL_REPORT.md)
 - [项目总体说明](../README.md)
 
 **维护说明**: debug目录中的工具主要用于开发和调试，不包含在生产环境中运行的代码。

@@ -37,15 +37,6 @@ debug/
     └── verify_websocket_setup.sh
 ```
 
-### 📚 移动到devdoc的文档:
-- `CHECKLIST ADVANCED FEATURES REPORT.md`
-- `PHASE2_COMPLETION_REPORT.md`  
-- `PHASE2_EVENT_MANAGEMENT_IMPLEMENTATION.md`
-- `PHASE2_TASK_MANAGEMENT_IMPLEMENTATION_REPORT.md`
-- `PHASE2_WEBSOCKET_IMPLEMENTATION_REPORT.md`
-- `PHASE2_验收报告.md`
-- `WEBSOCKET_QUICK_START.md`
-
 ## 🎯 整理效果
 
 ### ✅ 根目录清洁度：100%
@@ -61,7 +52,7 @@ ls -la | grep "^-" | wc -l  # 只显示7个核心文件
 - 清晰的目录结构
 
 ### ✅ 文档管理：100%  
-- 所有报告文档集中在devdoc/
+- 所有报告文档集中在development/
 - 完整的Phase完成报告
 - 清晰的文档命名规范
 
@@ -82,7 +73,7 @@ python debug/phase2/verify_phase2.py
 ### 查看项目文档：
 ```bash  
 # 查看所有开发文档
-ls -la devdoc/
+ls -la development/
 
 # 查看项目主文档
 cat README.md
@@ -92,7 +83,7 @@ cat README.md
 
 1. **项目结构更清晰** - 根目录简洁，功能明确
 2. **测试工具易查找** - 按功能分类，便于定位
-3. **文档管理标准化** - 集中在devdoc，便于查阅
+3. **文档管理标准化** - 集中在docs/，便于查阅
 4. **开发体验提升** - 减少目录混乱，提高效率
 5. **团队协作友好** - 清晰的结构易于理解
 

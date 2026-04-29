@@ -311,9 +311,8 @@ EventPilot/
 ├── scripts/               # 部署和初始化脚本
 ├── storage/               # 文件存储
 ├── tests/                 # 测试
-├── debug/                 # 调试和测试工具 🆕
 ├── frontend/              # Vue.js前端
-├── devdoc/                # 开发文档 🆕
+├── docs/                  # 文档
 ├── manage.py
 ├── requirements.txt
 └── .env.example           # 环境变量模板
@@ -343,14 +342,21 @@ EventPilot/
 ## 📚 文档
 
 ### 开发文档
-- [Phase 3 开发方案](devdoc/Phase3_开发方案.md)
-- [Phase 3 完成报告](devdoc/Phase3_Completion_Report.md)
-- [Phase 2 功能实现文档](devdoc/PHASE2_EVENT_MANAGEMENT_IMPLEMENTATION.md)
-- [Phase 2 WebSocket 实现](devdoc/PHASE2_WEBSOCKET_IMPLEMENTATION.md)
-- [WebSocket 快速开始](devdoc/WEBSOCKET_QUICK_START.md)
+- [EventPilot 开发方案](development/EventPilot_开发方案.md)
+- [Phase 3 开发方案](development/Phase3_开发方案.md)
+- [Phase 3 完成报告](development/Phase3_Completion_Report.md)
+- [Phase 2 功能实现文档](development/PHASE2_EVENT_MANAGEMENT_IMPLEMENTATION.md)
+- [Phase 2 WebSocket 实现](development/PHASE2_WEBSOCKET_IMPLEMENTATION_REPORT.md)
+- [WebSocket 快速开始](development/WEBSOCKET_QUICK_START.md)
+
+### 质量和测试报告
+- [项目最终报告](FINAL_REPORT.md)
+- [功能完成分析](quality/Complete_Analysis_Report.md)
+- [P0/P1任务完成报告](quality/P0_P1_Completion_Report.md)
+- [P0 Bug修复总结](quality/P0_Bug_Fix_Summary.md)
 
 ### 测试和调试
-- [调试工具说明](debug/README.md)
+- 调试相关文档见 [debug/目录](debug/)
 
 ## 🧪 测试工具使用
 

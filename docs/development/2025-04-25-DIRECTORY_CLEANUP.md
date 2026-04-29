@@ -11,7 +11,7 @@
 
 ```
 debug/          - 16个文件，测试脚本、日志、截图混合存放
-devdoc/         - 只有1个JSON文件，命名不规范
+development/         - 只有1个JSON文件，命名不规范
 tests/          - 空目录（应该存放正式测试）
 ```
 
@@ -24,7 +24,7 @@ tests/          - 空目录（应该存放正式测试）
    - 日志文件 (`backend.log`)
    - 截图 (`ScreenShot_*.png`)
 
-2. **devdoc/** - 语义不清：
+2. **development/** - 语义不清：
    - 只有一个 `VUE_AUDIT_REPORT.json`
    - 所有真正的开发日志都在 `docs/` 目录
 
@@ -78,13 +78,13 @@ git mv debug/websocket/test_websocket/test_websocket_basic.py tests/unit/
 
 ```bash
 rm -rf debug/
-rm -rf devdoc/
+rm -rf development/
 ```
 
 ### 第五步：验证确认
 
 - ✓ `debug/` 已完全删除
-- ✓ `devdoc/` 已完全删除
+- ✓ `development/` 已完全删除
 - ✓ 测试文件已迁移到正确位置
 - ✓ 日志和截图已归档
 
@@ -129,17 +129,17 @@ venv/             # 虚拟环境
 ### 规范化前
 ```
 D debug/ (16个文件)
-D devdoc/ (40个文档)
+D development/ (40个文档)
 ```
 
 ### 规范化后
 ```
 43 个 git 变更（删除操作）
 - debug/ 目录下的16个文件
-- devdoc/ 目录下的40个文档（已在之前整理到docs/）
+- development/ 目录下的40个文档（已在之前整理到docs/）
 ```
 
-注意：devdoc/ 中的文档已被之前的整理操作移动到 `docs/`，git 显示为删除是正常的。
+注意：development/ 中的文档已被之前的整理操作移动到 `docs/`，git 显示为删除是正常的。
 
 ---
 
@@ -157,7 +157,7 @@ D devdoc/ (40个文档)
 
 1. 提交 git 变更：
    ```bash
-   git commit -m "refactor: 目录规范化，删除debug/和devdoc/"
+   git commit -m "refactor: 目录规范化，删除debug/和development/"
    ```
 
 2. 更新文档说明新结构
@@ -170,7 +170,7 @@ D devdoc/ (40个文档)
 
 ## 总结
 
-✅ **成功删除非标准目录** (debug/, devdoc/)
+✅ **成功删除非标准目录** (debug/, development/)
 ✅ **建立标准目录结构** (tests/, docs/, logs/)
 ✅ **保持代码组织清晰** (单元测试、集成测试、验证脚本分离)
 ✅ **保留文件历史** (使用 git mv)
