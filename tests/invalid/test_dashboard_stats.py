@@ -8,7 +8,7 @@ import json
 BASE_URL = "http://localhost:8000/api"
 
 # 登录
-login = requests.post(f"{BASE_URL}/auth/login/", json={"username": "admin", "password": "admin123"})
+login = requests.post(f"{BASE_URL}/users/users/auth/login/", json={"username": "admin", "password": "admin123"})
 data = login.json()
 token = data.get('data', {}).get('token', data.get('token', ''))
 headers = {"Authorization": f"Bearer {token}"}

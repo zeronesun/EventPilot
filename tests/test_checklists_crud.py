@@ -42,7 +42,7 @@ def test_checklists_crud():
         "category": "event_planning",
         "is_public": False
     }
-    r = requests.post(f"{BASE_URL}/templates/", json=template_data, headers=headers)
+    r = requests.post(f"{BASE_URL}/checklists/templates/", json=template_data, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code in [200, 201]:
         result = r.json()
@@ -54,7 +54,7 @@ def test_checklists_crud():
 
     # 3. 读取检查清单模板列表
     print("\n3. 读取检查清单模板列表:")
-    r = requests.get(f"{BASE_URL}/templates/", headers=headers)
+    r = requests.get(f"{BASE_URL}/checklists/templates/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         templates_list = r.json()
@@ -65,7 +65,7 @@ def test_checklists_crud():
 
     # 4. 读取单个检查清单模板详情
     print("\n4. 读取检查清单模板详情:")
-    r = requests.get(f"{BASE_URL}/templates/{template_id}/", headers=headers)
+    r = requests.get(f"{BASE_URL}/checklists/templates/{template_id}/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         template = r.json()
@@ -79,7 +79,7 @@ def test_checklists_crud():
         "name": "更新后的检查清单模板",
         "description": "这是更新后的描述"
     }
-    r = requests.patch(f"{BASE_URL}/templates/{template_id}/", json=update_data, headers=headers)
+    r = requests.patch(f"{BASE_URL}/checklists/templates/{template_id}/", json=update_data, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         print(f"✅ 更新成功")
@@ -88,7 +88,7 @@ def test_checklists_crud():
 
     # 6. 删除检查清单模板
     print("\n6. 删除检查清单模板:")
-    r = requests.delete(f"{BASE_URL}/templates/{template_id}/", headers=headers)
+    r = requests.delete(f"{BASE_URL}/checklists/templates/{template_id}/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 204:
         print(f"✅ 删除成功")
@@ -101,7 +101,7 @@ def test_checklists_crud():
 
     # 7. 验证删除
     print("\n7. 验证删除:")
-    r = requests.get(f"{BASE_URL}/templates/{template_id}/", headers=headers)
+    r = requests.get(f"{BASE_URL}/checklists/templates/{template_id}/", headers=headers)
     if r.status_code == 404:
         print(f"✅ 确认删除（返回404）")
     else:
@@ -114,7 +114,7 @@ def test_checklists_crud():
         "description": "这是测试项目描述",
         "order": 1
     }
-    r = requests.post(f"{BASE_URL}/item-templates/", json=item_data, headers=headers)
+    r = requests.post(f"{BASE_URL}/checklists/item-templates/", json=item_data, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code in [200, 201]:
         print(f"✅ 项目模板创建成功")
@@ -123,7 +123,7 @@ def test_checklists_crud():
 
     # 9. 测试检查清单实例化（如果存在）
     print("\n9. 测试检查清单实例化（从模板创建实例）:")
-    r = requests.post(f"{BASE_URL}/instances/instantiate-from-template/", json={"template_id": template_id}, headers=headers)
+    r = requests.post(f"{BASE_URL}/checklists/instances/instantiate-from-template/", json={"template_id": template_id}, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code in [200, 201]:
         print(f"✅ 实例化成功")

@@ -11,14 +11,14 @@ urlpatterns = [
     path('api/', include('api.urls')),
 
     # 应用API路由 - 各模块独立路径前缀
-    path('api/', include('apps.users.api.urls')),  # 包含auth/, users/等
-    path('api/', include('apps.events.api.urls')),  # 包含events/等
-    path('api/', include('apps.tasks.api.urls')),  # 包含tasks/等
-    path('api/', include('apps.checklists.api.urls')),  # 包含templates/, instances/等
-    path('api/', include('apps.files.api.urls')),  # 文件上传系统，包含files/等
-    path('api/', include('apps.profiles.api.urls')),  # Phase 3 包含profiles/等
-    path('api/', include('apps.knowledge.api.urls')),  # 知识库模块
-    path('api/', include('apps.reviews.api.urls')),  # 复盘模块
+    path('api/users/', include('apps.users.api.urls')),  # 包含auth/, users/等
+    path('api/events/', include('apps.events.api.urls')),  # 包含events/等
+    path('api/tasks/', include('apps.tasks.api.urls')),  # 包含tasks/等
+    path('api/checklists/', include('apps.checklists.api.urls')),  # 包含templates/, instances/等
+    path('api/files/', include('apps.files.api.urls')),  # 文件上传系统，包含files/等
+    path('api/profiles/', include('apps.profiles.api.urls')),  # Phase 3 包含profiles/等
+    path('api/knowledge/', include('apps.knowledge.api.urls')),  # 知识库模块
+    path('api/reviews/', include('apps.reviews.api.urls')),  # 复盘模块
 
     # API文档（后续集成）
     # path('api/docs/', include('rest_framework.urls')),

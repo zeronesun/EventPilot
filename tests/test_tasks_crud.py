@@ -94,7 +94,7 @@ def test_tasks_crud():
         "description": "这是一个测试任务",
         "task_type": "planning"
     }
-    r = requests.post(f"{BASE_URL}/tasks/", json=create_payload, headers=headers)
+    r = requests.post(f"{BASE_URL}/tasks/tasks/", json=create_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
 
     if r.status_code != 201:
@@ -110,7 +110,7 @@ def test_tasks_crud():
 
     # 4. 读取任务列表
     print("\n4. 读取任务列表 (LIST):")
-    r = requests.get(f"{BASE_URL}/tasks/", headers=headers)
+    r = requests.get(f"{BASE_URL}/tasks/tasks/", headers=headers)
     print(f"   状态码: {r.status_code}")
 
     if r.status_code == 200:
@@ -123,7 +123,7 @@ def test_tasks_crud():
 
     # 5. 读取单个任务
     print("\n5. 读取任务详情 (RETRIEVE):")
-    r = requests.get(f"{BASE_URL}/tasks/{task_id}/", headers=headers)
+    r = requests.get(f"{BASE_URL}/tasks/tasks/{task_id}/", headers=headers)
     print(f"   状态码: {r.status_code}")
 
     if r.status_code == 200:
@@ -139,7 +139,7 @@ def test_tasks_crud():
         "description": "任务描述已更新",
         "status": "in_progress"
     }
-    r = requests.put(f"{BASE_URL}/tasks/{task_id}/", json=update_payload, headers=headers)
+    r = requests.put(f"{BASE_URL}/tasks/tasks/{task_id}/", json=update_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
 
     if r.status_code == 200:
@@ -150,7 +150,7 @@ def test_tasks_crud():
 
     # 7. 删除任务
     print("\n7. 删除任务 (DELETE):")
-    r = requests.delete(f"{BASE_URL}/tasks/{task_id}/", headers=headers)
+    r = requests.delete(f"{BASE_URL}/tasks/tasks/{task_id}/", headers=headers)
     print(f"   状态码: {r.status_code}")
 
     if r.status_code == 204:
@@ -160,7 +160,7 @@ def test_tasks_crud():
 
     # 8. 验证删除
     print("\n8. 验证删除 (RETRIEVE 删除后的任务):")
-    r = requests.get(f"{BASE_URL}/tasks/{task_id}/", headers=headers)
+    r = requests.get(f"{BASE_URL}/tasks/tasks/{task_id}/", headers=headers)
     print(f"   状态码: {r.status_code}")
 
     if r.status_code == 404:

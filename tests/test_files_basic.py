@@ -21,7 +21,7 @@ def test_files_basic_functions():
     # 1. 登录
     print("\n1. 登录获取Token:")
     login_payload = {"username": "admin", "password": "admin123"}
-    r = requests.post(f"{BASE_URL}/auth/login/", json=login_payload)
+    r = requests.post(f"{BASE_URL}/users/auth/login/", json=login_payload)
     if r.status_code not in [200, 201]:
         print(f"❌ 登录失败: {r.text}")
         return False
@@ -32,7 +32,7 @@ def test_files_basic_functions():
 
     # 2. 测试文件列表获取
     print("\n2. 测试文件列表:")
-    r = requests.get(f"{BASE_URL}/files/", headers=headers)
+    r = requests.get(f"{BASE_URL}/files/files/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         files_list = r.json()
@@ -48,7 +48,7 @@ def test_files_basic_functions():
         "file_size": 1024,
         "mime_type": "application/pdf"
     }
-    r = requests.post(f"{BASE_URL}/files/", json=invalid_payload, headers=headers)
+    r = requests.post(f"{BASE_URL}/files/files/", json=invalid_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 400:
         print(f"✅ 表单验证正确（空文件名被拒绝）")
@@ -62,7 +62,7 @@ def test_files_basic_functions():
         "file_size": 1024,
         "mime_type": "application/x-msdownload"  # exe文件通常不被允许
     }
-    r = requests.post(f"{BASE_URL}/files/", json=invalid_mime, headers=headers)
+    r = requests.post(f"{BASE_URL}/files/files/", json=invalid_mime, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 400:
         print(f"✅ 安全验证正常（危险文件类型被拒绝）")
@@ -77,7 +77,7 @@ def test_files_basic_functions():
         "mime_type": "application/pdf",
         "metadata": {"category": "document"}
     }
-    r = requests.post(f"{BASE_URL}/files/", json=upload_payload, headers=headers)
+    r = requests.post(f"{BASE_URL}/files/files/", json=upload_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 500:
         try:
@@ -101,7 +101,7 @@ def test_files_basic_functions():
 
     # 6. 测试文件API的基本响应结构
     print("\n6. 测试API响应结构:")
-    r = requests.get(f"{BASE_URL}/files/", headers=headers)
+    r = requests.get(f"{BASE_URL}/files/files/", headers=headers)
     if r.status_code == 200:
         result = r.json()
         if isinstance(result, dict):

@@ -9,7 +9,7 @@ BASE_URL = "http://localhost:8000/api"
 
 # 登录
 print("=== Profiles高级功能测试 ===\n")
-login_resp = requests.post(f"{BASE_URL}/auth/login/", json={"username": "admin", "password": "admin123"})
+login_resp = requests.post(f"{BASE_URL}/users/auth/login/", json={"username": "admin", "password": "admin123"})
 token = login_resp.json().get('access')
 
 headers = {
@@ -28,24 +28,24 @@ create_data = {
         "email": "test@example.com"
     }
 }
-r = requests.post(f"{BASE_URL}/profiles/", headers=headers, json=create_data)
+r = requests.post(f"{BASE_URL}/profiles/profiles/", headers=headers, json=create_data)
 profile_id = r.json().get('id') if r.status_code == 201 else None
 print(f"   状态: {r.status_code}")
 if profile_id:
     print(f"   档案ID: {profile_id}")
 
 # 2. 测试contacts（列表）
-print("\n2. 测试 /profiles/{id}/contacts/:")
+print("\n2. 测试 /profiles/profiles/{id}/contacts/:")
 if profile_id:
-    r = requests.get(f"{BASE_URL}/profiles/{profile_id}/contacts/", headers=headers)
+    r = requests.get(f"{BASE_URL}/profiles/profiles/{profile_id}/contacts/", headers=headers)
     print(f"   状态: {r.status_code}")
     if r.status_code == 200:
         print(f"   联系人列表: {r.json()}")
 
 # 3. 测试add contact
-print("\n3. 测试 /profiles/{id}/contact/:")
+print("\n3. 测试 /profiles/profiles/{id}/contact/:")
 if profile_id:
-    r = requests.post(f"{BASE_URL}/profiles/{profile_id}/contact/", headers=headers, json={
+    r = requests.post(f"{BASE_URL}/profiles/profiles/{profile_id}/contact/", headers=headers, json={
         "name": "李四",
         "phone": "13900139000",
         "email": "lisi@example.com"
@@ -54,15 +54,15 @@ if profile_id:
     contact_id = r.json().get('id') if r.status_code == 201 else None
 
 # 4. 测试interactions
-print("\n4. 测试 /profiles/{id}/interactions/:")
+print("\n4. 测试 /profiles/profiles/{id}/interactions/:")
 if profile_id:
-    r = requests.get(f"{BASE_URL}/profiles/{profile_id}/interactions/", headers=headers)
+    r = requests.get(f"{BASE_URL}/profiles/profiles/{profile_id}/interactions/", headers=headers)
     print(f"   状态: {r.status_code}")
 
 # 5. 测试add interaction
-print("\n5. 测试 /profiles/{id}/interaction/:")
+print("\n5. 测试 /profiles/profiles/{id}/interaction/:")
 if profile_id:
-    r = requests.post(f"{BASE_URL}/profiles/{profile_id}/interaction/", headers=headers, json={
+    r = requests.post(f"{BASE_URL}/profiles/profiles/{profile_id}/interaction/", headers=headers, json={
         "interaction_type": "email",
         "content": "邮件沟通",
         "outcome": "pending"
@@ -70,15 +70,15 @@ if profile_id:
     print(f"   状态: {r.status_code}")
 
 # 6. 测试evaluations
-print("\n6. 测试 /profiles/{id}/evaluations/:")
+print("\n6. 测试 /profiles/profiles/{id}/evaluations/:")
 if profile_id:
-    r = requests.get(f"{BASE_URL}/profiles/{profile_id}/evaluations/", headers=headers)
+    r = requests.get(f"{BASE_URL}/profiles/profiles/{profile_id}/evaluations/", headers=headers)
     print(f"   状态: {r.status_code}")
 
 # 7. 测试add evaluation
-print("\n7. 测试 /profiles/{id}/evaluation/:")
+print("\n7. 测试 /profiles/profiles/{id}/evaluation/:")
 if profile_id:
-    r = requests.post(f"{BASE_URL}/profiles/{profile_id}/evaluation/", headers=headers, json={
+    r = requests.post(f"{BASE_URL}/profiles/profiles/{profile_id}/evaluation/", headers=headers, json={
         "category": "quality",
         "score": 85,
         "period": "q1",
@@ -87,9 +87,9 @@ if profile_id:
     print(f"   状态: {r.status_code}")
 
 # 8. 测试综合评估
-print("\n8. 测试 /profiles/{id}/comprehensive_assessment/:")
+print("\n8. 测试 /profiles/profiles/{id}/comprehensive_assessment/:")
 if profile_id:
-    r = requests.get(f"{BASE_URL}/profiles/{profile_id}/comprehensive_assessment/", headers=headers)
+    r = requests.get(f"{BASE_URL}/profiles/profiles/{profile_id}/comprehensive_assessment/", headers=headers)
     print(f"   状态: {r.status_code}")
     if r.status_code == 200:
         print(f"   评估结果: {r.json()}")

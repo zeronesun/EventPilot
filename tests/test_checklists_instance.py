@@ -39,7 +39,7 @@ def test_checklists_instance():
         "event_types": ["conference"],
         "status": "published"
     }
-    r = requests.post(f"{BASE_URL}/templates/", json=template_data, headers=headers)
+    r = requests.post(f"{BASE_URL}/checklists/templates/", json=template_data, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code not in [200, 201]:
         print(f"❌ 模板创建失败: {r.text}")
@@ -55,7 +55,7 @@ def test_checklists_instance():
         "event": "08f5a543-a686-4d41-8f9b-9dd19badd2b5",  # UUID 字符串
         "status": "in_progress"
     }
-    r = requests.post(f"{BASE_URL}/instances/", json=instance_data, headers=headers)
+    r = requests.post(f"{BASE_URL}/checklists/instances/", json=instance_data, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code in [200, 201]:
         instance = r.json()
@@ -77,7 +77,7 @@ def test_checklists_instance():
         "weight": 5,
         "status": "active"
     }
-    r = requests.post(f"{BASE_URL}/item-templates/", json=item_data, headers=headers)
+    r = requests.post(f"{BASE_URL}/checklists/item-templates/", json=item_data, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code in [200, 201]:
         print(f"✅ 项目模板创建成功")
@@ -86,7 +86,7 @@ def test_checklists_instance():
 
     # 5. 读取实例列表
     print("\n5. 读取实例列表:")
-    r = requests.get(f"{BASE_URL}/instances/", headers=headers)
+    r = requests.get(f"{BASE_URL}/checklists/instances/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         instances = r.json()

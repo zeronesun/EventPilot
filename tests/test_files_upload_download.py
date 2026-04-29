@@ -22,7 +22,7 @@ def test_files_upload_and_download():
     # 1. 登录
     print("\n1. 登录获取Token:")
     login_payload = {"username": "admin", "password": "admin123"}
-    r = requests.post(f"{BASE_URL}/auth/login/", json=login_payload)
+    r = requests.post(f"{BASE_URL}/users/auth/login/", json=login_payload)
     if r.status_code not in [200, 201]:
         print(f"❌ 登录失败: {r.text}")
         return False
@@ -42,7 +42,7 @@ def test_files_upload_and_download():
     }
     
     # 注意：实际 multipart 上传可能需要调整，这里做基本测试
-    r = requests.post(f"{BASE_URL}/files/", headers=headers, files=files)
+    r = requests.post(f"{BASE_URL}/files/files/", headers=headers, files=files)
     print(f"   状态码: {r.status_code}")
     if r.status_code:
         result = r.json()
@@ -52,7 +52,7 @@ def test_files_upload_and_download():
 
     # 3. 测试文件列表
     print("\n3. 测试文件列表:")
-    r = requests.get(f"{BASE_URL}/files/", headers=headers)
+    r = requests.get(f"{BASE_URL}/files/files/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         files_list = r.json()
@@ -69,7 +69,7 @@ def test_files_upload_and_download():
         "mime_type": "application/pdf",
         "metadata": {"category": "document"}
     }
-    r = requests.post(f"{BASE_URL}/files/", json=upload_payload, headers=headers)
+    r = requests.post(f"{BASE_URL}/files/files/", json=upload_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code:
         result = r.json()
@@ -84,12 +84,12 @@ def test_files_upload_and_download():
     if upload_id:
         print("\n5. 测试文件下载:")
         # 使用 file_id 下载 endpoint
-        r = requests.get(f"{BASE_URL}/files/{upload_id}/download/", headers=headers)
+        r = requests.get(f"{BASE_URL}/files/files/{upload_id}/download/", headers=headers)
         print(f"   状态码: {r.status_code}")
         if r.status_code == 200:
             print(f"✅ 文件下载成功")
             # 清理
-            requests.delete(f"{BASE_URL}/files/{upload_id}/", headers=headers)
+            requests.delete(f"{BASE_URL}/files/files/{upload_id}/", headers=headers)
         elif r.status_code:
             print(f"⚠️  下载返回: {str(r.text)[:100]}")
         else:
@@ -102,7 +102,7 @@ def test_files_upload_and_download():
         "file_size": 1024,
         "mime_type": "application/pdf"
     }
-    r = requests.post(f"{BASE_URL}/files/", json=invalid_payload, headers=headers)
+    r = requests.post(f"{BASE_URL}/files/files/", json=invalid_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 400:
         print(f"✅ 表单验证正确（应拒绝空文件名）")

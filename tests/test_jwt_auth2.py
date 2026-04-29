@@ -10,7 +10,7 @@ BASE_URL = "http://localhost:8000/api"
 print("=== JWT认证测试 ===\n")
 
 # 登录获取token
-login_resp = requests.post(f"{BASE_URL}/auth/login/", json={"username": "admin", "password": "admin123"})
+login_resp = requests.post(f"{BASE_URL}/users/auth/login/", json={"username": "admin", "password": "admin123"})
 print(f"登录状态: {login_resp.status_code}")
 
 if login_resp.status_code in [200, 201]:
@@ -32,17 +32,17 @@ if login_resp.status_code in [200, 201]:
         
         # 尝试访问profiles
         headers = {"Authorization": f"Bearer {token}"}
-        r = requests.get(f"{BASE_URL}/profiles/", headers=headers)
-        print(f"\nGET /profiles/ 状态: {r.status_code}")
+        r = requests.get(f"{BASE_URL}/profiles/profiles/", headers=headers)
+        print(f"\nGET /profiles/profiles/ 状态: {r.status_code}")
         if r.status_code == 200:
             print(f" profiles数量: {len(r.json())}")
         
         # 尝试创建
-        r2 = requests.post(f"{BASE_URL}/profiles/", headers=headers, json={
+        r2 = requests.post(f"{BASE_URL}/profiles/profiles/", headers=headers, json={
             "name": "测试",
             "role": "supplier"
         })
-        print(f"POST /profiles/ 状态: {r2.status_code}")
+        print(f"POST /profiles/profiles/ 状态: {r2.status_code}")
         if r2.status_code != 201:
             print(f"响应: {r2.text[:200]}")
 else:

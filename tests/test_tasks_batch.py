@@ -64,7 +64,7 @@ def test_tasks_batch_operations():
             "description": f"这是批量创建的第{i+1}个测试任务",
             "task_type": "planning"
         }
-        r = requests.post(f"{BASE_URL}/tasks/", json=payload, headers=headers)
+        r = requests.post(f"{BASE_URL}/tasks/tasks/", json=payload, headers=headers)
         if r.status_code == 201:
             task_data = r.json()
             task = task_data if 'data' not in task_data else task_data['data']
@@ -87,7 +87,7 @@ def test_tasks_batch_operations():
         "task_ids": created_task_ids,
         "status": "in_progress"
     }
-    r = requests.post(f"{BASE_URL}/tasks/bulk_update_status/", json=bulk_update_payload, headers=headers)
+    r = requests.post(f"{BASE_URL}/tasks/tasks/bulk_update_status/", json=bulk_update_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         print(f"✅ 批量更新成功: {r.json()}")
@@ -97,7 +97,7 @@ def test_tasks_batch_operations():
     # 5. 验证批量更新结果
     print("\n5. 验证批量更新结果:")
     for task_id in created_task_ids:
-        r = requests.get(f"{BASE_URL}/tasks/{task_id}/", headers=headers)
+        r = requests.get(f"{BASE_URL}/tasks/tasks/{task_id}/", headers=headers)
         if r.status_code == 200:
             task = r.json()
             task_data = task['data'] if 'data' in task else task
@@ -111,7 +111,7 @@ def test_tasks_batch_operations():
     bulk_delete_payload = {
         "task_ids": created_task_ids[:2]  # 只删除前2个
     }
-    r = requests.post(f"{BASE_URL}/tasks/bulk_delete/", json=bulk_delete_payload, headers=headers)
+    r = requests.post(f"{BASE_URL}/tasks/tasks/bulk_delete/", json=bulk_delete_payload, headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         result = r.json()
@@ -122,7 +122,7 @@ def test_tasks_batch_operations():
     # 7. 验证批量删除结果
     print("\n7. 验证批量删除结果:")
     for task_id in created_task_ids[:2]:
-        r = requests.get(f"{BASE_URL}/tasks/{task_id}/", headers=headers)
+        r = requests.get(f"{BASE_URL}/tasks/tasks/{task_id}/", headers=headers)
         if r.status_code == 404:
             print(f"✅ 任务 {task_id[:8]}... 已成功删除")
         else:
@@ -131,7 +131,7 @@ def test_tasks_batch_operations():
     # 清理创建的剩余任务
     print("\n8. 清理剩余测试任务:")
     for task_id in created_task_ids[2:]:
-        requests.delete(f"{BASE_URL}/tasks/{task_id}/", headers=headers)
+        requests.delete(f"{BASE_URL}/tasks/tasks/{task_id}/", headers=headers)
 
     print("\n" + "="*60)
     print("✅ Tasks 批量操作测试完成!")
