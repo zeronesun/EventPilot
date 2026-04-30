@@ -22,7 +22,7 @@ def test_checklists_crud():
     # 1. 登录
     print("\n1. 登录获取Token:")
     login_payload = {"username": "admin", "password": "admin123"}
-    r = requests.post(f"{BASE_URL}/auth/login/", json=login_payload)
+    r = requests.post(f"{BASE_URL}/users/auth/login/", json=login_payload)
     if r.status_code not in [200, 201]:
         print(f"❌ 登录失败: {r.text}")
         return False

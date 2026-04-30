@@ -23,7 +23,7 @@ def test_tasks_drag_functionality():
     # 1. 登录
     print("\n1. 登录获取Token:")
     login_payload = {"username": "admin", "password": "admin123"}
-    r = requests.post(f"{BASE_URL}/auth/login/", json=login_payload)
+    r = requests.post(f"{BASE_URL}/users/auth/login/", json=login_payload)
     if r.status_code not in [200, 201]:
         print(f"❌ 登录失败: {r.text}")
         return False
@@ -39,7 +39,7 @@ def test_tasks_drag_functionality():
 
     # 2. 获取活动
     print("\n2. 获取测试活动:")
-    r = requests.get(f"{BASE_URL}/events/", headers=headers)
+    r = requests.get(f"{BASE_URL}/events/events/", headers=headers)
     if r.status_code != 200:
         print("❌ 无法获取活动")
         return False
@@ -69,7 +69,7 @@ def test_tasks_drag_functionality():
             "description": f"测试{status}状态的任务",
             "task_type": "planning"
         }
-        r = requests.post(f"{BASE_URL}/tasks/tasks/", json=payload, headers=headers)
+        r = requests.post(f"{BASE_URL}/tasks/tasks/tasks/", json=payload, headers=headers)
         if r.status_code == 201:
             task_data = r.json()
             task = task_data if 'data' not in task_data else task_data['data']
@@ -80,7 +80,7 @@ def test_tasks_drag_functionality():
 
     # 4. 获取看板数据
     print("\n4. 获取看板数据:")
-    r = requests.get(f"{BASE_URL}/tasks/tasks/kanban_data/?event={event_id}", headers=headers)
+    r = requests.get(f"{BASE_URL}/tasks/tasks/tasks/kanban_data/?event={event_id}", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         kanban_data = r.json()
@@ -96,7 +96,7 @@ def test_tasks_drag_functionality():
         return False
 
     r = requests.put(
-        f"{BASE_URL}/tasks/tasks/{tasks_by_status['pending']}/",
+        f"{BASE_URL}/tasks/tasks/tasks/{tasks_by_status['pending']}/",
         json={"status": "in_progress"},
         headers=headers
     )
@@ -108,7 +108,7 @@ def test_tasks_drag_functionality():
 
     # 6. 再次获取看板数据验证拖拽结果
     print("\n6. 验证拖拽结果:")
-    r = requests.get(f"{BASE_URL}/tasks/tasks/kanban_data/?event={event_id}", headers=headers)
+    r = requests.get(f"{BASE_URL}/tasks/tasks/tasks/kanban_data/?event={event_id}", headers=headers)
     if r.status_code == 200:
         kanban_data = r.json()
         # 检查in_progress列是否有任务
@@ -126,7 +126,7 @@ def test_tasks_drag_functionality():
             "task_ids": valid_task_ids,
             "status": "completed"
         }
-        r = requests.post(f"{BASE_URL}/tasks/tasks/bulk_update_status/", json=bulk_payload, headers=headers)
+        r = requests.post(f"{BASE_URL}/tasks/tasks/tasks/bulk_update_status/", json=bulk_payload, headers=headers)
         print(f"   状态码: {r.status_code}")
         if r.status_code == 200:
             print(f"✅ 批量拖拽成功")
@@ -137,7 +137,7 @@ def test_tasks_drag_functionality():
     print("\n8. 清理测试任务:")
     for task_id in tasks_by_status.values():
         if task_id:
-            requests.delete(f"{BASE_URL}/tasks/tasks/{task_id}/", headers=headers)
+            requests.delete(f"{BASE_URL}/tasks/tasks/tasks/{task_id}/", headers=headers)
 
     print("\n" + "="*60)
     print("✅ Tasks 拖拽功能测试完成!")

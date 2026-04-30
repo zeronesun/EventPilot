@@ -126,7 +126,7 @@ class EventSerializer(serializers.ModelSerializer):
     
     def get_participants_count(self, obj):
         """获取参与者数量"""
-        return obj.participants.filter(active=True).count()
+        return obj.eventparticipant_set.filter(active=True).count()
 
 
 class EventCreateSerializer(serializers.ModelSerializer):

@@ -1,29 +1,17 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { useAuthStore } from '../store'
-import Home from '../views/Home.vue'
-import Login from '../views/Login.vue'
-import Events from '../views/Events.vue'
-import Tasks from '../views/Tasks.vue'
-import Users from '../views/Users.vue'
-import Checklists from '../views/Checklists.vue'
-import Files from '../views/Files.vue'
-import Profiles from '../views/Profiles.vue'
-import Budget from '../views/Budget.vue'
-import Knowledge from '../views/Knowledge.vue'
-import Reviews from '../views/Reviews.vue'
-import Analytics from '../views/Analytics.vue'
 
+// 使用懒加载优化性能
 const routes = [
   {
     path: '/',
     name: 'home',
-    component: Home,
+    component: () => import('../views/Home.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/login',
     name: 'login',
-    component: Login,
+    component: () => import('../views/Login.vue'),
     meta: { requiresAuth: false }
   },
   {
@@ -35,62 +23,71 @@ const routes = [
   {
     path: '/events',
     name: 'events',
-    component: Events,
+    component: () => import('../views/Events.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/tasks',
     name: 'tasks',
-    component: Tasks,
+    component: () => import('../views/Tasks.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/users',
     name: 'users',
-    component: Users,
+    component: () => import('../views/Users.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/checklists',
     name: 'checklists',
-    component: Checklists,
+    component: () => import('../views/Checklists.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/files',
     name: 'files',
-    component: Files,
+    component: () => import('../views/Files.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/profiles',
     name: 'profiles',
-    component: Profiles,
+    component: () => import('../views/Profiles.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/budget',
     name: 'budget',
-    component: Budget,
+    component: () => import('../views/Budget.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/knowledge',
     name: 'knowledge',
-    component: Knowledge,
+    component: () => import('../views/Knowledge.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/reviews',
     name: 'reviews',
-    component: Reviews,
+    component: () => import('../views/Reviews.vue'),
     meta: { requiresAuth: true }
   },
   {
     path: '/analytics',
     name: 'analytics',
-    component: Analytics,
+    component: () => import('../views/Analytics.vue'),
     meta: { requiresAuth: true }
+  },
+  {
+    path: '/404',
+    name: 'not-found',
+    component: () => import('../views/NotFound.vue')
+  },
+  {
+    path: '/:pathMatch(.*)*',
+    redirect: '/404'
   }
 ]
 
@@ -99,17 +96,35 @@ const router = createRouter({
   routes
 })
 
+// 导出路由实例，在App.vue中进行认证检查
+export default router
+
+// 延迟导入认证store以避免循环依赖
+let authStore = null
+const getAuthStore = () => {
+  if (!authStore) {
+    // 动态导入store
+    const { useAuthStore } = require('../store/index')
+    authStore = useAuthStore()
+  }
+  return authStore
+}
+
 // Navigation guard for authentication
 router.beforeEach((to, from, next) => {
-  const authStore = useAuthStore()
-  
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    next('/login')
-  } else if (to.name === 'login' && authStore.isAuthenticated) {
-    next('/')
-  } else {
-    next()
+  // 延迟检查，避免初始化时的导入问题
+  try {
+    const store = getAuthStore()
+    
+    if (to.meta.requiresAuth && !store.isAuthenticated) {
+      next('/login')
+    } else if (to.name === 'login' && store?.isAuthenticated) {
+      next('/')
+    } else {
+      next()
+    }
+  } catch (error) {
+    console.error('Router guard error:', error)
+    next() // 出错时继续，避免阻塞
   }
 })
-
-export default router

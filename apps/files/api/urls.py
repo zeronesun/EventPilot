@@ -5,7 +5,7 @@ from .views import FileViewSet, FileShareViewSet, FileHealthViewSet
 router = DefaultRouter()
 
 # 注册文件管理视图
-router.register(r'files', FileViewSet, basename='file')
+router.register(r'', FileViewSet, basename='file')
 
 # 文件分享和健康检查使用自定义URL
 from django.urls import path, include

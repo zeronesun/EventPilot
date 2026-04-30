@@ -32,7 +32,7 @@ def test_events_stats_and_complete():
 
     # 2. 获取活动
     print("\n2. 获取测试活动:")
-    r = requests.get(f"{BASE_URL}/events/events/", headers=headers)
+    r = requests.get(f"{BASE_URL}/events/events/events/", headers=headers)
     if r.status_code != 200:
         print("❌ 无法获取活动")
         return False
@@ -49,7 +49,7 @@ def test_events_stats_and_complete():
 
     # 3. 测试统计端点
     print("\n3. 测试活动统计端点:")
-    r = requests.get(f"{BASE_URL}/events/events/{event_id}/statistics/", headers=headers)
+    r = requests.get(f"{BASE_URL}/events/events/events/{event_id}/statistics/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         stats = r.json()
@@ -61,7 +61,7 @@ def test_events_stats_and_complete():
 
     # 4. 测试风险评估端点
     print("\n4. 测试风险评估端点:")
-    r = requests.get(f"{BASE_URL}/events/events/{event_id}/risk/", headers=headers)
+    r = requests.get(f"{BASE_URL}/events/events/events/{event_id}/risk/", headers=headers)
     print(f"   状态码: {r.status_code}")
     if r.status_code == 200:
         risk = r.json()
@@ -74,7 +74,7 @@ def test_events_stats_and_complete():
 
     # 5. 查找一个非完成状态的活动测试完成功能
     print("\n5. 查找适合的测试活动（非已完成状态）:")
-    r = requests.get(f"{BASE_URL}/events/events/", headers=headers)
+    r = requests.get(f"{BASE_URL}/events/events/events/", headers=headers)
     if r.status_code == 200:
         events = r.json()['results']
         candidate_event = None
@@ -88,7 +88,7 @@ def test_events_stats_and_complete():
             print(f"✅ 找到活动: {test_event_id} (状态: {candidate_event.get('status')})")
             
             # 测试完成端点
-            r = requests.post(f"{BASE_URL}/events/events/{test_event_id}/complete/", headers=headers)
+            r = requests.post(f"{BASE_URL}/events/events/events/{test_event_id}/complete/", headers=headers)
             print(f"\n6. 测试活动完成端点:")
             print(f"   状态码: {r.status_code}")
             if r.status_code == 200:

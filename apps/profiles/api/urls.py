@@ -16,9 +16,7 @@ from apps.profiles.api.views import (
 router = DefaultRouter()
 
 # 注册视图集
-router.register(r'profiles', ContactProfileViewSet, basename='profile')
-
-# 注册功能视图
+router.register(r'', ContactProfileViewSet, basename='profile')
 router.register(r'recommendations', RecommendationsViewSet, basename='recommendation')
 router.register(r'search', SearchViewSet, basename='search')
 router.register(r'analytics', AnalyticsViewSet, basename='analytics')

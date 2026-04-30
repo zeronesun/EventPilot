@@ -5,7 +5,7 @@ from apps.knowledge.api.views import KnowledgeEntryViewSet
 app_name = 'knowledge'
 
 router = DefaultRouter()
-router.register(r'knowledge', KnowledgeEntryViewSet, basename='knowledge')
+router.register(r'', KnowledgeEntryViewSet, basename='knowledge')
 
 urlpatterns = [
     path('', include(router.urls)),

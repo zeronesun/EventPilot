@@ -19,4 +19,8 @@ export default defineConfig({
       },
     },
   },
+  // 临时禁用 rolldown 以规避版本不兼容导致的构建问题
+  build: {
+    minify: 'esbuild',
+  },
 })

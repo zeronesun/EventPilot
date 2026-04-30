@@ -1,3 +1,4 @@
+// 简化版main.js - 用于排查问题
 console.log('🚀 App initializing...');
 
 import { createApp } from 'vue'
@@ -22,12 +23,6 @@ console.log('🏗️ Mounting app to #app');
 app.mount('#app')
 
 console.log('✅ App mounted successfully!');
-
-// 隐藏加载屏幕
-const loadingScreen = document.getElementById('loading-screen');
-if (loadingScreen) {
-  loadingScreen.style.display = 'none';
-}
 
 // 错误监听
 window.addEventListener('error', (event) => {

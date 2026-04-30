@@ -7,7 +7,56 @@
     <title>EventPilot - 活动领航系统</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div id="loading-screen" style="display: flex; justify-content: center; align-items: center; height: 100vh; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+        <div style="text-align: center; color: white;">
+          <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">EventPilot</h1>
+          <p style="font-size: 1.2rem;">活动领航系统</p>
+          <div id="error-container" style="margin-top: 2rem; display: none;">
+            <p style="color: #ef4444;">系统加载出现问题</p>
+            <button onclick="window.location.reload()" style="padding: 10px 20px; background: white; color: #667eea; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">重新加载</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- 主应用脚本 -->
     <script type="module" src="/src/main.js"></script>
+    
+    <!-- 错误监控脚本 -->
+    <script>
+      // 加载超时检测
+      let loadTimeout = setTimeout(() => {
+        const loadingScreen = document.getElementById('loading-screen');
+        const errorContainer = document.getElementById('error-container');
+        if (errorContainer) {
+          errorContainer.style.display = 'block';
+        }
+      }, 10000);
+
+      // 当应用成功加载时清除超时
+      window.addEventListener('load', () => {
+        clearTimeout(loadTimeout);
+      });
+
+      // 全局错误处理
+      window.addEventListener('error', (event) => {
+        console.error('Global error detected:', event);
+        clearTimeout(loadTimeout);
+        const errorContainer = document.getElementById('error-container');
+        if (errorContainer) {
+          errorContainer.style.display = 'block';
+        }
+      });
+
+      // 未处理的Promise错误
+      window.addEventListener('unhandledrejection', (event) => {
+        console.error('Unhandled promise rejection:', event);
+        clearTimeout(loadTimeout);
+        const errorContainer = document.getElementById('error-container');
+        if (errorContainer) {
+          errorContainer.style.display = 'block';
+        }
+      });
+    </script>
   </body>
 </html>

@@ -14,11 +14,11 @@ router.register(r'items', views.ChecklistItemViewSet, basename='checklist-item')
 
 # 高级功能路由
 advanced_router = DefaultRouter()
-advanced_router.register(r'versions', advanced_views.ChecklistVersionViewSet, basename='checklist-version')
-advanced_router.register(r'exports', advanced_views.ChecklistExportViewSet, basename='checklist-export')
-advanced_router.register(r'imports', advanced_views.ChecklistImportViewSet, basename='checklist-import')
-advanced_router.register(r'verifications', advanced_views.ChecklistVerificationViewSet, basename='checklist-verification')
-advanced_router.register(r'exceptions', advanced_views.ChecklistVerificationExceptionViewSet, basename='checklist-exception')
+advanced_router.register(r'versions/', advanced_views.ChecklistVersionViewSet, basename='checklist-version')
+advanced_router.register(r'exports/', advanced_views.ChecklistExportViewSet, basename='checklist-export')
+advanced_router.register(r'imports/', advanced_views.ChecklistImportViewSet, basename='checklist-import')
+advanced_router.register(r'verifications/', advanced_views.ChecklistVerificationViewSet, basename='checklist-verification')
+advanced_router.register(r'exceptions/', advanced_views.ChecklistVerificationExceptionViewSet, basename='checklist-exception')
 
 urlpatterns = [
     path('', include(router.urls)),
