@@ -2,62 +2,144 @@
   <div class="users-container">
     <div class="page-header">
       <h1>用户管理</h1>
-      <el-button type="primary" @click="dialogVisible = true">
+      <el-button
+        type="primary"
+        @click="dialogVisible = true"
+      >
         新增用户
       </el-button>
     </div>
 
     <el-card class="search-card">
-      <el-form :inline="true" :model="searchForm">
+      <el-form
+        :inline="true"
+        :model="searchForm"
+      >
         <el-form-item label="用户名">
-          <el-input v-model="searchForm.username" placeholder="搜索用户名" clearable />
+          <el-input
+            v-model="searchForm.username"
+            placeholder="搜索用户名"
+            clearable
+          />
         </el-form-item>
         <el-form-item label="角色">
-          <el-select v-model="searchForm.role" placeholder="选择角色" clearable>
-            <el-option label="全部" value="" />
-            <el-option label="管理员" value="admin" />
-            <el-option label="项目负责人" value="project_owner" />
-            <el-option label="执行者" value="executor" />
-            <el-option label="观察者" value="observer" />
+          <el-select
+            v-model="searchForm.role"
+            placeholder="选择角色"
+            clearable
+          >
+            <el-option
+              label="全部"
+              value=""
+            />
+            <el-option
+              label="管理员"
+              value="admin"
+            />
+            <el-option
+              label="项目负责人"
+              value="project_owner"
+            />
+            <el-option
+              label="执行者"
+              value="executor"
+            />
+            <el-option
+              label="观察者"
+              value="observer"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="handleReset">重置</el-button>
+          <el-button
+            type="primary"
+            @click="handleSearch"
+          >
+            搜索
+          </el-button>
+          <el-button @click="handleReset">
+            重置
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <el-card class="table-card">
       <el-table 
-        :data="users" 
-        v-loading="usersStore.isLoading"
+        v-loading="usersStore.isLoading" 
+        :data="users"
         stripe
         border
       >
-        <el-table-column prop="username" label="用户名" width="150" />
-        <el-table-column prop="email" label="邮箱" width="200" />
-        <el-table-column prop="first_name" label="姓名" width="120" />
-        <el-table-column prop="department" label="部门" width="120" />
-        <el-table-column prop="position" label="职位" width="120" />
-        <el-table-column prop="is_active" label="状态" width="80" align="center">
+        <el-table-column
+          prop="username"
+          label="用户名"
+          width="150"
+        />
+        <el-table-column
+          prop="email"
+          label="邮箱"
+          width="200"
+        />
+        <el-table-column
+          prop="first_name"
+          label="姓名"
+          width="120"
+        />
+        <el-table-column
+          prop="department"
+          label="部门"
+          width="120"
+        />
+        <el-table-column
+          prop="position"
+          label="职位"
+          width="120"
+        />
+        <el-table-column
+          prop="is_active"
+          label="状态"
+          width="80"
+          align="center"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.is_active ? 'success' : 'danger'" size="small">
+            <el-tag
+              :type="row.is_active ? 'success' : 'danger'"
+              size="small"
+            >
               {{ row.is_active ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180">
+        <el-table-column
+          prop="created_at"
+          label="创建时间"
+          width="180"
+        >
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleEdit(row)">
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="handleEdit(row)"
+            >
               编辑
             </el-button>
-            <el-button link type="danger" size="small" @click="handleDelete(row)">
+            <el-button
+              link
+              type="danger"
+              size="small"
+              @click="handleDelete(row)"
+            >
               删除
             </el-button>
           </template>
@@ -70,8 +152,8 @@
         :page-size="20"
         :total="pagination.total"
         layout="total, prev, pager, next"
-        @current-change="handlePageChange"
         style="margin-top: 20px; justify-content: flex-end"
+        @current-change="handlePageChange"
       />
     </el-card>
 
@@ -81,14 +163,35 @@
       :title="isEdit ? '编辑用户' : '新增用户'"
       width="600px"
     >
-      <el-form :model="userForm" :rules="userRules" ref="userFormRef" label-width="100px">
-        <el-form-item label="用户名" prop="username">
-          <el-input v-model="userForm.username" placeholder="请输入用户名" />
+      <el-form
+        ref="userFormRef"
+        :model="userForm"
+        :rules="userRules"
+        label-width="100px"
+      >
+        <el-form-item
+          label="用户名"
+          prop="username"
+        >
+          <el-input
+            v-model="userForm.username"
+            placeholder="请输入用户名"
+          />
         </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="userForm.email" type="email" placeholder="请输入邮箱" />
+        <el-form-item
+          label="邮箱"
+          prop="email"
+        >
+          <el-input
+            v-model="userForm.email"
+            type="email"
+            placeholder="请输入邮箱"
+          />
         </el-form-item>
-        <el-form-item label="密码" prop="password">
+        <el-form-item
+          label="密码"
+          prop="password"
+        >
           <el-input 
             v-model="userForm.password" 
             type="password" 
@@ -96,31 +199,69 @@
             show-password
           />
         </el-form-item>
-        <el-form-item label="姓名" prop="first_name">
-          <el-input v-model="userForm.first_name" placeholder="请输入姓名" />
+        <el-form-item
+          label="姓名"
+          prop="first_name"
+        >
+          <el-input
+            v-model="userForm.first_name"
+            placeholder="请输入姓名"
+          />
         </el-form-item>
         <el-form-item label="部门">
-          <el-input v-model="userForm.department" placeholder="请输入部门" />
+          <el-input
+            v-model="userForm.department"
+            placeholder="请输入部门"
+          />
         </el-form-item>
         <el-form-item label="职位">
-          <el-input v-model="userForm.position" placeholder="请输入职位" />
+          <el-input
+            v-model="userForm.position"
+            placeholder="请输入职位"
+          />
         </el-form-item>
-        <el-form-item label="角色" prop="role">
-          <el-select v-model="userForm.role" placeholder="请选择角色">
-            <el-option label="执行者" value="executor" />
-            <el-option label="项目负责人" value="project_owner" />
-            <el-option label="管理员" value="admin" />
-            <el-option label="观察者" value="observer" />
+        <el-form-item
+          label="角色"
+          prop="role"
+        >
+          <el-select
+            v-model="userForm.role"
+            placeholder="请选择角色"
+          >
+            <el-option
+              label="执行者"
+              value="executor"
+            />
+            <el-option
+              label="项目负责人"
+              value="project_owner"
+            />
+            <el-option
+              label="管理员"
+              value="admin"
+            />
+            <el-option
+              label="观察者"
+              value="observer"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="状态">
-          <el-switch v-model="userForm.is_active" 
-            :active-text="userForm.is_active ? '启用' : '禁用'" />
+          <el-switch
+            v-model="userForm.is_active" 
+            :active-text="userForm.is_active ? '启用' : '禁用'"
+          />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit" :loading="submitting">
+        <el-button @click="dialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="handleSubmit"
+        >
           确定
         </el-button>
       </template>

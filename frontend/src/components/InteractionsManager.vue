@@ -14,17 +14,17 @@
 
       <!-- 交互类型过滤 -->
       <div class="filter-section">
-        <el-select 
-          v-model="selectedType" 
-          placeholder="选择交互类型" 
+        <el-select
+          v-model="selectedType"
+          placeholder="选择交互类型"
           clearable
           @change="filterInteractions"
         >
           <el-option label="全部" value="" />
-          <el-option 
-            v-for="type in interactionTypes" 
-            :key="type.value" 
-            :label="type.label" 
+          <el-option
+            v-for="type in interactionTypes"
+            :key="type.value"
+            :label="type.label"
             :value="type.value"
           />
         </el-select>
@@ -33,7 +33,7 @@
       <!-- 交互历史时间线 -->
       <div v-loading="loading" class="interactions-list">
         <el-empty v-if="!loading && filteredInteractions.length === 0" description="暂无交互记录" />
-        
+
         <el-timeline v-else>
           <el-timeline-item
             v-for="interaction in filteredInteractions"
@@ -43,14 +43,11 @@
           >
             <div class="interaction-item">
               <div class="interaction-header">
-                <el-tag 
-                  :type="getInteractionTypeColor(interaction.interaction_type)" 
-                  size="small"
-                >
+                <el-tag :type="getInteractionTypeColor(interaction.interaction_type)" size="small">
                   {{ interaction.interaction_type_display }}
                 </el-tag>
                 <span class="interaction-title">{{ interaction.title }}</span>
-                
+
                 <!-- 满意度评分 -->
                 <div v-if="interaction.satisfaction_score" class="satisfaction-score">
                   <el-rate
@@ -88,7 +85,10 @@
                       </el-descriptions-item>
                       <!-- 动态显示其他元数据 -->
                       <template v-for="(value, key) in interaction.metadata" :key="key">
-                        <el-descriptions-item v-if="shouldDisplayMetadata(key)" :label="formatMetadataKey(key)">
+                        <el-descriptions-item
+                          v-if="shouldDisplayMetadata(key)"
+                          :label="formatMetadataKey(key)"
+                        >
                           {{ formatMetadataValue(value) }}
                         </el-descriptions-item>
                       </template>
@@ -99,17 +99,8 @@
 
               <!-- 操作按钮 -->
               <div class="interaction-actions">
-                <el-button
-                  size="small"
-                  @click="editInteraction(interaction)"
-                >
-                  编辑
-                </el-button>
-                <el-button
-                  size="small"
-                  type="danger"
-                  @click="deleteInteraction(interaction)"
-                >
+                <el-button size="small" @click="editInteraction(interaction)"> 编辑 </el-button>
+                <el-button size="small" type="danger" @click="deleteInteraction(interaction)">
                   删除
                 </el-button>
               </div>
@@ -126,15 +117,10 @@
       width="700px"
       @close="resetForm"
     >
-      <el-form
-        ref="formRef"
-        :model="interactionForm"
-        :rules="formRules"
-        label-width="120px"
-      >
+      <el-form ref="formRef" :model="interactionForm" :rules="formRules" label-width="120px">
         <el-form-item label="交互类型" prop="interaction_type">
-          <el-select 
-            v-model="interactionForm.interaction_type" 
+          <el-select
+            v-model="interactionForm.interaction_type"
             placeholder="选择交互类型"
             style="width: 100%"
           >
@@ -170,8 +156,8 @@
         </el-form-item>
 
         <el-form-item label="结果状态" prop="outcome_status">
-          <el-select 
-            v-model="interactionForm.outcome_status" 
+          <el-select
+            v-model="interactionForm.outcome_status"
             placeholder="选择结果状态"
             style="width: 100%"
             clearable
@@ -196,8 +182,8 @@
 
         <!-- 动态元数据字段 -->
         <el-form-item label="金额（元）">
-          <el-input-number 
-            v-model="interactionForm.metadata.amount" 
+          <el-input-number
+            v-model="interactionForm.metadata.amount"
             :min="0"
             :precision="2"
             placeholder="业务金额"
@@ -206,10 +192,7 @@
         </el-form-item>
 
         <el-form-item label="参与人员">
-          <el-input 
-            v-model="interactionForm.metadata.participants" 
-            placeholder="参与人员名单"
-          />
+          <el-input v-model="interactionForm.metadata.participants" placeholder="参与人员名单" />
         </el-form-item>
 
         <el-form-item label="地点">
@@ -217,8 +200,8 @@
         </el-form-item>
 
         <el-form-item label="下一步计划">
-          <el-input 
-            v-model="interactionForm.metadata.next_steps" 
+          <el-input
+            v-model="interactionForm.metadata.next_steps"
             type="textarea"
             :rows="2"
             placeholder="后续行动计划"
@@ -269,7 +252,7 @@ const interactionTypes = [
   { label: '支持服务', value: 'support' },
   { label: '投诉处理', value: 'complaint' },
   { label: '商务谈判', value: 'negotiation' },
-  { label: '其他', value: 'other' }
+  { label: '其他', value: 'other' },
 ];
 
 // 响应式数据
@@ -294,28 +277,22 @@ const interactionForm = ref({
     amount: undefined,
     participants: '',
     location: '',
-    next_steps: ''
-  }
+    next_steps: '',
+  },
 });
 
 // 表单验证规则
 const formRules = {
-  interaction_type: [
-    { required: true, message: '请选择交互类型', trigger: 'change' }
-  ],
-  title: [
-    { required: true, message: '请输入交互标题', trigger: 'blur' }
-  ],
-  description: [
-    { required: true, message: '请输入详细描述', trigger: 'blur' }
-  ],
+  interaction_type: [{ required: true, message: '请选择交互类型', trigger: 'change' }],
+  title: [{ required: true, message: '请输入交互标题', trigger: 'blur' }],
+  description: [{ required: true, message: '请输入详细描述', trigger: 'blur' }],
   interaction_date: [
-    { 
-      required: true, 
-      message: '请选择交互时间', 
-      trigger: 'change' 
-    }
-  ]
+    {
+      required: true,
+      message: '请选择交互时间',
+      trigger: 'change',
+    },
+  ],
 };
 
 // 过滤后的交互列表
@@ -324,7 +301,7 @@ const filteredInteractions = computed(() => {
     return interactions.value;
   }
   return interactions.value.filter(
-    interaction => interaction.interaction_type === selectedType.value
+    (interaction) => interaction.interaction_type === selectedType.value
   );
 });
 
@@ -352,15 +329,15 @@ const filterInteractions = () => {
 // 获取交互类型颜色
 const getInteractionTypeColor = (type: string) => {
   const colorMap: Record<string, string> = {
-    'event': 'success',
-    'contract': 'warning',
-    'communication': 'info',
-    'meeting': 'primary',
-    'payment': 'success',
-    'support': 'info',
-    'complaint': 'danger',
-    'negotiation': 'warning',
-    'other': ''
+    event: 'success',
+    contract: 'warning',
+    communication: 'info',
+    meeting: 'primary',
+    payment: 'success',
+    support: 'info',
+    complaint: 'danger',
+    negotiation: 'warning',
+    other: '',
   };
   return colorMap[type] || '';
 };
@@ -379,11 +356,11 @@ const shouldDisplayMetadata = (key: string) => {
 // 格式化元数据键名
 const formatMetadataKey = (key: string) => {
   const keyMap: Record<string, string> = {
-    'document': '相关文档',
-    'duration': '持续时间',
-    'outcome': '具体结果',
-    'issues': '存在问题',
-    'solutions': '解决方案'
+    document: '相关文档',
+    duration: '持续时间',
+    outcome: '具体结果',
+    issues: '存在问题',
+    solutions: '解决方案',
   };
   return keyMap[key] || key;
 };
@@ -415,46 +392,44 @@ const editInteraction = (interaction: InteractionHistory) => {
       amount: interaction.metadata.amount,
       participants: interaction.metadata.participants || '',
       location: interaction.metadata.location || '',
-      next_steps: interaction.metadata.next_steps || ''
-    }
+      next_steps: interaction.metadata.next_steps || '',
+    },
   };
   showAddDialog.value = true;
 };
 
 // 删除交互
 const deleteInteraction = (interaction: InteractionHistory) => {
-  ElMessageBox.confirm(
-    `确定要删除交互记录 "${interaction.title}" 吗？`,
-    '确认删除',
-    {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      // 这里应该调用删除API，目前先从本地状态移除
-      interactions.value = interactions.value.filter(i => i.id !== interaction.id);
-      ElMessage.success('删除成功');
-    } catch (error) {
-      console.error('删除交互记录失败:', error);
-      ElMessage.error('删除交互记录失败');
-    }
-  }).catch(() => {
-    // 用户取消删除
-  });
+  ElMessageBox.confirm(`确定要删除交互记录 "${interaction.title}" 吗？`, '确认删除', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(async () => {
+      try {
+        // 这里应该调用删除API，目前先从本地状态移除
+        interactions.value = interactions.value.filter((i) => i.id !== interaction.id);
+        ElMessage.success('删除成功');
+      } catch (error) {
+        console.error('删除交互记录失败:', error);
+        ElMessage.error('删除交互记录失败');
+      }
+    })
+    .catch(() => {
+      // 用户取消删除
+    });
 };
 
 // 提交表单
 const submitForm = async () => {
   try {
     await formRef.value.validate();
-    
+
     const interactionData = {
       ...interactionForm.value,
-      interaction_date: interactionForm.value.interaction_date.toISOString()
+      interaction_date: interactionForm.value.interaction_date.toISOString(),
     };
-    
+
     if (editingInteraction.value) {
       // 更新交互
       // 需要实现updateInteraction API
@@ -462,11 +437,8 @@ const submitForm = async () => {
       showAddDialog.value = false;
     } else {
       // 创建交互
-      const result = await profilesStore.addInteraction(
-        props.profileId,
-        interactionData
-      );
-      
+      const result = await profilesStore.addInteraction(props.profileId, interactionData);
+
       if (typeof result === 'object' && 'success' in result) {
         if (result.success) {
           ElMessage.success('记录成功');
@@ -505,8 +477,8 @@ const resetForm = () => {
       amount: undefined,
       participants: '',
       location: '',
-      next_steps: ''
-    }
+      next_steps: '',
+    },
   };
   if (formRef.value) {
     formRef.value.resetFields();
@@ -521,7 +493,7 @@ const formatDateTime = (dateString: string) => {
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
   });
 };
 

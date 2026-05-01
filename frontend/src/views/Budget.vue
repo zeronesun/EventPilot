@@ -6,37 +6,67 @@
           <template #header>
             <div class="card-header">
               <h3>预算概览</h3>
-              <el-select v-model="selectedEventId" placeholder="选择活动" style="width: 300px" @change="loadBudgetData">
-                <el-option v-for="event in events" :key="event.id" :label="event.name" :value="event.id" />
+              <el-select
+                v-model="selectedEventId"
+                placeholder="选择活动"
+                style="width: 300px"
+                @change="loadBudgetData"
+              >
+                <el-option
+                  v-for="event in events"
+                  :key="event.id"
+                  :label="event.name"
+                  :value="event.id"
+                />
               </el-select>
             </div>
           </template>
 
-          <el-row :gutter="20" v-if="currentEvent">
+          <el-row
+            v-if="currentEvent"
+            :gutter="20"
+          >
             <el-col :span="6">
               <div class="stat-card">
-                <div class="stat-label">预估预算</div>
-                <div class="stat-value">{{ formatCurrency(currentEvent.estimated_budget) }}</div>
+                <div class="stat-label">
+                  预估预算
+                </div>
+                <div class="stat-value">
+                  {{ formatCurrency(currentEvent.estimated_budget) }}
+                </div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="stat-card">
-                <div class="stat-label">实际支出</div>
-                <div class="stat-value">{{ formatCurrency(currentEvent.actual_budget) }}</div>
+                <div class="stat-label">
+                  实际支出
+                </div>
+                <div class="stat-value">
+                  {{ formatCurrency(currentEvent.actual_budget) }}
+                </div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="stat-card">
-                <div class="stat-label">预算偏差</div>
-                <div class="stat-value" :class="budgetVarianceClass">
+                <div class="stat-label">
+                  预算偏差
+                </div>
+                <div
+                  class="stat-value"
+                  :class="budgetVarianceClass"
+                >
                   {{ formatCurrency(currentEvent.budget_variance) }}
                 </div>
               </div>
             </el-col>
             <el-col :span="6">
               <div class="stat-card">
-                <div class="stat-label">预算使用率</div>
-                <div class="stat-value">{{ budgetUsageRate }}%</div>
+                <div class="stat-label">
+                  预算使用率
+                </div>
+                <div class="stat-value">
+                  {{ budgetUsageRate }}%
+                </div>
               </div>
             </el-col>
           </el-row>
@@ -44,44 +74,102 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="24">
         <el-card>
           <template #header>
             <div class="card-header">
               <h3>预算明细</h3>
-              <el-button type="primary" @click="showCreateDialog" :disabled="!selectedEventId">添加预算项</el-button>
+              <el-button
+                type="primary"
+                :disabled="!selectedEventId"
+                @click="showCreateDialog"
+              >
+                添加预算项
+              </el-button>
             </div>
           </template>
 
-          <el-table v-loading="loading" :data="budgetItems" stripe style="width: 100%">
-            <el-table-column prop="category_name" label="预算科目" width="150" />
-            <el-table-column prop="name" label="预算项名称" width="200" />
-            <el-table-column prop="estimated_amount" label="预估金额" width="120">
+          <el-table
+            v-loading="loading"
+            :data="budgetItems"
+            stripe
+            style="width: 100%"
+          >
+            <el-table-column
+              prop="category_name"
+              label="预算科目"
+              width="150"
+            />
+            <el-table-column
+              prop="name"
+              label="预算项名称"
+              width="200"
+            />
+            <el-table-column
+              prop="estimated_amount"
+              label="预估金额"
+              width="120"
+            >
               <template #default="{ row }">
                 {{ formatCurrency(row.estimated_amount) }}
               </template>
             </el-table-column>
-            <el-table-column prop="actual_amount" label="实际金额" width="120">
+            <el-table-column
+              prop="actual_amount"
+              label="实际金额"
+              width="120"
+            >
               <template #default="{ row }">
                 {{ formatCurrency(row.actual_amount) }}
               </template>
             </el-table-column>
-            <el-table-column prop="variance" label="偏差" width="120">
+            <el-table-column
+              prop="variance"
+              label="偏差"
+              width="120"
+            >
               <template #default="{ row }">
                 <span :class="getVarianceClass(row.variance)">{{ formatCurrency(row.variance) }}</span>
               </template>
             </el-table-column>
-            <el-table-column prop="responsible_name" label="负责人" width="120" />
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column
+              prop="responsible_name"
+              label="负责人"
+              width="120"
+            />
+            <el-table-column
+              prop="status"
+              label="状态"
+              width="100"
+            >
               <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+                <el-tag :type="getStatusType(row.status)">
+                  {{ getStatusText(row.status) }}
+                </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="150">
+            <el-table-column
+              label="操作"
+              width="150"
+            >
               <template #default="{ row }">
-                <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-                <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+                <el-button
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  编辑
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  @click="handleDelete(row)"
+                >
+                  删除
+                </el-button>
               </template>
             </el-table-column>
           </el-table>
@@ -90,35 +178,98 @@
     </el-row>
 
     <!-- 创建/编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="600px">
-      <el-form :model="form" :rules="rules" ref="formRef" label-width="120px">
-        <el-form-item label="预算科目" prop="category_name">
-          <el-input v-model="form.category_name" placeholder="如：场地费、餐饮费" />
+    <el-dialog
+      v-model="dialogVisible"
+      :title="dialogTitle"
+      width="600px"
+    >
+      <el-form
+        ref="formRef"
+        :model="form"
+        :rules="rules"
+        label-width="120px"
+      >
+        <el-form-item
+          label="预算科目"
+          prop="category_name"
+        >
+          <el-input
+            v-model="form.category_name"
+            placeholder="如：场地费、餐饮费"
+          />
         </el-form-item>
-        <el-form-item label="预算项名称" prop="name">
-          <el-input v-model="form.name" placeholder="如：会场租赁费" />
+        <el-form-item
+          label="预算项名称"
+          prop="name"
+        >
+          <el-input
+            v-model="form.name"
+            placeholder="如：会场租赁费"
+          />
         </el-form-item>
-        <el-form-item label="预估金额" prop="estimated_amount">
-          <el-input-number v-model="form.estimated_amount" :min="0" :precision="2" :step="1000" style="width: 100%" />
+        <el-form-item
+          label="预估金额"
+          prop="estimated_amount"
+        >
+          <el-input-number
+            v-model="form.estimated_amount"
+            :min="0"
+            :precision="2"
+            :step="1000"
+            style="width: 100%"
+          />
         </el-form-item>
-        <el-form-item label="实际金额" prop="actual_amount">
-          <el-input-number v-model="form.actual_amount" :min="0" :precision="2" :step="1000" style="width: 100%" />
+        <el-form-item
+          label="实际金额"
+          prop="actual_amount"
+        >
+          <el-input-number
+            v-model="form.actual_amount"
+            :min="0"
+            :precision="2"
+            :step="1000"
+            style="width: 100%"
+          />
         </el-form-item>
-        <el-form-item label="负责人" prop="responsible">
-          <el-input v-model="form.responsible" placeholder="用户ID" />
+        <el-form-item
+          label="负责人"
+          prop="responsible"
+        >
+          <el-input
+            v-model="form.responsible"
+            placeholder="用户ID"
+          />
         </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="form.status" placeholder="选择状态">
-            <el-option label="待定" value="pending" />
-            <el-option label="进行中" value="in_progress" />
-            <el-option label="已完成" value="completed" />
+        <el-form-item
+          label="状态"
+          prop="status"
+        >
+          <el-select
+            v-model="form.status"
+            placeholder="选择状态"
+          >
+            <el-option
+              label="待定"
+              value="pending"
+            />
+            <el-option
+              label="进行中"
+              value="in_progress"
+            />
+            <el-option
+              label="已完成"
+              value="completed"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitForm">确认</el-button>
+          <el-button
+            type="primary"
+            @click="submitForm"
+          >确认</el-button>
         </span>
       </template>
     </el-dialog>

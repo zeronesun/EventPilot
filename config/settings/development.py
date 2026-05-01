@@ -8,7 +8,7 @@ from .base import *
 DEBUG = True
 
 # 允许的本地开发域名
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*', 'testserver']
 
 # 开发工具配置
 INSTALLED_APPS += [

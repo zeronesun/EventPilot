@@ -9,8 +9,8 @@
           range-separator="至"
           start-placeholder="开始日期"
           end-placeholder="结束日期"
-          @change="handleDateChange"
           style="margin-right: 10px"
+          @change="handleDateChange"
         />
         <el-button @click="loadAnalytics">
           <el-icon><Refresh /></el-icon>
@@ -19,34 +19,68 @@
       </div>
     </div>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ analytics.overview?.total_events || 0 }}</div>
-          <div class="stat-label">活动总数</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ analytics.overview?.total_events || 0 }}
+          </div>
+          <div class="stat-label">
+            活动总数
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ analytics.overview?.total_tasks || 0 }}</div>
-          <div class="stat-label">任务总数</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ analytics.overview?.total_tasks || 0 }}
+          </div>
+          <div class="stat-label">
+            任务总数
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ analytics.overview?.task_completion_rate || 0 }}%</div>
-          <div class="stat-label">任务完成率</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ analytics.overview?.task_completion_rate || 0 }}%
+          </div>
+          <div class="stat-label">
+            任务完成率
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ analytics.overview?.budget_variance_rate || 0 }}%</div>
-          <div class="stat-label">预算偏差率</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ analytics.overview?.budget_variance_rate || 0 }}%
+          </div>
+          <div class="stat-label">
+            预算偏差率
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="12">
         <el-card>
           <template #header>
@@ -55,21 +89,40 @@
             </div>
           </template>
           <div class="chart-container">
-            <el-table :data="statusTableData" stripe border>
-              <el-table-column prop="status" label="状态" width="120">
+            <el-table
+              :data="statusTableData"
+              stripe
+              border
+            >
+              <el-table-column
+                prop="status"
+                label="状态"
+                width="120"
+              >
                 <template #default="{ row }">
-                  <el-tag :type="row.type">{{ row.label }}</el-tag>
+                  <el-tag :type="row.type">
+                    {{ row.label }}
+                  </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="count" label="数量" />
-              <el-table-column prop="percentage" label="占比">
+              <el-table-column
+                prop="count"
+                label="数量"
+              />
+              <el-table-column
+                prop="percentage"
+                label="占比"
+              >
                 <template #default="{ row }">
                   {{ row.percentage }}%
                 </template>
               </el-table-column>
               <el-table-column label="分布">
                 <template #default="{ row }">
-                  <el-progress :percentage="row.percentage" :stroke-width="10" />
+                  <el-progress
+                    :percentage="row.percentage"
+                    :stroke-width="10"
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -84,17 +137,33 @@
             </div>
           </template>
           <div class="chart-container">
-            <el-table :data="typeTableData" stripe border>
-              <el-table-column prop="name" label="类型" />
-              <el-table-column prop="count" label="数量" />
-              <el-table-column prop="percentage" label="占比">
+            <el-table
+              :data="typeTableData"
+              stripe
+              border
+            >
+              <el-table-column
+                prop="name"
+                label="类型"
+              />
+              <el-table-column
+                prop="count"
+                label="数量"
+              />
+              <el-table-column
+                prop="percentage"
+                label="占比"
+              >
                 <template #default="{ row }">
                   {{ row.percentage }}%
                 </template>
               </el-table-column>
               <el-table-column label="分布">
                 <template #default="{ row }">
-                  <el-progress :percentage="row.percentage" :stroke-width="10" />
+                  <el-progress
+                    :percentage="row.percentage"
+                    :stroke-width="10"
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -103,7 +172,10 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="12">
         <el-card>
           <template #header>
@@ -112,21 +184,40 @@
             </div>
           </template>
           <div class="chart-container">
-            <el-table :data="taskTypeTableData" stripe border>
-              <el-table-column prop="type" label="任务类型" width="120">
+            <el-table
+              :data="taskTypeTableData"
+              stripe
+              border
+            >
+              <el-table-column
+                prop="type"
+                label="任务类型"
+                width="120"
+              >
                 <template #default="{ row }">
-                  <el-tag size="small">{{ row.label }}</el-tag>
+                  <el-tag size="small">
+                    {{ row.label }}
+                  </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="count" label="数量" />
-              <el-table-column prop="percentage" label="占比">
+              <el-table-column
+                prop="count"
+                label="数量"
+              />
+              <el-table-column
+                prop="percentage"
+                label="占比"
+              >
                 <template #default="{ row }">
                   {{ row.percentage }}%
                 </template>
               </el-table-column>
               <el-table-column label="分布">
                 <template #default="{ row }">
-                  <el-progress :percentage="row.percentage" :stroke-width="10" />
+                  <el-progress
+                    :percentage="row.percentage"
+                    :stroke-width="10"
+                  />
                 </template>
               </el-table-column>
             </el-table>
@@ -141,7 +232,10 @@
             </div>
           </template>
           <div class="budget-overview">
-            <el-descriptions :column="1" border>
+            <el-descriptions
+              :column="1"
+              border
+            >
               <el-descriptions-item label="总预算">
                 ¥{{ formatNumber(analytics.overview?.total_estimated_budget || 0) }}
               </el-descriptions-item>
@@ -159,22 +253,42 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="12">
         <el-card>
           <template #header>
             <div class="card-header">
               <h3>高风险活动</h3>
-              <el-tag type="danger" size="small">需要关注</el-tag>
+              <el-tag
+                type="danger"
+                size="small"
+              >
+                需要关注
+              </el-tag>
             </div>
           </template>
           <div class="event-list">
-            <el-empty v-if="!analytics.high_risk_events?.length" description="暂无高风险活动" />
+            <el-empty
+              v-if="!analytics.high_risk_events?.length"
+              description="暂无高风险活动"
+            />
             <div v-else>
-              <div v-for="event in analytics.high_risk_events" :key="event.id" class="event-item">
+              <div
+                v-for="event in analytics.high_risk_events"
+                :key="event.id"
+                class="event-item"
+              >
                 <div class="event-info">
                   <span class="event-name">{{ event.name }}</span>
-                  <el-tag type="danger" size="small">{{ event.risk_level }}</el-tag>
+                  <el-tag
+                    type="danger"
+                    size="small"
+                  >
+                    {{ event.risk_level }}
+                  </el-tag>
                 </div>
                 <div class="event-meta">
                   风险因素: {{ event.factors_count }}个
@@ -189,16 +303,33 @@
           <template #header>
             <div class="card-header">
               <h3>即将到期</h3>
-              <el-tag type="warning" size="small">7天内</el-tag>
+              <el-tag
+                type="warning"
+                size="small"
+              >
+                7天内
+              </el-tag>
             </div>
           </template>
           <div class="event-list">
-            <el-empty v-if="!analytics.upcoming_deadlines?.length" description="暂无即将到期的活动" />
+            <el-empty
+              v-if="!analytics.upcoming_deadlines?.length"
+              description="暂无即将到期的活动"
+            />
             <div v-else>
-              <div v-for="event in analytics.upcoming_deadlines" :key="event.id" class="event-item">
+              <div
+                v-for="event in analytics.upcoming_deadlines"
+                :key="event.id"
+                class="event-item"
+              >
                 <div class="event-info">
                   <span class="event-name">{{ event.name }}</span>
-                  <el-tag type="warning" size="small">{{ event.days_remaining }}天后</el-tag>
+                  <el-tag
+                    type="warning"
+                    size="small"
+                  >
+                    {{ event.days_remaining }}天后
+                  </el-tag>
                 </div>
                 <div class="event-meta">
                   截止: {{ formatDate(event.end_date) }}
@@ -210,7 +341,10 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="24">
         <el-card>
           <template #header>
@@ -219,9 +353,19 @@
             </div>
           </template>
           <div class="owner-list">
-            <el-table :data="analytics.top_owners" stripe border>
-              <el-table-column prop="username" label="负责人" />
-              <el-table-column prop="event_count" label="活动数" />
+            <el-table
+              :data="analytics.top_owners"
+              stripe
+              border
+            >
+              <el-table-column
+                prop="username"
+                label="负责人"
+              />
+              <el-table-column
+                prop="event_count"
+                label="活动数"
+              />
               <el-table-column label="总预算">
                 <template #default="{ row }">
                   ¥{{ formatNumber(row.total_budget) }}
@@ -229,7 +373,13 @@
               </el-table-column>
               <el-table-column label="操作">
                 <template #default="{ row }">
-                  <el-button type="primary" size="small" link>查看详情</el-button>
+                  <el-button
+                    type="primary"
+                    size="small"
+                    link
+                  >
+                    查看详情
+                  </el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -238,7 +388,10 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="24">
         <el-card>
           <template #header>
@@ -247,9 +400,19 @@
             </div>
           </template>
           <div class="trend-chart">
-            <el-table :data="analytics.monthly_trend" stripe border>
-              <el-table-column prop="month" label="月份" />
-              <el-table-column prop="count" label="活动数" />
+            <el-table
+              :data="analytics.monthly_trend"
+              stripe
+              border
+            >
+              <el-table-column
+                prop="month"
+                label="月份"
+              />
+              <el-table-column
+                prop="count"
+                label="活动数"
+              />
               <el-table-column label="预算">
                 <template #default="{ row }">
                   ¥{{ formatNumber(row.total_budget) }}
@@ -261,7 +424,10 @@
       </el-col>
     </el-row>
 
-    <div class="update-time" v-if="analytics.generated_at">
+    <div
+      v-if="analytics.generated_at"
+      class="update-time"
+    >
       数据更新时间: {{ formatDateTime(analytics.generated_at) }}
     </div>
   </div>

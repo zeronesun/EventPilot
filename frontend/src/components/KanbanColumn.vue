@@ -18,8 +18,15 @@
     >
       <template #item="{ element: task }">
         <div class="draggable-card">
-          <slot name="card" :task="task" :click="onCardClick">
-            <div @click="onCardClick(task)" class="default-card">
+          <slot
+            name="card"
+            :task="task"
+            :click="onCardClick"
+          >
+            <div
+              class="default-card"
+              @click="onCardClick(task)"
+            >
               {{ task }}
             </div>
           </slot>
@@ -73,9 +80,7 @@ const localTasks = computed({
 });
 
 function itemKey(task) {
-  return typeof props.itemKey === 'function'
-    ? props.itemKey(task)
-    : task[props.itemKey];
+  return typeof props.itemKey === 'function' ? props.itemKey(task) : task[props.itemKey];
 }
 
 function onDragStart(event) {
@@ -110,7 +115,9 @@ function onCardClick(task) {
 
 .draggable-card {
   cursor: grab;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 .draggable-card:active {

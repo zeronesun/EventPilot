@@ -132,12 +132,12 @@ class CommunicationTask(models.Model):
     # 沟通内容
     content = models.TextField(verbose_name="沟通内容")
     requirements = models.TextField(blank=True, verbose_name="要求")
-    
+
     # 沟通对象
-    communicators = models.JSONField(default=list, verbose_name="联系人")
-    
+    communicators = models.JSONField(default=list, blank=True, verbose_name="联系人")
+
     # 结论性文件
-    conclusion_files = models.JSONField(default=list, verbose_name="结论文件")
+    conclusion_files = models.JSONField(default=list, blank=True, verbose_name="结论文件")
     is_closed = models.BooleanField(default=False, verbose_name="已闭环")
     
     class Meta:

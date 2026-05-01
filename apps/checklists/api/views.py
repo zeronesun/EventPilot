@@ -155,28 +155,24 @@ class ChecklistInstanceViewSet(viewsets.ModelViewSet):
         return queryset
     
     
-    def list(self, request, *args, **kwargs):
-        """列出清单实例"""
-        return super().list(request, *args, **kwargs)
-    
-    
+    @action(detail=False, methods=['post'])
     def instantiate_from_template(self, request):
         """从模板创建清单实例"""
         template_id = request.data.get('template_id') or request.data.get('template')
         event_id = request.data.get('event_id') or request.data.get('event')
-        
+
         if not template_id:
             return Response(
                 {'message': '需要指定模板ID'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         if not event_id:
             return Response(
                 {'message': '需要指定活动ID'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # 创建实例数据
         instance_data = {
             'event_id': event_id,
@@ -184,70 +180,77 @@ class ChecklistInstanceViewSet(viewsets.ModelViewSet):
             'name': request.data.get('name'),
             'metadata': request.data.get('metadata', {}),
         }
-        
-        success, instance, errors = ChecklistService.create_instance(instance_data, request.user)
-        
-        if not success:
+
+        instance, errors = ChecklistService.create_instance(instance_data, request.user)
+
+        if errors:
             return Response(
                 {'errors': errors},
                 status=status.HTTP_400_BAD_REQUEST if errors else status.HTTP_404_NOT_FOUND
             )
-        
+
         serializer = self.get_serializer(instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     
+
+    @action(detail=True, methods=['post'])
     def complete(self, request, pk=None):
         """完成清单实例"""
         instance = self.get_object()
-        
+
         success, errors = ChecklistService.complete_instance(instance, request.user)
-        
+
         if not success:
             return Response(
                 {'errors': errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-    
-    
+
+    @action(detail=True, methods=['post'])
     def cancel(self, request, pk=None):
         """取消清单实例"""
         instance = self.get_object()
         reason = request.data.get('reason', '')
-        
+
         success, errors = ChecklistService.cancel_instance(instance, request.user, reason)
-        
+
         if not success:
             return Response(
                 {'errors': errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         serializer = self.get_serializer(instance)
         return Response(serializer.data)
-    
-    
+
+    @action(detail=True, methods=['get'])
     def progress(self, request, pk=None):
         """获取实例进度"""
         instance = self.get_object()
         progress = ChecklistService.get_instance_progress(instance)
         return Response(progress)
-    
-    
-    def report(self, request, pk=None):
+
+    @action(detail=True, methods=['get'])
+    def report(self, request, pk=None, instance_id=None):
         """导出实例报告"""
-        instance = self.get_object()
+        if instance_id:
+            # 从URL参数获取实例ID
+            instance = ChecklistInstance.objects.get(id=instance_id)
+        else:
+            instance = self.get_object()
+
         report = ChecklistService.export_instance_report(str(instance.id))
-        
+
         if not report:
             return Response(
                 {'message': '生成报告失败'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
-        
+
         serializer = ChecklistReportSerializer(data=report)
         serializer.is_valid(raise_exception=True)
         return Response(serializer.data)
@@ -275,16 +278,17 @@ class ChecklistItemViewSet(viewsets.ModelViewSet):
         return queryset.order_by('order')
     
     
+    @action(detail=True, methods=['post'])
     def check(self, request, pk=None):
         """执行核验操作"""
         item = self.get_object()
-        
+
         # 获取核验数据
         item_status = request.data.get('status', 'pending')
         notes = request.data.get('notes', '')
         attachments = request.data.get('attachments')
         location = request.data.get('location')
-        
+
         # 更新清单项状态
         success, errors = ChecklistService.update_item_status(
             str(item.id),
@@ -294,55 +298,55 @@ class ChecklistItemViewSet(viewsets.ModelViewSet):
             attachments,
             location
         )
-        
+
         if not success:
             return Response(
                 {'errors': errors},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # 重新获取更新后的项
         updated_item = ChecklistItem.objects.get(id=item.id)
         serializer = ChecklistItemSerializer(updated_item)
         return Response(serializer.data)
-    
-    
+
+    @action(detail=True, methods=['post'])
     def attachment(self, request, pk=None):
         """上传附件"""
         item = self.get_object()
         attachment_data = request.data.get('attachment')
-        
+
         if not attachment_data:
             return Response(
                 {'message': '需要提供attachment数据'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         # 添加附件
         if not item.attachments:
             item.attachments = []
-        
+
         item.attachments.append(attachment_data)
         item.save()
-        
+
         return Response({'message': '附件已添加', 'attachments': item.attachments})
-    
-    
+
+    @action(detail=False, methods=['post'])
     def bulk_update(self, request):
         """批量更新清单项状态"""
         item_ids = request.data.get('item_ids', [])
         item_status = request.data.get('status', 'pending')
         notes = request.data.get('notes', '')
-        
+
         if not item_ids:
             return Response(
                 {'message': '需要提供要更新的清单项ID列表'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         results = []
         errors = []
-        
+
         for item_id in item_ids:
             success, item_errors = ChecklistService.update_item_status(
                 item_id,
@@ -350,30 +354,30 @@ class ChecklistItemViewSet(viewsets.ModelViewSet):
                 request.user,
                 notes
             )
-            
+
             if success:
                 results.append(item_id)
             else:
                 errors.append({'item_id': item_id, 'errors': item_errors})
-        
+
         return Response({
             'message': f'成功更新 {len(results)} 个清单项',
             'success_count': len(results),
             'error_count': len(errors),
             'errors': errors
         })
-    
-    
+
+    @action(detail=False, methods=['get'])
     def by_instance(self, request):
         """按实例获取清单项"""
         instance_id = request.query_params.get('instance')
-        
+
         if not instance_id:
             return Response(
                 {'message': '需要指定instance参数'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
+
         items = ChecklistItem.objects.filter(instance_id=instance_id).order_by('order')
         serializer = ChecklistItemSerializer(items, many=True)
         return Response(serializer.data)

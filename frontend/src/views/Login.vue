@@ -8,7 +8,12 @@
         </div>
       </template>
       
-      <el-form :model="loginForm" :rules="rules" ref="loginFormRef" @submit.prevent="handleLogin">
+      <el-form
+        ref="loginFormRef"
+        :model="loginForm"
+        :rules="rules"
+        @submit.prevent="handleLogin"
+      >
         <el-form-item prop="username">
           <el-input
             v-model="loginForm.username"
@@ -35,8 +40,8 @@
             type="primary"
             size="large"
             :loading="authStore.isLoading"
-            @click="handleLogin"
             style="width: 100%"
+            @click="handleLogin"
           >
             登录
           </el-button>

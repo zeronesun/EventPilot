@@ -1,7 +1,10 @@
 <template>
   <div id="app">
     <!-- 全局布局 -->
-    <div v-if="isAuthenticated" class="app-layout">
+    <div
+      v-if="isAuthenticated"
+      class="app-layout"
+    >
       <!-- 侧边栏 -->
       <div class="sidebar">
         <div class="logo-section">
@@ -75,7 +78,7 @@
             <span>关联方档案</span>
           </div>
 
-          <div class="menu-divider"></div>
+          <div class="menu-divider" />
 
           <div
             class="menu-item"
@@ -93,21 +96,31 @@
         <div class="main-header">
           <div class="header-left">
             <el-breadcrumb>
-              <el-breadcrumb-item :to="{ path: '/' }">首页</el-breadcrumb-item>
+              <el-breadcrumb-item :to="{ path: '/' }">
+                首页
+              </el-breadcrumb-item>
               <el-breadcrumb-item v-if="currentPage !== '首页'">
                 {{ currentPage }}
               </el-breadcrumb-item>
             </el-breadcrumb>
           </div>
           <div class="header-right">
-            <el-badge :value="unreadCount" class="notification-badge">
-              <el-button circle @click="showNotifications">
+            <el-badge
+              :value="unreadCount"
+              class="notification-badge"
+            >
+              <el-button
+                circle
+                @click="showNotifications"
+              >
                 <el-icon><Bell /></el-icon>
               </el-button>
             </el-badge>
             <el-dropdown @command="handleUserMenu">
               <div class="user-avatar">
-                <el-avatar :size="32">{{ userInitial }}</el-avatar>
+                <el-avatar :size="32">
+                  {{ userInitial }}
+                </el-avatar>
               </div>
               <template #dropdown>
                 <el-dropdown-menu>
@@ -115,11 +128,11 @@
                     <span>{{ authStore.username }}</span>
                   </el-dropdown-item>
                   <el-dropdown-item divided>
-                    <el-icon></el-icon>
+                    <el-icon />
                     个人资料
                   </el-dropdown-item>
                   <el-dropdown-item>
-                    <el-icon></el-icon>
+                    <el-icon />
                     系统设置
                   </el-dropdown-item>
                   <el-dropdown-item @command="handleLogout">
@@ -135,8 +148,14 @@
         <!-- 页面内容 -->
         <div class="page-content">
           <router-view v-slot="{ Component, route }">
-            <transition name="fade-transform" mode="out-in">
-              <component :is="Component" :key="route.path" />
+            <transition
+              name="fade-transform"
+              mode="out-in"
+            >
+              <component
+                :is="Component"
+                :key="route.path"
+              />
             </transition>
           </router-view>
         </div>
@@ -145,7 +164,10 @@
         <div class="main-footer">
           <div class="footer-content">
             <span>© 2026 EventPilot - 活动领航系统 v1.2 Phase 2</span>
-            <a href="https://github.com/eventpilot" target="_blank">
+            <a
+              href="https://github.com/eventpilot"
+              target="_blank"
+            >
               <el-icon><Link /></el-icon>
               GitHub
             </a>
@@ -155,16 +177,19 @@
     </div>
 
     <!-- 登录页面布局 -->
-    <div v-else class="login-layout">
+    <div
+      v-else
+      class="login-layout"
+    >
       <router-view />
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useAuthStore } from './store'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
+import { useAuthStore } from './store';
 import {
   HomeFilled,
   List,
@@ -175,26 +200,30 @@ import {
   Setting,
   Bell,
   SwitchButton,
-  Link
-} from '@element-plus/icons-vue'
+  Link,
+} from '@element-plus/icons-vue';
 
-const router = useRouter()
-const route = useRoute()
-const authStore = useAuthStore()
+const router = useRouter();
+const route = useRoute();
+const authStore = useAuthStore();
 
-const activeMenu = ref('/')
-const currentPage = ref('首页')
-const unreadCount = ref(0)
-const userInitial = computed(() =>
-  authStore.currentUser?.username?.charAt(0)?.toUpperCase() || 'U'
-)
-const isAuthenticated = computed(() => authStore.isAuthenticated)
+const activeMenu = ref('/');
+const currentPage = ref('首页');
+const unreadCount = ref(0);
+const userInitial = computed(
+  () => authStore.currentUser?.username?.charAt(0)?.toUpperCase() || 'U'
+);
+const isAuthenticated = computed(() => authStore.isAuthenticated);
 
 // 监听路由变化
-watch(() => route.path, (newPath) => {
-  activeMenu.value = newPath
-  currentPage.value = getPageTitle(newPath)
-}, { immediate: true })
+watch(
+  () => route.path,
+  (newPath) => {
+    activeMenu.value = newPath;
+    currentPage.value = getPageTitle(newPath);
+  },
+  { immediate: true }
+);
 
 function getPageTitle(path) {
   const titles = {
@@ -204,46 +233,46 @@ function getPageTitle(path) {
     '/users': '用户管理',
     '/checklists': '清单管理',
     '/files': '文件管理',
-    '/settings': '系统设置'
-  }
-  return titles[path] || 'EventPilot'
+    '/settings': '系统设置',
+  };
+  return titles[path] || 'EventPilot';
 }
 
 function showNotifications() {
   if (unreadCount.value === 0) {
-    ElMessage.info('暂未读通知')
+    ElMessage.info('暂未读通知');
   } else {
-    ElMessage.success(`有 ${unreadCount.value} 条未读通知`)
+    ElMessage.success(`有 ${unreadCount.value} 条未读通知`);
   }
 }
 
 function handleUserMenu(command) {
-  console.log('User menu command:', command)
+  console.log('User menu command:', command);
 }
 
 async function handleLogout() {
   try {
-    await authStore.logout()
-    ElMessage.success('已退出登录')
-    router.push('/login')
+    await authStore.logout();
+    ElMessage.success('已退出登录');
+    router.push('/login');
   } catch (error) {
-    console.error('Logout error:', error)
-    ElMessage.error('退出登录失败')
+    console.error('Logout error:', error);
+    ElMessage.error('退出登录失败');
   }
 }
 
 onMounted(async () => {
-  authStore.initialize()
+  authStore.initialize();
 
   // 检查认证状态并重定向
   if (!isAuthenticated.value && route.path !== '/login') {
-    router.push('/login')
+    router.push('/login');
   }
-})
+});
 
 onUnmounted(() => {
   // Clean up if needed
-})
+});
 </script>
 
 <style scoped>
@@ -419,7 +448,8 @@ onUnmounted(() => {
 }
 
 #app {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;

@@ -39,7 +39,7 @@ class TaskSerializer(serializers.ModelSerializer):
         dependencies = obj.dependencies.all()
         return [
             {
-                'id': dep.depends_on.id,
+                'id': str(dep.depends_on.id),
                 'title': dep.depends_on.title,
                 'status': dep.depends_on.status
             }
@@ -152,26 +152,40 @@ class TaskDependencySerializer(serializers.ModelSerializer):
 
 class CommunicationTaskSerializer(serializers.ModelSerializer):
     """沟通任务序列化器"""
+    task_id = serializers.UUIDField(write_only=True, required=True)
     task_title = serializers.CharField(source='task.title', read_only=True)
     task_status = serializers.CharField(source='task.status', read_only=True)
-    
+
     class Meta:
         model = CommunicationTask
         fields = [
-            'id', 'task', 'task_title', 'task_status', 'content', 'requirements',
+            'id', 'task_id', 'task_title', 'task_status', 'content', 'requirements',
             'communicators', 'conclusion_files', 'is_closed'
         ]
         read_only_fields = ['id', 'task_title', 'task_status']
+
+    def validate_task_id(self, value):
+        """验证任务ID"""
+        from apps.tasks.models import Task
+        if not Task.objects.filter(id=value).exists():
+            raise serializers.ValidationError("指定的任务不存在")
+        return value
+
+    def create(self, validated_data):
+        """创建沟通任务"""
+        from apps.tasks.models import Task
+        task_id = validated_data.pop('task_id')
+        task = Task.objects.get(id=task_id)
+        return CommunicationTask.objects.create(task=task, **validated_data)
     
     def validate_communicators(self, value):
         """验证联系人列表"""
         if not isinstance(value, list):
             raise serializers.ValidationError("联系人必须是列表")
-        if len(value) == 0:
-            raise serializers.ValidationError("联系人不能为空")
+        # 允许空列表
         if len(value) > 20:
             raise serializers.ValidationError("联系人数量不能超过20个")
-        
+
         # 验证联系人格式
         for contact in value:
             if not isinstance(contact, dict):
@@ -180,7 +194,7 @@ class CommunicationTaskSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("联系人必须包含name字段")
             if not contact['name'].strip():
                 raise serializers.ValidationError("联系人名称不能为空")
-        
+
         return value
     
     def validate_conclusion_files(self, value):
@@ -377,6 +391,24 @@ class TaskBulkUpdateSerializer(serializers.Serializer):
     )
     status = serializers.ChoiceField(choices=Task.Status.choices)
     
+    def validate_task_ids(self, value):
+        """验证任务ID列表"""
+        valid_count = Task.objects.filter(id__in=value).count()
+        if valid_count != len(value):
+            raise serializers.ValidationError(
+                f"某些任务不存在 (提供了{len(value)}个，找到{valid_count}个)"
+            )
+        return value
+
+
+class TaskBulkDeleteSerializer(serializers.Serializer):
+    """任务批量删除序列化器"""
+    task_ids = serializers.ListField(
+        child=serializers.UUIDField(),
+        min_length=1,
+        max_length=100
+    )
+
     def validate_task_ids(self, value):
         """验证任务ID列表"""
         valid_count = Task.objects.filter(id__in=value).count()

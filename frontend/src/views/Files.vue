@@ -2,15 +2,24 @@
   <div class="files-container">
     <div class="page-header">
       <h1>文件管理</h1>
-      <el-button type="primary" @click="showUploadDialog">
+      <el-button
+        type="primary"
+        @click="showUploadDialog"
+      >
         上传文件
       </el-button>
     </div>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="24">
         <el-card class="toolbar-card">
-          <el-row :gutter="20" align="middle">
+          <el-row
+            :gutter="20"
+            align="middle"
+          >
             <el-col :span="12">
               <el-input
                 v-model="searchQuery"
@@ -31,13 +40,34 @@
                 style="width: 100%"
                 @change="handleSearch"
               >
-                <el-option label="全部类型" value="" />
-                <el-option label="图片" value="image" />
-                <el-option label="文档" value="document" />
-                <el-option label="视频" value="video" />
-                <el-option label="音频" value="audio" />
-                <el-option label="压缩包" value="archive" />
-                <el-option label="其他" value="other" />
+                <el-option
+                  label="全部类型"
+                  value=""
+                />
+                <el-option
+                  label="图片"
+                  value="image"
+                />
+                <el-option
+                  label="文档"
+                  value="document"
+                />
+                <el-option
+                  label="视频"
+                  value="video"
+                />
+                <el-option
+                  label="音频"
+                  value="audio"
+                />
+                <el-option
+                  label="压缩包"
+                  value="archive"
+                />
+                <el-option
+                  label="其他"
+                  value="other"
+                />
               </el-select>
             </el-col>
             <el-col :span="4">
@@ -46,9 +76,18 @@
                 placeholder="排序方式"
                 @change="handleSearch"
               >
-                <el-option label="按名称" value="name" />
-                <el-option label="按大小" value="size" />
-                <el-option label="按时间" value="time" />
+                <el-option
+                  label="按名称"
+                  value="name"
+                />
+                <el-option
+                  label="按大小"
+                  value="size"
+                />
+                <el-option
+                  label="按时间"
+                  value="time"
+                />
               </el-select>
             </el-col>
           </el-row>
@@ -56,7 +95,10 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="24">
         <el-card class="files-card">
           <template #header>
@@ -66,10 +108,18 @@
                 <span class="storage-used">已用 {{ formatBytes(totalSize) }} / {{ formatBytes(quota) }}</span>
               </div>
               <div class="header-right">
-                <el-button @click="viewMode = 'grid'" :type="viewMode === 'grid' ? 'primary' : 'default'" circle>
+                <el-button
+                  :type="viewMode === 'grid' ? 'primary' : 'default'"
+                  circle
+                  @click="viewMode = 'grid'"
+                >
                   <el-icon><Grid /></el-icon>
                 </el-button>
-                <el-button @click="viewMode = 'list'" :type="viewMode === 'list' ? 'primary' : 'default'" circle>
+                <el-button
+                  :type="viewMode === 'list' ? 'primary' : 'default'"
+                  circle
+                  @click="viewMode = 'list'"
+                >
                   <el-icon><List /></el-icon>
                 </el-button>
               </div>
@@ -77,7 +127,11 @@
           </template>
 
           <!-- 网格视图 -->
-          <div v-if="viewMode === 'grid'" class="grid-view" v-loading="loading">
+          <div
+            v-if="viewMode === 'grid'"
+            v-loading="loading"
+            class="grid-view"
+          >
             <div
               v-for="file in filteredFiles"
               :key="file.id"
@@ -85,29 +139,66 @@
               @click="handleFileClick(file)"
             >
               <div class="file-thumbnail">
-                <img v-if="file.thumbnail_url" :src="file.thumbnail_url" :alt="file.name" />
-                <div v-else class="file-icon" :class="getFileIconClass(file.file_type)">
-                  <el-icon :size="48"><component :is="getFileIconComponent(file.file_type)" /></el-icon>
+                <img
+                  v-if="file.thumbnail_url"
+                  :src="file.thumbnail_url"
+                  :alt="file.name"
+                >
+                <div
+                  v-else
+                  class="file-icon"
+                  :class="getFileIconClass(file.file_type)"
+                >
+                  <el-icon :size="48">
+                    <component :is="getFileIconComponent(file.file_type)" />
+                  </el-icon>
                 </div>
               </div>
               <div class="file-info">
-                <div class="file-name" :title="file.name">{{ file.name }}</div>
+                <div
+                  class="file-name"
+                  :title="file.name"
+                >
+                  {{ file.name }}
+                </div>
                 <div class="file-meta">
                   <span class="file-size">{{ formatBytes(file.size) }}</span>
                   <span class="file-type">{{ getFileTypeText(file.file_type) }}</span>
                 </div>
                 <div class="file-actions">
-                  <el-button link type="primary" size="small" @click.stop="handlePreview(file)">
+                  <el-button
+                    link
+                    type="primary"
+                    size="small"
+                    @click.stop="handlePreview(file)"
+                  >
                     预览
                   </el-button>
-                  <el-button link type="success" size="small" @click.stop="handleDownload(file)">
+                  <el-button
+                    link
+                    type="success"
+                    size="small"
+                    @click.stop="handleDownload(file)"
+                  >
                     下载
                   </el-button>
-                  <el-button link type="danger" size="small" @click.stop="handleDelete(file)">
+                  <el-button
+                    link
+                    type="danger"
+                    size="small"
+                    @click.stop="handleDelete(file)"
+                  >
                     删除
                   </el-button>
-                  <el-dropdown @command="handleMoreAction" @click.stop>
-                    <el-button link type="info" size="small">
+                  <el-dropdown
+                    @command="handleMoreAction"
+                    @click.stop
+                  >
+                    <el-button
+                      link
+                      type="info"
+                      size="small"
+                    >
                       更多<el-icon><ArrowDown /></el-icon>
                     </el-button>
                     <template #dropdown>
@@ -135,12 +226,16 @@
           <!-- 列表视图 -->
           <el-table
             v-else
-            :data="filteredFiles"
             v-loading="loading"
+            :data="filteredFiles"
             stripe
             border
           >
-            <el-table-column prop="name" label="文件名" min-width="200">
+            <el-table-column
+              prop="name"
+              label="文件名"
+              min-width="200"
+            >
               <template #default="{ row }">
                 <div class="table-file-name">
                   <el-icon :class="getFileIconClass(row.file_type)">
@@ -150,33 +245,66 @@
                 </div>
               </template>
             </el-table-column>
-            <el-table-column prop="file_type" label="类型" width="100">
+            <el-table-column
+              prop="file_type"
+              label="类型"
+              width="100"
+            >
               <template #default="{ row }">
-                <el-tag size="small" :type="getTypeTagType(row.file_type)">
+                <el-tag
+                  size="small"
+                  :type="getTypeTagType(row.file_type)"
+                >
                   {{ getFileTypeText(row.file_type) }}
                 </el-tag>
               </template>
             </el-table-column>
-            <el-table-column prop="size" label="大小" width="100">
+            <el-table-column
+              prop="size"
+              label="大小"
+              width="100"
+            >
               <template #default="{ row }">
                 {{ formatBytes(row.size) }}
               </template>
             </el-table-column>
-            <el-table-column prop="created_at" label="上传时间" width="160">
+            <el-table-column
+              prop="created_at"
+              label="上传时间"
+              width="160"
+            >
               <template #default="{ row }">
                 {{ formatDate(row.created_at) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200" fixed="right">
+            <el-table-column
+              label="操作"
+              width="200"
+              fixed="right"
+            >
               <template #default="{ row }">
-                <el-button link type="primary" size="small" @click="handlePreview(row)">
+                <el-button
+                  link
+                  type="primary"
+                  size="small"
+                  @click="handlePreview(row)"
+                >
                   预览
                 </el-button>
-                <el-button link type="success" size="small" @click="handleDownload(row)">
+                <el-button
+                  link
+                  type="success"
+                  size="small"
+                  @click="handleDownload(row)"
+                >
                   下载
                 </el-button>
                 <el-dropdown @command="handleMoreAction">
-                  <el-button link type="info" size="small">
+                  <el-button
+                    link
+                    type="info"
+                    size="small"
+                  >
                     更多<el-icon><ArrowDown /></el-icon>
                   </el-button>
                   <template #dropdown>
@@ -210,7 +338,10 @@
       width="700px"
       :close-on-click-modal="false"
     >
-      <FileUploader @upload-success="handleUploadSuccess" @upload-error="handleUploadError" />
+      <FileUploader
+        @upload-success="handleUploadSuccess"
+        @upload-error="handleUploadError"
+      />
     </el-dialog>
 
     <!-- 文件预览对话框 -->
@@ -220,13 +351,28 @@
       width="900px"
       :close-on-click-modal="false"
     >
-      <div class="preview-container" v-loading="previewLoading">
+      <div
+        v-loading="previewLoading"
+        class="preview-container"
+      >
         <div v-if="previewFile && previewFile.file_type.startsWith('image')">
-          <img :src="previewFile.url" :alt="previewFile.name" class="preview-image" />
+          <img
+            :src="previewFile.url"
+            :alt="previewFile.name"
+            class="preview-image"
+          >
         </div>
-        <div v-else class="no-preview">
+        <div
+          v-else
+          class="no-preview"
+        >
           <el-empty description="此文件类型暂不支持预览">
-            <el-button type="primary" @click="handleDownload(previewFile)">下载文件</el-button>
+            <el-button
+              type="primary"
+              @click="handleDownload(previewFile)"
+            >
+              下载文件
+            </el-button>
           </el-empty>
         </div>
       </div>

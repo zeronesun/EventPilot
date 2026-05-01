@@ -53,11 +53,13 @@ def websocket_notification(model_name: str, action: str = 'updated'):
             # 先执行原始信号处理器
             result = signal_handler(sender, instance, **kwargs)
             
-            # 发送WebSocket通知
-            try:
-                _send_model_notification(instance, model_name, action)
-            except Exception as e:
-                logger.error(f"Failed to send WebSocket notification: {str(e)}")
+            # 发送WebSocket通知（仅在 service 可用时）
+            service = get_notification_service()
+            if service:
+                try:
+                    _send_model_notification(instance, model_name, action)
+                except Exception as e:
+                    logger.error(f"Failed to send WebSocket notification: {str(e)}")
             
             return result
         
@@ -75,16 +77,21 @@ def _send_model_notification(instance: Model, model_name: str, action: str):
         model_name: 模型名称
         action: 动作类型
     """
+    service = get_notification_service()
+    if service is None:
+        logger.debug(f"Notification Service not available, skipping {model_name} notification")
+        return
+    
     try:
         if model_name == 'event':
-            notification_service.send_event_notification(
+            service.send_event_notification(
                 event_id=instance.id,
                 action=action,
                 data=_serialize_model(instance, model_name)
             )
         elif model_name == 'task':
             if hasattr(instance, 'assignee_id') and instance.assignee_id:
-                notification_service.send_task_notification(
+                service.send_task_notification(
                     task_id=instance.id,
                     action=action,
                     user_id=instance.assignee_id,
@@ -136,27 +143,12 @@ try:
     @websocket_notification('event', 'updated')
     def event_updated(sender: Model, instance: Event, created: bool, **kwargs):
         """活动更新信号"""
-        if created:
-            try:
-                notification_service.send_event_notification(
-                    event_id=instance.id,
-                    action='created',
-                    data=_serialize_model(instance, 'event')
-                )
-            except Exception as e:
-                logger.error(f"Failed to send event creation notification: {str(e)}")
+        pass
     
     @receiver(post_delete, sender=Event)
     def event_deleted(sender: Model, instance: Event, **kwargs):
         """活动删除信号"""
-        try:
-            notification_service.send_event_notification(
-                event_id=instance.id,
-                action='deleted',
-                data={'id': instance.id, 'title': instance.title}
-            )
-        except Exception as e:
-            logger.error(f"Failed to send event deletion notification: {str(e)}")
+        pass
 
 # 任务模型信号
     from apps.tasks.models import Task
@@ -166,43 +158,37 @@ try:
     def task_updated(sender: Model, instance: Task, created: bool, **kwargs):
         """任务更新信号"""
         if created:
-            try:
-                if instance.assignee_id:
-                    notification_service.send_task_notification(
-                        task_id=instance.id,
-                        action='created',
-                        user_id=instance.assignee_id,
-                        data=_serialize_model(instance, 'task')
-                    )
-            except Exception as e:
-                logger.error(f"Failed to send task creation notification: {str(e)}")
+            pass  # creation is handled by decorator
+        # task status change notification is handled by decorator
         
-        # 任务状态变更通知
-        if hasattr(instance, 'status'):
-            try:
-                if instance.assignee_id:
-                    notification_service.send_task_notification(
+        # Additional status change notification if needed
+        if hasattr(instance, 'status') and instance.assignee_id:
+            service = get_notification_service()
+            if service:
+                try:
+                    service.send_task_notification(
                         task_id=instance.id,
                         action='status_changed',
                         user_id=instance.assignee_id,
                         data=_serialize_model(instance, 'task')
                     )
-            except Exception as e:
-                logger.error(f"Failed to send task status notification: {str(e)}")
+                except Exception as e:
+                    logger.error(f"Failed to send task status notification: {str(e)}")
     
     @receiver(post_delete, sender=Task)
     def task_deleted(sender: Model, instance: Task, **kwargs):
         """任务删除信号"""
-        try:
-            if instance.assignee_id:
-                notification_service.send_task_notification(
+        service = get_notification_service()
+        if service and instance.assignee_id:
+            try:
+                service.send_task_notification(
                     task_id=instance.id,
                     action='deleted',
                     user_id=instance.assignee_id,
                     data={'id': instance.id, 'title': instance.title}
                 )
-        except Exception as e:
-            logger.error(f"Failed to send task deletion notification: {str(e)}")
+            except Exception as e:
+                logger.error(f"Failed to send task deletion notification: {str(e)}")
 
 except ImportError as e:
     logger.warning(f"Could not import models for WebSocket signals: {str(e)}")

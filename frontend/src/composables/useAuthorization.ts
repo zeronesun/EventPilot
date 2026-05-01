@@ -8,7 +8,7 @@ export const Roles = {
   MANAGER: 'manager',
   OPERATOR: 'operator',
   VIEWER: 'viewer',
-  GUEST: 'guest'
+  GUEST: 'guest',
 } as const;
 
 // 权限定义
@@ -19,28 +19,28 @@ export const Permissions = {
   EDIT_EVENT: 'edit_event',
   DELETE_EVENT: 'delete_event',
   MANAGE_PARTICIPANTS: 'manage_participants',
-  
+
   // 任务管理
   VIEW_TASKS: 'view_tasks',
   CREATE_TASK: 'create_task',
   EDIT_TASK: 'edit_task',
   DELETE_TASK: 'delete_task',
   ASSIGN_TASK: 'assign_task',
-  
+
   // 文件管理
   VIEW_FILES: 'view_files',
   UPLOAD_FILE: 'upload_file',
   DELETE_FILE: 'delete_file',
-  
+
   // 系统管理
   VIEW_USERS: 'view_users',
   MANAGE_USERS: 'manage_users',
   VIEW_ROLES: 'view_roles',
   MANAGE_ROLES: 'manage_roles',
   MANAGE_SYSTEM: 'manage_system',
-  
+
   // 审计日志
-  VIEW_AUDIT_LOG: 'view_audit_log'
+  VIEW_AUDIT_LOG: 'view_audit_log',
 } as const;
 
 // 角色权限映射（简化版，与后端保持一致）
@@ -58,7 +58,7 @@ const ROLE_PERMISSIONS = {
     Permissions.UPLOAD_FILE,
     Permissions.VIEW_USERS,
     Permissions.VIEW_ROLES,
-    Permissions.VIEW_AUDIT_LOG
+    Permissions.VIEW_AUDIT_LOG,
   ]),
   [Roles.OPERATOR]: new Set([
     Permissions.VIEW_EVENTS,
@@ -67,16 +67,14 @@ const ROLE_PERMISSIONS = {
     Permissions.EDIT_TASK,
     Permissions.VIEW_FILES,
     Permissions.UPLOAD_FILE,
-    Permissions.VIEW_USERS
+    Permissions.VIEW_USERS,
   ]),
   [Roles.VIEWER]: new Set([
     Permissions.VIEW_EVENTS,
     Permissions.VIEW_TASKS,
-    Permissions.VIEW_FILES
+    Permissions.VIEW_FILES,
   ]),
-  [Roles.GUEST]: new Set([
-    Permissions.VIEW_EVENTS
-  ])
+  [Roles.GUEST]: new Set([Permissions.VIEW_EVENTS]),
 };
 
 export function useAuthorization() {
@@ -84,22 +82,22 @@ export function useAuthorization() {
   const currentRoles = ref<string[]>(authStore.user?.roles || [Roles.GUEST]);
   const allPermissions = computed(() => {
     const permissions = new Set<string>();
-    
+
     for (const role of currentRoles.value) {
       const rolePerms = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS];
       if (rolePerms) {
-        rolePerms.forEach(perm => permissions.add(perm));
+        rolePerms.forEach((perm) => permissions.add(perm));
       }
     }
-    
+
     // admin拥有所有权限
     if (currentRoles.value.includes(Roles.ADMIN)) {
-      Object.values(Permissions).forEach(perm => permissions.add(perm));
+      Object.values(Permissions).forEach((perm) => permissions.add(perm));
     }
-    
+
     return permissions;
   });
-  
+
   /**
    * 检查用户是否拥有指定权限
    */
@@ -107,10 +105,10 @@ export function useAuthorization() {
     if (currentRoles.value.includes(Roles.ADMIN)) {
       return true;
     }
-    
+
     return allPermissions.value.has(permission);
   };
-  
+
   /**
    * 检查用户是否拥有任意一个指定权限
    */
@@ -118,10 +116,10 @@ export function useAuthorization() {
     if (currentRoles.value.includes(Roles.ADMIN)) {
       return true;
     }
-    
-    return permissions.some(perm => allPermissions.value.has(perm));
+
+    return permissions.some((perm) => allPermissions.value.has(perm));
   };
-  
+
   /**
    * 检查用户是否拥有所有指定权限
    */
@@ -129,17 +127,17 @@ export function useAuthorization() {
     if (currentRoles.value.includes(Roles.ADMIN)) {
       return true;
     }
-    
-    return permissions.every(perm => allPermissions.value.has(perm));
+
+    return permissions.every((perm) => allPermissions.value.has(perm));
   };
-  
+
   /**
    * 检查用户是否拥有指定角色
    */
   const hasRole = (role: string): boolean => {
     return currentRoles.value.includes(role);
   };
-  
+
   /**
    * 检查用户是否拥有指定角色或更高级别
    */
@@ -149,17 +147,17 @@ export function useAuthorization() {
       [Roles.VIEWER]: 2,
       [Roles.OPERATOR]: 3,
       [Roles.MANAGER]: 4,
-      [Roles.ADMIN]: 5
+      [Roles.ADMIN]: 5,
     };
-    
+
     const minLevel = roleHierarchy[minRole as keyof typeof roleHierarchy] || 0;
-    
-    return currentRoles.value.some(role => {
+
+    return currentRoles.value.some((role) => {
       const level = roleHierarchy[role as keyof typeof roleHierarchy] || 0;
       return level >= minLevel;
     });
   };
-  
+
   /**
    * 检查是否可以执行指定操作
    */
@@ -168,80 +166,78 @@ export function useAuthorization() {
     if (currentRoles.value.includes(Roles.ADMIN)) {
       return true;
     }
-    
-    const permission = resourceType 
-      ? `${action}_${resourceType}` 
-      : action;
-    
+
+    const permission = resourceType ? `${action}_${resourceType}` : action;
+
     return allPermissions.value.has(permission);
   };
-  
+
   /**
    * 获取用户所有角色
    */
   const getRoles = (): string[] => {
     return [...currentRoles.value];
   };
-  
+
   /**
    * 检查是否是管理员
    */
   const isAdmin = computed(() => hasRole(Roles.ADMIN));
-  
+
   /**
    * 检查是否是经理
    */
   const isManager = computed(() => hasRole(Roles.MANAGER));
-  
+
   /**
    * 检查是否是操作员
    */
   const isOperator = computed(() => hasRole(Roles.OPERATOR));
-  
+
   /**
    * 检查是否是查看者
    */
   const isViewer = computed(() => hasRole(Roles.VIEWER));
-  
+
   /**
    * 检查是否是访客
    */
   const isGuest = computed(() => hasRole(Roles.GUEST));
-  
+
   /**
    * 过滤可访问的菜单项
    */
   const filterMenu = (menuItems: any[]): any[] => {
-    return menuItems.filter(item => {
+    return menuItems.filter((item) => {
       if (!item.permission) {
         return true;
       }
-      
+
       if (typeof item.permission === 'string') {
         return hasPermission(item.permission);
       }
-      
+
       if (Array.isArray(item.permission)) {
         return hasAnyPermission(item.permission);
       }
-      
+
       return false;
     });
   };
-  
+
   /**
    * 过滤可显示的操作按钮
    */
   const filterActions = (actions: any[]): any[] => {
-    return actions.filter(action => {
+    return actions.filter((action) => {
       if (!action.permission) {
         return true;
       }
-      
+
       return hasPermission(action.permission);
     });
   };
-  
+
   return {
     hasPermission,
     hasAnyPermission,
@@ -258,7 +254,7 @@ export function useAuthorization() {
     allPermissions,
     currentRoles,
     filterMenu,
-    filterActions
+    filterActions,
   };
 }
 
@@ -266,7 +262,7 @@ export function useAuthorization() {
 export const permissionDirective = {
   mounted(el: HTMLElement, binding: any) {
     const { value } = binding;
-    
+
     if (value && !checkPermission(value)) {
       // 移除元素
       el.parentNode?.removeChild(el);
@@ -274,24 +270,24 @@ export const permissionDirective = {
   },
   updated(el: HTMLElement, binding: any) {
     const { value } = binding;
-    
+
     if (value && !checkPermission(value)) {
       el.parentNode?.removeChild(el);
     }
-  }
+  },
 };
 
 function checkPermission(value: string | string[]): boolean {
   const { hasPermission, hasAnyPermission } = useAuthorization();
-  
+
   if (typeof value === 'string') {
     return hasPermission(value);
   }
-  
+
   if (Array.isArray(value)) {
     return hasAnyPermission(value);
   }
-  
+
   return false;
 }
 

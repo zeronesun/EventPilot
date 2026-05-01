@@ -14,12 +14,7 @@
 
       <!-- 搜索和过滤 -->
       <div class="filter-section">
-        <el-input
-          v-model="searchQuery"
-          placeholder="搜索联系人..."
-          clearable
-          @input="handleSearch"
-        >
+        <el-input v-model="searchQuery" placeholder="搜索联系人..." clearable @input="handleSearch">
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
@@ -29,7 +24,7 @@
       <!-- 联系人表格 -->
       <div v-loading="loading" class="contacts-table">
         <el-empty v-if="!loading && contacts.length === 0" description="暂无联系人" />
-        
+
         <el-table v-else :data="paginatedContacts" stripe border>
           <el-table-column prop="name" label="姓名" width="120">
             <template #default="{ row }">
@@ -39,9 +34,9 @@
               </div>
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="position" label="职位" width="120" />
-          
+
           <el-table-column label="联系方式" width="200">
             <template #default="{ row }">
               <div class="contact-info">
@@ -56,7 +51,7 @@
               </div>
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="is_active" label="状态" width="80">
             <template #default="{ row }">
               <el-tag :type="row.is_active ? 'success' : 'info'" size="small">
@@ -64,24 +59,18 @@
               </el-tag>
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="created_at" label="创建时间" width="120">
             <template #default="{ row }">
               {{ formatDate(row.created_at) }}
             </template>
           </el-table-column>
-          
+
           <el-table-column prop="notes" label="备注" min-width="150" show-overflow-tooltip />
-          
+
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="{ row }">
-              <el-button
-                type="primary"
-                size="small"
-                @click="editContact(row)"
-              >
-                编辑
-              </el-button>
+              <el-button type="primary" size="small" @click="editContact(row)"> 编辑 </el-button>
               <el-button
                 v-if="!row.is_primary"
                 type="success"
@@ -90,13 +79,7 @@
               >
                 设为主要
               </el-button>
-              <el-button
-                type="danger"
-                size="small"
-                @click="deleteContact(row)"
-              >
-                删除
-              </el-button>
+              <el-button type="danger" size="small" @click="deleteContact(row)"> 删除 </el-button>
             </template>
           </el-table-column>
         </el-table>
@@ -121,12 +104,7 @@
       width="600px"
       @close="resetForm"
     >
-      <el-form
-        ref="formRef"
-        :model="contactForm"
-        :rules="formRules"
-        label-width="100px"
-      >
+      <el-form ref="formRef" :model="contactForm" :rules="formRules" label-width="100px">
         <el-form-item label="姓名" prop="name">
           <el-input v-model="contactForm.name" placeholder="请输入联系人姓名" />
         </el-form-item>
@@ -213,17 +191,13 @@ const contactForm = ref({
   address: '',
   notes: '',
   is_active: true,
-  is_primary: false
+  is_primary: false,
 });
 
 // 表单验证规则
 const formRules = {
-  name: [
-    { required: true, message: '请输入联系人姓名', trigger: 'blur' }
-  ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
-  ]
+  name: [{ required: true, message: '请输入联系人姓名', trigger: 'blur' }],
+  email: [{ type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }],
 };
 
 // 分页后的联系人列表
@@ -238,13 +212,14 @@ const filteredContacts = computed(() => {
   if (!searchQuery.value.trim()) {
     return contacts.value;
   }
-  
+
   const query = searchQuery.value.toLowerCase();
-  return contacts.value.filter(contact => 
-    contact.name.toLowerCase().includes(query) ||
-    contact.position?.toLowerCase().includes(query) ||
-    contact.email?.toLowerCase().includes(query) ||
-    contact.phone?.includes(query)
+  return contacts.value.filter(
+    (contact) =>
+      contact.name.toLowerCase().includes(query) ||
+      contact.position?.toLowerCase().includes(query) ||
+      contact.email?.toLowerCase().includes(query) ||
+      contact.phone?.includes(query)
   );
 });
 
@@ -288,99 +263,88 @@ const editContact = (contact: ContactPerson) => {
     address: contact.contact_info?.address || '',
     notes: contact.notes || '',
     is_active: contact.is_active,
-    is_primary: contact.is_primary
+    is_primary: contact.is_primary,
   };
   showAddDialog.value = true;
 };
 
 // 删除联系人
 const deleteContact = (contact: ContactPerson) => {
-  ElMessageBox.confirm(
-    `确定要删除联系人 "${contact.name}" 吗？`,
-    '确认删除',
-    {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      const result = await profilesStore.deleteContact(
-        props.profileId,
-        contact.id
-      );
-      
-      if (result.success) {
-        ElMessage.success('删除成功');
-        await loadContacts();
-      } else {
-        ElMessage.error(result.error || '删除失败');
+  ElMessageBox.confirm(`确定要删除联系人 "${contact.name}" 吗？`, '确认删除', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(async () => {
+      try {
+        const result = await profilesStore.deleteContact(props.profileId, contact.id);
+
+        if (result.success) {
+          ElMessage.success('删除成功');
+          await loadContacts();
+        } else {
+          ElMessage.error(result.error || '删除失败');
+        }
+      } catch (error) {
+        console.error('删除联系人失败:', error);
+        ElMessage.error('删除联系人失败');
       }
-    } catch (error) {
-      console.error('删除联系人失败:', error);
-      ElMessage.error('删除联系人失败');
-    }
-  }).catch(() => {
-    // 用户取消删除
-  });
+    })
+    .catch(() => {
+      // 用户取消删除
+    });
 };
 
 // 设为主要联系人
 const setAsPrimary = (contact: ContactPerson) => {
-  ElMessageBox.confirm(
-    `确定要将 "${contact.name}" 设为主要联系人吗？`,
-    '确认设置',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'info'
-    }
-  ).then(async () => {
-    try {
-      // 先取消当前主要联系人状态
-      const primaryContact = contacts.value.find(c => c.is_primary);
-      if (primaryContact) {
-        await profilesStore.updateContact(
-          props.profileId,
-          primaryContact.id,
-          { is_primary: false }
-        );
+  ElMessageBox.confirm(`确定要将 "${contact.name}" 设为主要联系人吗？`, '确认设置', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'info',
+  })
+    .then(async () => {
+      try {
+        // 先取消当前主要联系人状态
+        const primaryContact = contacts.value.find((c) => c.is_primary);
+        if (primaryContact) {
+          await profilesStore.updateContact(props.profileId, primaryContact.id, {
+            is_primary: false,
+          });
+        }
+
+        // 设置新的主要联系人
+        const result = await profilesStore.updateContact(props.profileId, contact.id, {
+          is_primary: true,
+        });
+
+        if (result.success) {
+          ElMessage.success('设置成功');
+          await loadContacts();
+        } else {
+          ElMessage.error(result.error || '设置失败');
+        }
+      } catch (error) {
+        console.error('设置主要联系人失败:', error);
+        ElMessage.error('设置主要联系人失败');
       }
-      
-      // 设置新的主要联系人
-      const result = await profilesStore.updateContact(
-        props.profileId,
-        contact.id,
-        { is_primary: true }
-      );
-      
-      if (result.success) {
-        ElMessage.success('设置成功');
-        await loadContacts();
-      } else {
-        ElMessage.error(result.error || '设置失败');
-      }
-    } catch (error) {
-      console.error('设置主要联系人失败:', error);
-      ElMessage.error('设置主要联系人失败');
-    }
-  }).catch(() => {
-    // 用户取消设置
-  });
+    })
+    .catch(() => {
+      // 用户取消设置
+    });
 };
 
 // 提交表单
 const submitForm = async () => {
   try {
     await formRef.value.validate();
-    
+
     const contactData = {
       ...contactForm.value,
       contact_info: {
-        address: contactForm.value.address
-      }
+        address: contactForm.value.address,
+      },
     };
-    
+
     if (editingContact.value) {
       // 更新联系人
       const result = await profilesStore.updateContact(
@@ -388,7 +352,7 @@ const submitForm = async () => {
         editingContact.value.id,
         contactData
       );
-      
+
       if (result.success) {
         ElMessage.success('更新成功');
         showAddDialog.value = false;
@@ -398,11 +362,8 @@ const submitForm = async () => {
       }
     } else {
       // 创建联系人
-      const result = await profilesStore.createContact(
-        props.profileId,
-        contactData
-      );
-      
+      const result = await profilesStore.createContact(props.profileId, contactData);
+
       if (result.success) {
         ElMessage.success('创建成功');
         showAddDialog.value = false;
@@ -429,7 +390,7 @@ const resetForm = () => {
     address: '',
     notes: '',
     is_active: true,
-    is_primary: false
+    is_primary: false,
   };
   formRef.value?.resetFields();
 };

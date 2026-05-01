@@ -146,9 +146,7 @@
             <el-table-column prop="partner" label="合作伙伴" width="100" />
             <el-table-column prop="total" label="总计" width="100" />
             <el-table-column prop="percentage" label="占比" width="100">
-              <template #default="{ row }">
-                {{ row.percentage }}%
-              </template>
+              <template #default="{ row }"> {{ row.percentage }}% </template>
             </el-table-column>
             <el-table-column prop="trend" label="趋势" width="80">
               <template #default="{ row }">
@@ -220,8 +218,14 @@
 import { ref, computed, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
-  User, Star, Trophy, Warning, Refresh, Document,
-  ArrowUp, ArrowDown
+  User,
+  Star,
+  Trophy,
+  Warning,
+  Refresh,
+  Document,
+  ArrowUp,
+  ArrowDown,
 } from '@element-plus/icons-vue';
 import { useProfilesStore } from '@/stores/profiles';
 import type { AnalyticsDashboard } from '@/lib/profiles-client';
@@ -235,12 +239,12 @@ const dashboard = ref<AnalyticsDashboard>({
   by_status: {},
   average_scores: {
     credit: 0,
-    quality: 0
+    quality: 0,
   },
   risk_distribution: {},
   recent_interactions: 0,
   high_risk_count: 0,
-  high_score_count: 0
+  high_score_count: 0,
 });
 
 // 计算活跃档案数量
@@ -262,8 +266,8 @@ const pieData = computed(() => {
         name: labels[index],
         value: count,
         itemStyle: {
-          color: colors[index]
-        }
+          color: colors[index],
+        },
       });
     }
   });
@@ -277,13 +281,13 @@ const barData = computed(() => {
     {
       name: '信用评分',
       value: dashboard.value.average_scores.credit,
-      itemStyle: { color: '#409EFF' }
+      itemStyle: { color: '#409EFF' },
     },
     {
-      name: '质量评分', 
+      name: '质量评分',
       value: dashboard.value.average_scores.quality,
-      itemStyle: { color: '#67C23A' }
-    }
+      itemStyle: { color: '#67C23A' },
+    },
   ];
   return data;
 });
@@ -302,8 +306,8 @@ const riskData = computed(() => {
         name: labels[index],
         value: count,
         itemStyle: {
-          color: colors[index]
-        }
+          color: colors[index],
+        },
       });
     }
   });
@@ -319,14 +323,14 @@ const lineData = computed(() => {
       {
         name: '新增档案',
         data: [12, 19, 3, 5, 2, 3, 8],
-        itemStyle: { color: '#409EFF' }
+        itemStyle: { color: '#409EFF' },
       },
       {
         name: '交互次数',
         data: [45, 32, 67, 23, 89, 56, 78],
-        itemStyle: { color: '#67C23A' }
-      }
-    ]
+        itemStyle: { color: '#67C23A' },
+      },
+    ],
   };
 });
 
@@ -340,7 +344,7 @@ const detailStats = computed(() => {
       partner: dashboard.value.by_type.partner || 0,
       total: dashboard.value.total_profiles,
       percentage: 100,
-      trend: 'up'
+      trend: 'up',
     },
     {
       category: '按状态',
@@ -349,7 +353,7 @@ const detailStats = computed(() => {
       partner: dashboard.value.by_status.inactive || 0,
       total: dashboard.value.total_profiles,
       percentage: 100,
-      trend: 'up'
+      trend: 'up',
     },
     {
       category: '高分档案',
@@ -357,9 +361,11 @@ const detailStats = computed(() => {
       supplier: Math.floor((dashboard.value.by_type.supplier || 0) * 0.6),
       partner: Math.floor((dashboard.value.by_type.partner || 0) * 0.8),
       total: dashboard.value.high_score_count,
-      percentage: Math.round((dashboard.value.high_score_count / dashboard.value.total_profiles) * 100),
-      trend: 'up'
-    }
+      percentage: Math.round(
+        (dashboard.value.high_score_count / dashboard.value.total_profiles) * 100
+      ),
+      trend: 'up',
+    },
   ];
 
   return stats;
@@ -395,7 +401,10 @@ onMounted(() => {
   padding: 20px;
 }
 
-.overview-cards, .charts-section, .details-section, .activity-section {
+.overview-cards,
+.charts-section,
+.details-section,
+.activity-section {
   margin-bottom: 20px;
 }
 
@@ -485,11 +494,13 @@ onMounted(() => {
   border-bottom: 1px solid #ebeef5;
 }
 
-.activity-card, .alerts-card {
+.activity-card,
+.alerts-card {
   height: 400px;
 }
 
-.activity-list, .alerts-list {
+.activity-list,
+.alerts-list {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -508,7 +519,7 @@ onMounted(() => {
 .activity-icon {
   width: 40px;
   height: 40px;
-  background: #409EFF;
+  background: #409eff;
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -539,12 +550,12 @@ onMounted(() => {
   padding: 12px;
   background: #fef0f0;
   border-radius: 4px;
-  border-left: 4px solid #F56C6C;
+  border-left: 4px solid #f56c6c;
 }
 
 .alert-item.warning {
   background: #fef9f0;
-  border-left-color: #E6A23C;
+  border-left-color: #e6a23c;
 }
 
 .alert-details {

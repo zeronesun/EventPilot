@@ -3,13 +3,22 @@
     <div class="page-header">
       <h1>清单管理</h1>
       <div class="header-actions">
-        <el-button @click="showTemplates = false" :type="!showTemplates ? 'primary' : 'default'">
+        <el-button
+          :type="!showTemplates ? 'primary' : 'default'"
+          @click="showTemplates = false"
+        >
           清单实例
         </el-button>
-        <el-button @click="showTemplates = true" :type="showTemplates ? 'primary' : 'default'">
+        <el-button
+          :type="showTemplates ? 'primary' : 'default'"
+          @click="showTemplates = true"
+        >
           模板管理
         </el-button>
-        <el-button type="primary" @click="showCreateDialog">
+        <el-button
+          type="primary"
+          @click="showCreateDialog"
+        >
           新建{{ showTemplates ? '模板' : '清单实例' }}
         </el-button>
       </div>
@@ -31,39 +40,86 @@
         </template>
 
         <el-table
-          :data="filteredTemplates"
           v-loading="loading"
+          :data="filteredTemplates"
           stripe
           border
         >
-          <el-table-column prop="name" label="模板名称" min-width="180" />
-          <el-table-column prop="description" label="描述" min-width="200" />
-          <el-table-column prop="category" label="分类" width="120">
+          <el-table-column
+            prop="name"
+            label="模板名称"
+            min-width="180"
+          />
+          <el-table-column
+            prop="description"
+            label="描述"
+            min-width="200"
+          />
+          <el-table-column
+            prop="category"
+            label="分类"
+            width="120"
+          >
             <template #default="{ row }">
-              <el-tag size="small" type="info">{{ row.category || '默认' }}</el-tag>
+              <el-tag
+                size="small"
+                type="info"
+              >
+                {{ row.category || '默认' }}
+              </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="status" label="状态" width="100">
+          <el-table-column
+            prop="status"
+            label="状态"
+            width="100"
+          >
             <template #default="{ row }">
-              <el-tag :type="getTemplateStatusType(row.status)" size="small">
+              <el-tag
+                :type="getTemplateStatusType(row.status)"
+                size="small"
+              >
                 {{ getTemplateStatusText(row.status) }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="created_at" label="创建时间" width="160">
+          <el-table-column
+            prop="created_at"
+            label="创建时间"
+            width="160"
+          >
             <template #default="{ row }">
               {{ formatDate(row.created_at) }}
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200" fixed="right">
+          <el-table-column
+            label="操作"
+            width="200"
+            fixed="right"
+          >
             <template #default="{ row }">
-              <el-button link type="primary" size="small" @click="handleInstantiate(row)">
+              <el-button
+                link
+                type="primary"
+                size="small"
+                @click="handleInstantiate(row)"
+              >
                 实例化
               </el-button>
-              <el-button link type="success" size="small" @click="handleEditTemplate(row)">
+              <el-button
+                link
+                type="success"
+                size="small"
+                @click="handleEditTemplate(row)"
+              >
                 编辑
               </el-button>
-              <el-button link type="danger" size="small" @click="handleDeleteTemplate(row)">
+              <el-button
+                link
+                type="danger"
+                size="small"
+                @click="handleDeleteTemplate(row)"
+              >
                 删除
               </el-button>
             </template>
@@ -73,7 +129,10 @@
     </div>
 
     <!-- 清单实例管理 -->
-    <el-card v-else class="table-card">
+    <el-card
+      v-else
+      class="table-card"
+    >
       <template #header>
         <div class="table-header">
           <h3>清单实例</h3>
@@ -84,49 +143,106 @@
               clearable
               style="width: 120px"
             >
-              <el-option label="全部状态" value="" />
-              <el-option label="进行中" value="in_progress" />
-              <el-option label="已完成" value="completed" />
-              <el-option label="已暂停" value="paused" />
+              <el-option
+                label="全部状态"
+                value=""
+              />
+              <el-option
+                label="进行中"
+                value="in_progress"
+              />
+              <el-option
+                label="已完成"
+                value="completed"
+              />
+              <el-option
+                label="已暂停"
+                value="paused"
+              />
             </el-select>
           </div>
         </div>
       </template>
 
       <el-table
-        :data="filteredInstances"
         v-loading="loading"
+        :data="filteredInstances"
         stripe
         border
       >
-        <el-table-column prop="name" label="清单名称" min-width="180" />
-        <el-table-column prop="template_name" label="来源模板" width="150" />
-        <el-table-column prop="progress" label="完成度" width="120">
+        <el-table-column
+          prop="name"
+          label="清单名称"
+          min-width="180"
+        />
+        <el-table-column
+          prop="template_name"
+          label="来源模板"
+          width="150"
+        />
+        <el-table-column
+          prop="progress"
+          label="完成度"
+          width="120"
+        >
           <template #default="{ row }">
-            <el-progress :percentage="row.progress || 0" :stroke-width="6" />
+            <el-progress
+              :percentage="row.progress || 0"
+              :stroke-width="6"
+            />
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100">
+        <el-table-column
+          prop="status"
+          label="状态"
+          width="100"
+        >
           <template #default="{ row }">
-            <el-tag :type="getInstanceStatusType(row.status)" size="small">
+            <el-tag
+              :type="getInstanceStatusType(row.status)"
+              size="small"
+            >
               {{ getInstanceStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="160">
+        <el-table-column
+          prop="created_at"
+          label="创建时间"
+          width="160"
+        >
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column
+          label="操作"
+          width="200"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="handleVerify(row)">
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="handleVerify(row)"
+            >
               核验
             </el-button>
-            <el-button link type="success" size="small" @click="handleViewDetails(row)">
+            <el-button
+              link
+              type="success"
+              size="small"
+              @click="handleViewDetails(row)"
+            >
               详情
             </el-button>
-            <el-button link type="danger" size="small" @click="handleDeleteInstance(row)">
+            <el-button
+              link
+              type="danger"
+              size="small"
+              @click="handleDeleteInstance(row)"
+            >
               删除
             </el-button>
           </template>
@@ -141,12 +257,26 @@
       width="800px"
       :close-on-click-modal="false"
     >
-      <el-form :model="templateForm" :rules="templateRules" ref="templateFormRef" label-width="100px">
-        <el-form-item label="模板名称" prop="name">
-          <el-input v-model="templateForm.name" placeholder="请输入模板名称" />
+      <el-form
+        ref="templateFormRef"
+        :model="templateForm"
+        :rules="templateRules"
+        label-width="100px"
+      >
+        <el-form-item
+          label="模板名称"
+          prop="name"
+        >
+          <el-input
+            v-model="templateForm.name"
+            placeholder="请输入模板名称"
+          />
         </el-form-item>
         <el-form-item label="分类">
-          <el-input v-model="templateForm.category" placeholder="请输入分类" />
+          <el-input
+            v-model="templateForm.category"
+            placeholder="请输入分类"
+          />
         </el-form-item>
         <el-form-item label="描述">
           <el-input
@@ -175,26 +305,52 @@
                 placeholder="权重"
                 style="width: 120px"
               />
-              <el-button type="danger" circle @click="removeTemplateItem(index)">
+              <el-button
+                type="danger"
+                circle
+                @click="removeTemplateItem(index)"
+              >
                 <el-icon><Delete /></el-icon>
               </el-button>
             </div>
-            <el-button type="primary" link @click="addTemplateItem">
+            <el-button
+              type="primary"
+              link
+              @click="addTemplateItem"
+            >
               + 添加清单项
             </el-button>
           </div>
         </el-form-item>
         <el-form-item label="状态">
-          <el-select v-model="templateForm.status" placeholder="请选择状态">
-            <el-option label="草稿" value="draft" />
-            <el-option label="已发布" value="published" />
-            <el-option label="已归档" value="archived" />
+          <el-select
+            v-model="templateForm.status"
+            placeholder="请选择状态"
+          >
+            <el-option
+              label="草稿"
+              value="draft"
+            />
+            <el-option
+              label="已发布"
+              value="published"
+            />
+            <el-option
+              label="已归档"
+              value="archived"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="templateDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="submitTemplate" :loading="submitting">
+        <el-button @click="templateDialogVisible = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="submitTemplate"
+        >
           确定
         </el-button>
       </template>
@@ -211,7 +367,10 @@
         <h3>{{ currentInstance?.name }}</h3>
         <div class="verification-progress">
           <span>完成度：</span>
-          <el-progress :percentage="currentInstance?.progress || 0" :stroke-width="8" />
+          <el-progress
+            :percentage="currentInstance?.progress || 0"
+            :stroke-width="8"
+          />
         </div>
       </div>
       
@@ -231,13 +390,24 @@
             </el-checkbox>
             <div class="item-meta">
               <span class="item-weight">权重: {{ item.weight }}</span>
-              <el-tag :type="item.checked ? 'success' : 'info'" size="small">
+              <el-tag
+                :type="item.checked ? 'success' : 'info'"
+                size="small"
+              >
                 {{ item.checked ? '已核验' : '未核验' }}
               </el-tag>
             </div>
           </div>
-          <div class="item-attachment" v-if="item.attachment_url">
-            <el-button link type="primary" size="small" @click="viewAttachment(item.attachment_url)">
+          <div
+            v-if="item.attachment_url"
+            class="item-attachment"
+          >
+            <el-button
+              link
+              type="primary"
+              size="small"
+              @click="viewAttachment(item.attachment_url)"
+            >
               查看附件
             </el-button>
           </div>
@@ -248,7 +418,11 @@
         <el-button @click="verificationDialogVisible = false">
           关闭
         </el-button>
-        <el-button type="primary" @click="submitVerification" :loading="submitting">
+        <el-button
+          type="primary"
+          :loading="submitting"
+          @click="submitVerification"
+        >
           提交核验结果
         </el-button>
       </template>

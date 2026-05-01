@@ -13,9 +13,9 @@
       </template>
 
       <!-- 搜索表单 -->
-      <el-form 
-        ref="formRef" 
-        :model="searchForm" 
+      <el-form
+        ref="formRef"
+        :model="searchForm"
         label-width="120px"
         @submit.prevent="performSearch"
       >
@@ -36,9 +36,9 @@
 
           <el-col :span="8">
             <el-form-item label="档案类型">
-              <el-select 
-                v-model="searchForm.profile_type" 
-                placeholder="选择档案类型" 
+              <el-select
+                v-model="searchForm.profile_type"
+                placeholder="选择档案类型"
                 clearable
                 style="width: 100%"
               >
@@ -51,9 +51,9 @@
 
           <el-col :span="8">
             <el-form-item label="状态">
-              <el-select 
-                v-model="searchForm.status" 
-                placeholder="选择状态" 
+              <el-select
+                v-model="searchForm.status"
+                placeholder="选择状态"
                 clearable
                 style="width: 100%"
               >
@@ -67,9 +67,9 @@
 
           <el-col :span="8">
             <el-form-item label="风险等级">
-              <el-select 
-                v-model="searchForm.risk_level" 
-                placeholder="选择风险等级" 
+              <el-select
+                v-model="searchForm.risk_level"
+                placeholder="选择风险等级"
                 clearable
                 style="width: 100%"
               >
@@ -152,11 +152,7 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="行业">
-              <el-input
-                v-model="searchForm.industry"
-                placeholder="搜索行业..."
-                clearable
-              >
+              <el-input v-model="searchForm.industry" placeholder="搜索行业..." clearable>
                 <template #prefix>
                   <el-icon><OfficeBuilding /></el-icon>
                 </template>
@@ -166,11 +162,7 @@
 
           <el-col :span="12">
             <el-form-item label="标签">
-              <el-input
-                v-model="searchForm.tags"
-                placeholder="搜索标签..."
-                clearable
-              >
+              <el-input v-model="searchForm.tags" placeholder="搜索标签..." clearable>
                 <template #prefix>
                   <el-icon><PriceTag /></el-icon>
                 </template>
@@ -208,9 +200,7 @@
         <div class="card-header">
           <div class="header-info">
             <h3>搜索结果</h3>
-            <span v-if="!loading" class="results-count">
-              找到 {{ results.length }} 个结果
-            </span>
+            <span v-if="!loading" class="results-count"> 找到 {{ results.length }} 个结果 </span>
           </div>
           <div class="header-actions">
             <el-dropdown @command="handleSort">
@@ -233,24 +223,19 @@
 
       <div v-loading="loading" class="results-container">
         <el-empty v-if="!loading && results.length === 0" description="未找到匹配的档案">
-          <el-button type="primary" @click="resetSearch">
-            清除筛选条件
-          </el-button>
+          <el-button type="primary" @click="resetSearch"> 清除筛选条件 </el-button>
         </el-empty>
 
         <div v-else class="results-grid">
-          <div 
-            v-for="result in results" 
+          <div
+            v-for="result in results"
             :key="result.profile_id"
             class="result-card"
             @click="viewResult(result)"
           >
             <div class="result-header">
               <h4>{{ result.name }}</h4>
-              <el-tag 
-                :type="getTypeColor(result.profile_type)" 
-                size="small"
-              >
+              <el-tag :type="getTypeColor(result.profile_type)" size="small">
                 {{ getTypeLabel(result.profile_type) }}
               </el-tag>
             </div>
@@ -262,8 +247,8 @@
             <div class="result-scores">
               <div class="score-item">
                 <span class="score-label">信用:</span>
-                <el-progress 
-                  :percentage="result.credit_score" 
+                <el-progress
+                  :percentage="result.credit_score"
                   :color="getScoreColor(result.credit_score)"
                   :stroke-width="8"
                   :show-text="false"
@@ -272,8 +257,8 @@
               </div>
               <div class="score-item">
                 <span class="score-label">质量:</span>
-                <el-progress 
-                  :percentage="result.quality_score" 
+                <el-progress
+                  :percentage="result.quality_score"
                   :color="getScoreColor(result.quality_score)"
                   :stroke-width="8"
                   :show-text="false"
@@ -283,24 +268,18 @@
             </div>
 
             <div class="result-meta">
-              <el-tag 
-                :type="getStatusColor(result.status)" 
-                size="small"
-              >
+              <el-tag :type="getStatusColor(result.status)" size="small">
                 {{ getStatusLabel(result.status) }}
               </el-tag>
-              <el-tag 
-                :type="getRiskType(result.risk_level)" 
-                size="small"
-              >
+              <el-tag :type="getRiskType(result.risk_level)" size="small">
                 {{ getRiskLabel(result.risk_level) }}
               </el-tag>
             </div>
 
             <div class="result-relevance" v-if="result.relevance_score">
               <div class="relevance-label">相关度</div>
-              <el-progress 
-                :percentage="Math.round(result.relevance_score * 100)" 
+              <el-progress
+                :percentage="Math.round(result.relevance_score * 100)"
                 :show-text="false"
               />
             </div>
@@ -313,10 +292,7 @@
     <el-dialog v-model="showSaveDialog" title="保存搜索条件" width="500px">
       <el-form ref="saveFormRef" :model="saveForm" label-width="100px">
         <el-form-item label="搜索名称" prop="name">
-          <el-input 
-            v-model="saveForm.name" 
-            placeholder="为这个搜索条件命名"
-          />
+          <el-input v-model="saveForm.name" placeholder="为这个搜索条件命名" />
         </el-form-item>
         <el-form-item label="备注">
           <el-input
@@ -339,8 +315,12 @@
 import { ref, reactive } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
-  Search, Refresh, Star, ArrowDown,
-  OfficeBuilding, PriceTag
+  Search,
+  Refresh,
+  Star,
+  ArrowDown,
+  OfficeBuilding,
+  PriceTag,
 } from '@element-plus/icons-vue';
 import { useProfilesStore } from '@/stores/profiles';
 import type { SearchResult } from '@/lib/profiles-client';
@@ -363,13 +343,13 @@ const searchForm = reactive({
   created_range: [] as Date[],
   contact_range: [] as Date[],
   industry: '',
-  tags: ''
+  tags: '',
 });
 
 // 保存表单
 const saveForm = reactive({
   name: '',
-  description: ''
+  description: '',
 });
 
 // 排序方式
@@ -380,7 +360,7 @@ const performSearch = async () => {
   loading.value = true;
   try {
     const searchParams: any = {};
-    
+
     if (searchForm.query) {
       const response = await profilesStore.searchProfiles(
         searchForm.query,
@@ -395,9 +375,9 @@ const performSearch = async () => {
         min_credit_score: searchForm.credit_range[0],
         max_credit_score: searchForm.credit_range[1],
         industry: searchForm.industry,
-        search: searchForm.query
+        search: searchForm.query,
       };
-      
+
       await profilesStore.fetchProfiles(filters);
       // 将profile转换为search result格式
       results.value = (profilesStore.profiles as any).map((profile: any) => ({
@@ -409,13 +389,12 @@ const performSearch = async () => {
         credit_score: profile.credit_score,
         quality_score: profile.quality_score,
         risk_level: profile.risk_level,
-        relevance_score: 0.5 // 默认相关度
+        relevance_score: 0.5, // 默认相关度
       }));
     }
-    
+
     // 应用排序
     applySorting();
-    
   } catch (error) {
     console.error('搜索失败:', error);
     ElMessage.error('搜索失败');
@@ -473,7 +452,7 @@ const confirmSave = () => {
     ElMessage.warning('请输入搜索名称');
     return;
   }
-  
+
   // 将搜索条件保存到localStorage
   const savedSearches = JSON.parse(localStorage.getItem('savedSearches') || '[]');
   savedSearches.push({
@@ -481,14 +460,14 @@ const confirmSave = () => {
     name: saveForm.name,
     description: saveForm.description,
     conditions: { ...searchForm },
-    created_at: new Date().toISOString()
+    created_at: new Date().toISOString(),
   });
-  
+
   localStorage.setItem('savedSearches', JSON.stringify(savedSearches));
-  
+
   ElMessage.success('搜索条件已保存');
   showSaveDialog.value = false;
-  
+
   // 重置保存表单
   saveForm.name = '';
   saveForm.description = '';
@@ -511,9 +490,9 @@ const getScoreColor = (score: number) => {
 // 获取类型颜色
 const getTypeColor = (type: string) => {
   const colorMap: Record<string, string> = {
-    'client': 'success',
-    'supplier': 'warning',
-    'partner': 'primary'
+    client: 'success',
+    supplier: 'warning',
+    partner: 'primary',
   };
   return colorMap[type] || 'info';
 };
@@ -521,9 +500,9 @@ const getTypeColor = (type: string) => {
 // 获取类型标签
 const getTypeLabel = (type: string) => {
   const labelMap: Record<string, string> = {
-    'client': '客户',
-    'supplier': '供应商',
-    'partner': '合作伙伴'
+    client: '客户',
+    supplier: '供应商',
+    partner: '合作伙伴',
   };
   return labelMap[type] || type;
 };
@@ -531,10 +510,10 @@ const getTypeLabel = (type: string) => {
 // 获取状态颜色
 const getStatusColor = (status: string) => {
   const colorMap: Record<string, string> = {
-    'active': 'success',
-    'potential': 'info',
-    'inactive': 'warning',
-    'blacklist': 'danger'
+    active: 'success',
+    potential: 'info',
+    inactive: 'warning',
+    blacklist: 'danger',
   };
   return colorMap[status] || 'info';
 };
@@ -542,10 +521,10 @@ const getStatusColor = (status: string) => {
 // 获取状态标签
 const getStatusLabel = (status: string) => {
   const labelMap: Record<string, string> = {
-    'active': '活跃',
-    'potential': '潜在',
-    'inactive': '非活跃',
-    'blacklist': '黑名单'
+    active: '活跃',
+    potential: '潜在',
+    inactive: '非活跃',
+    blacklist: '黑名单',
   };
   return labelMap[status] || status;
 };
@@ -553,9 +532,9 @@ const getStatusLabel = (status: string) => {
 // 获取风险类型
 const getRiskType = (level: string) => {
   const typeMap: Record<string, string> = {
-    'low': 'success',
-    'medium': 'warning',
-    'high': 'danger'
+    low: 'success',
+    medium: 'warning',
+    high: 'danger',
   };
   return typeMap[level] || 'info';
 };
@@ -563,9 +542,9 @@ const getRiskType = (level: string) => {
 // 获取风险标签
 const getRiskLabel = (level: string) => {
   const labelMap: Record<string, string> = {
-    'low': '低风险',
-    'medium': '中风险',
-    'high': '高风险'
+    low: '低风险',
+    medium: '中风险',
+    high: '高风险',
   };
   return labelMap[level] || level;
 };

@@ -1,5 +1,5 @@
 import pytest
-from django.test import TestCase, Client
+from django.test import TestCase, override_settings, Client
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.utils import timezone
@@ -7,9 +7,15 @@ from rest_framework.test import APIClient
 from rest_framework import status
 import uuid
 
+from apps.checklists.models import ChecklistTemplate, ChecklistItemTemplate
+from apps.checklists.services.checklist_service import ChecklistService
+from apps.events.models import Event
+
 User = get_user_model()
 
 
+# Apply override_settings to all test classes
+@override_settings(ALLOWED_HOSTS=['testserver', '*'])
 class ChecklistTemplateTestCase(TestCase):
     """清单模板测试"""
     
@@ -27,7 +33,7 @@ class ChecklistTemplateTestCase(TestCase):
         data = {
             'name': '活动前检查清单',
             'description': '活动开始前的检查项',
-            'checklist_type': 'pre_event',
+            'checklist_type': 'custom',
             'event_types': ['conference', 'exhibition'],
             'version': '1.0.0',
             'status': 'draft',
@@ -51,6 +57,9 @@ class ChecklistTemplateTestCase(TestCase):
         }
         
         response = self.client.post('/api/checklists/templates/', data, format='json')
+        if response.status_code != status.HTTP_201_CREATED:
+            print(f"\n创建模板失败: {response.status_code}")
+            print(f"响应数据: {getattr(response, 'data', response.content)}")
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['name'], '活动前检查清单')
         self.assertEqual(response.data['items_count'], 2)
@@ -143,9 +152,10 @@ class ChecklistTemplateTestCase(TestCase):
         return template
 
 
+@override_settings(ALLOWED_HOSTS=['testserver', '*'])
 class ChecklistInstanceTestCase(TestCase):
     """清单实例测试"""
-    
+
     def setUp(self):
         """设置测试数据"""
         self.user = User.objects.create_user(
@@ -202,12 +212,75 @@ class ChecklistInstanceTestCase(TestCase):
     
     def test_update_instance_status(self):
         """测试更新实例状态"""
-        instance = self._create_test_instance()
+        # 创建包含2个必选项的实例
+        template = ChecklistTemplate.objects.create(
+            name='测试模板2',
+            description='测试',
+            checklist_type='custom',
+            event_types=['conference'],
+            created_by=self.user
+        )
         
+        # 添加2个必选项
+        ChecklistItemTemplate.objects.create(
+            template=template,
+            title='必选项1',
+            required=True,
+            order=1,
+            weight=1
+        )
+        ChecklistItemTemplate.objects.create(
+            template=template,
+            title='必选项2',
+            required=True,
+            order=2,
+            weight=1
+        )
+        
+        instance, errors = ChecklistService.create_instance({
+            'event_id': str(self.event.id),
+            'template_id': str(template.id),
+            'name': '测试实例'
+        }, self.user)
+        
+        self.assertEqual(len(errors), 0)
+        self.assertEqual(instance.items.count(), 2)
+        
+        # 只完成第一个必选项，实例状态变为 in_progress
+        item = instance.items.filter(required=True).first()
+        data = {
+            'status': 'passed',
+            'notes': f'完成项 {item.title}'
+        }
+        url = f'/api/checklists/items/{item.id}/check/'
+        response = self.client.post(url, data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # 实例状态为 in_progress
+        instance.refresh_from_db()
+        self.assertEqual(instance.status, 'in_progress')
+        
+        # 手动调用complete应该失败（还有未完成的必选项）
         url = f'/api/checklists/instances/{instance.id}/complete/'
         response = self.client.post(url)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        # 打印实际错误消息以调试
+        if 'errors' in response.data:
+            print(f"\n完成API错误: {response.data['errors']}")
+        else:
+            print(f"\n完成API响应: {response.data}")
         
+        # 完成第二个必选项
+        item = instance.items.filter(required=True).last()
+        data = {
+            'status': 'passed',
+            'notes': f'完成项 {item.title}'
+        }
+        url = f'/api/checklists/items/{item.id}/check/'
+        response = self.client.post(url, data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        
+        # 实例自动完成
         instance.refresh_from_db()
         self.assertEqual(instance.status, 'completed')
     
@@ -249,7 +322,7 @@ class ChecklistInstanceTestCase(TestCase):
 
 class ChecklistItemTestCase(TestCase):
     """清单项测试"""
-    
+
     def setUp(self):
         """设置测试数据"""
         self.user = User.objects.create_user(

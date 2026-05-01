@@ -6,32 +6,69 @@
           <template #header>
             <div class="card-header">
               <h3>活动管理</h3>
-              <el-button type="primary" @click="showCreateDialog">新建活动</el-button>
+              <el-button
+                type="primary"
+                @click="showCreateDialog"
+              >
+                新建活动
+              </el-button>
             </div>
           </template>
           
           <el-table
-            :data="eventsStore.events"
             v-loading="eventsStore.isLoading"
+            :data="eventsStore.events"
             stripe
             style="width: 100%"
           >
-            <el-table-column prop="name" label="活动名称" width="200" />
-            <el-table-column prop="type" label="类型" width="120" />
-            <el-table-column prop="start_date" label="开始时间" width="180">
+            <el-table-column
+              prop="name"
+              label="活动名称"
+              width="200"
+            />
+            <el-table-column
+              prop="type"
+              label="类型"
+              width="120"
+            />
+            <el-table-column
+              prop="start_date"
+              label="开始时间"
+              width="180"
+            >
               <template #default="{ row }">
                 {{ formatDate(row.start_date) }}
               </template>
             </el-table-column>
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column
+              prop="status"
+              label="状态"
+              width="100"
+            >
               <template #default="{ row }">
-                <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
+                <el-tag :type="getStatusType(row.status)">
+                  {{ getStatusText(row.status) }}
+                </el-tag>
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200">
+            <el-table-column
+              label="操作"
+              width="200"
+            >
               <template #default="{ row }">
-                <el-button size="small" @click="handleEdit(row)">编辑</el-button>
-                <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
+                <el-button
+                  size="small"
+                  @click="handleEdit(row)"
+                >
+                  编辑
+                </el-button>
+                <el-button
+                  size="small"
+                  type="danger"
+                  @click="handleDelete(row)"
+                >
+                  删除
+                </el-button>
               </template>
             </el-table-column>
           </el-table>

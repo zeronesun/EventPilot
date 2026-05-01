@@ -3,7 +3,10 @@
     <div class="content">
       <h1>404</h1>
       <p>页面未找到</p>
-      <router-link to="/" class="back-link">
+      <router-link
+        to="/"
+        class="back-link"
+      >
         返回首页
       </router-link>
     </div>

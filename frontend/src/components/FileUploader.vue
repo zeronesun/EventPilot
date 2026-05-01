@@ -1,12 +1,12 @@
 <template>
   <div class="file-uploader-wrapper">
     <!-- 拖拽上传区域 -->
-    <div 
+    <div
       class="upload-dropzone"
-      :class="{ 
+      :class="{
         'is-dragover': isDragOver,
         'is-uploading': isUploading,
-        'has-error': uploadError 
+        'has-error': uploadError,
       }"
       @dragover.prevent="handleDragOver"
       @dragleave.prevent="handleDragLeave"
@@ -23,7 +23,7 @@
         </div>
         <el-button type="primary" :icon="Upload">选择文件</el-button>
       </div>
-      <input 
+      <input
         ref="fileInputRef"
         type="file"
         :multiple="allowMultiple"
@@ -47,22 +47,12 @@
           <span>{{ file.type || '未知类型' }}</span>
         </div>
       </div>
-      <el-button 
-        type="danger" 
-        :icon="Delete" 
-        circle 
-        size="small"
-        @click="removeFile"
-      />
+      <el-button type="danger" :icon="Delete" circle size="small" @click="removeFile" />
     </div>
 
     <!-- 上传进度 -->
     <div v-if="uploadProgress > 0" class="upload-progress" @click.stop>
-      <el-progress 
-        :percentage="uploadProgress" 
-        :status="uploadStatus"
-        :stroke-width="6"
-      >
+      <el-progress :percentage="uploadProgress" :status="uploadStatus" :stroke-width="6">
         <template #default="{ percentage }">
           <span class="progress-text">{{ percentage }}%</span>
         </template>
@@ -75,45 +65,24 @@
 
     <!-- 上传结果 -->
     <div v-if="uploadError" class="upload-error" @click.stop>
-      <el-alert
-        type="error"
-        :closable="false"
-        show-icon
-      >
+      <el-alert type="error" :closable="false" show-icon>
         {{ uploadError }}
       </el-alert>
     </div>
 
     <!-- 上传成功 -->
     <div v-if="uploadSuccess" class="upload-success" @click.stop>
-      <el-alert
-        type="success"
-        :closable="false"
-        show-icon
-      >
-        文件上传成功！
-      </el-alert>
+      <el-alert type="success" :closable="false" show-icon> 文件上传成功！ </el-alert>
     </div>
 
     <!-- 批量上传队列 -->
     <div v-if="queue.length > 0" class="upload-queue" @click.stop>
       <div class="queue-header">
         <span>上传队列 ({{ queue.length }})</span>
-        <el-button 
-          type="danger" 
-          text 
-          size="small"
-          @click="clearQueue"
-        >
-          清空队列
-        </el-button>
+        <el-button type="danger" text size="small" @click="clearQueue"> 清空队列 </el-button>
       </div>
       <div class="queue-items">
-        <div 
-          v-for="(item, index) in queue" 
-          :key="index"
-          class="queue-item"
-        >
+        <div v-for="(item, index) in queue" :key="index" class="queue-item">
           <div class="queue-item-info">
             <el-icon :size="20">
               <component :is="getFileIcon(item.file.type)" />
@@ -124,11 +93,7 @@
             </div>
           </div>
           <div class="queue-item-progress">
-            <el-progress 
-              :percentage="item.progress" 
-              :status="item.status"
-              :stroke-width="4"
-            />
+            <el-progress :percentage="item.progress" :status="item.status" :stroke-width="4" />
           </div>
         </div>
       </div>
@@ -137,251 +102,256 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { 
-  UploadFilled, 
-  Upload, 
-  Delete, 
-  Files, 
+import { ref, computed } from 'vue';
+import {
+  UploadFilled,
+  Upload,
+  Delete,
+  Files,
   Picture,
   VideoPlay,
   Headset,
-  Folder
-} from '@element-plus/icons-vue'
-import { filesApi, apiClient } from '@/api/client'
-import type { FileUploadInitiateResponse } from '@/api/client'
+  Folder,
+} from '@element-plus/icons-vue';
+import { filesApi, apiClient } from '@/api/client';
+import type { FileUploadInitiateResponse } from '@/api/client';
 
 interface FileUploadItem {
-  file: File
-  progress: number
-  status: 'uploading' | 'completed' | 'failed'
-  fileId?: string
-  uploadId?: string
-  uploadStrategy?: 'direct' | 'multipart'
-  error?: string
+  file: File;
+  progress: number;
+  status: 'uploading' | 'completed' | 'failed';
+  fileId?: string;
+  uploadId?: string;
+  uploadStrategy?: 'direct' | 'multipart';
+  error?: string;
 }
 
 const props = defineProps({
   modelValue: {
     type: Object as any,
-    default: null
+    default: null,
   },
   allowMultiple: {
     type: Boolean,
-    default: false
+    default: false,
   },
   acceptedTypes: {
     type: String,
-    default: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.mp4,.mp3'
+    default: '.pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.mp4,.mp3',
   },
   maxSize: {
     type: Number,
-    default: 500 * 1024 * 1024 // 500MB
-  }
-})
+    default: 500 * 1024 * 1024, // 500MB
+  },
+});
 
-const emit = defineEmits(['update:modelValue', 'upload-success', 'upload-error'])
+const emit = defineEmits(['update:modelValue', 'upload-success', 'upload-error']);
 
-const isDragOver = ref(false)
-const isUploading = ref(false)
-const uploadProgress = ref(0)
-const uploadStatus = ref<'success' | 'exception' | undefined>(undefined)
-const uploadError = ref('')
-const uploadSuccess = ref(false)
-const uploadSpeed = ref('')
-const timeRemaining = ref(0)
+const isDragOver = ref(false);
+const isUploading = ref(false);
+const uploadProgress = ref(0);
+const uploadStatus = ref<'success' | 'exception' | undefined>(undefined);
+const uploadError = ref('');
+const uploadSuccess = ref(false);
+const uploadSpeed = ref('');
+const timeRemaining = ref(0);
 
-const fileInputRef = ref<HTMLInputElement>()
-const file = ref<File | null>(null)
-const queue = ref<FileUploadItem[]>([])
+const fileInputRef = ref<HTMLInputElement>();
+const file = ref<File | null>(null);
+const queue = ref<FileUploadItem[]>([]);
 
-const CHUNK_SIZE = 8 * 1024 * 1024 // 8MB
-const MAX_RETRIES = 3
-const RETRY_DELAY = 1000
+const CHUNK_SIZE = 8 * 1024 * 1024; // 8MB
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 
 const handleDragOver = (e: DragEvent) => {
-  isDragOver.value = true
-}
+  isDragOver.value = true;
+};
 
 const handleDragLeave = (e: DragEvent) => {
-  isDragOver.value = false
-}
+  isDragOver.value = false;
+};
 
 const handleDrop = (e: DragEvent) => {
-  isDragOver.value = false
-  const droppedFiles = e.dataTransfer?.files
+  isDragOver.value = false;
+  const droppedFiles = e.dataTransfer?.files;
   if (droppedFiles && droppedFiles.length > 0) {
     if (props.allowMultiple) {
-      addFilesToQueue(Array.from(droppedFiles))
+      addFilesToQueue(Array.from(droppedFiles));
     } else {
-      handleFile(droppedFiles[0])
+      handleFile(droppedFiles[0]);
     }
   }
-}
+};
 
 const triggerFileInput = () => {
-  fileInputRef.value?.click()
-}
+  fileInputRef.value?.click();
+};
 
 const handleFileSelect = (e: Event) => {
-  const target = e.target as HTMLInputElement
-  const selectedFiles = target.files
+  const target = e.target as HTMLInputElement;
+  const selectedFiles = target.files;
   if (selectedFiles && selectedFiles.length > 0) {
     if (props.allowMultiple) {
-      addFilesToQueue(Array.from(selectedFiles))
+      addFilesToQueue(Array.from(selectedFiles));
     } else {
-      handleFile(selectedFiles[0])
+      handleFile(selectedFiles[0]);
     }
   }
   // 重置input以允许再次选择相同文件
-  target.value = ''
-}
+  target.value = '';
+};
 
 const addFilesToQueue = (files: File[]) => {
-  files.forEach(f => {
+  files.forEach((f) => {
     if (validateFile(f)) {
       queue.value.push({
         file: f,
         progress: 0,
-        status: 'uploading'
-      })
+        status: 'uploading',
+      });
     }
-  })
-  processQueue()
-}
+  });
+  processQueue();
+};
 
 const handleFile = (selectedFile: File) => {
-  if (!validateFile(selectedFile)) return
-  
-  file.value = selectedFile
-  startUpload(selectedFile)
-}
+  if (!validateFile(selectedFile)) return;
+
+  file.value = selectedFile;
+  startUpload(selectedFile);
+};
 
 const validateFile = (file: File): boolean => {
   // 检查文件大小
   if (file.size > props.maxSize) {
-    uploadError.value = `文件大小超过限制 (${formatFileSize(props.maxSize)})`
-    return false
+    uploadError.value = `文件大小超过限制 (${formatFileSize(props.maxSize)})`;
+    return false;
   }
-  
+
   // 检查文件类型
   if (file.type && !isAcceptedType(file.type)) {
-    uploadError.value = `不支持的文件类型: ${file.type}`
-    return false
+    uploadError.value = `不支持的文件类型: ${file.type}`;
+    return false;
   }
-  
-  uploadError.value = ''
-  return true
-}
+
+  uploadError.value = '';
+  return true;
+};
 
 const isAcceptedType = (type: string): boolean => {
-  if (!type) return true
-  const acceptedTypes = props.acceptedTypes.split(',').map(t => t.trim())
-  return acceptedTypes.some(accept => type.includes(accept.replace('.', '')))
-}
+  if (!type) return true;
+  const acceptedTypes = props.acceptedTypes.split(',').map((t) => t.trim());
+  return acceptedTypes.some((accept) => type.includes(accept.replace('.', '')));
+};
 
 const removeFile = () => {
-  file.value = null
-  uploadProgress.value = 0
-  uploadError.value = ''
-  uploadSuccess.value = false
-  uploadStatus.value = undefined
-}
+  file.value = null;
+  uploadProgress.value = 0;
+  uploadError.value = '';
+  uploadSuccess.value = false;
+  uploadStatus.value = undefined;
+};
 
 const startUpload = async (fileToUpload: File) => {
-  isUploading.value = true
-  uploadProgress.value = 0
-  uploadStatus.value = undefined
-  uploadError.value = ''
-  uploadSuccess.value = false
-  
+  isUploading.value = true;
+  uploadProgress.value = 0;
+  uploadStatus.value = undefined;
+  uploadError.value = '';
+  uploadSuccess.value = false;
+
   try {
     // 初始化上传
     const initiateResponse = await filesApi.initiateUpload({
       filename: fileToUpload.name,
       file_size: fileToUpload.size,
-      mime_type: fileToUpload.type || 'application/octet-stream'
-    })
-    
-    const { file_id, upload_strategy, presigned_url, upload_id } = initiateResponse as FileUploadInitiateResponse
-    
+      mime_type: fileToUpload.type || 'application/octet-stream',
+    });
+
+    const { file_id, upload_strategy, presigned_url, upload_id } =
+      initiateResponse as FileUploadInitiateResponse;
+
     if (upload_strategy === 'direct') {
       // 直接上传小文件
-      await uploadDirect(fileToUpload, presigned_url || '', file_id)
+      await uploadDirect(fileToUpload, presigned_url || '', file_id);
     } else {
       // 分片上传大文件
-      await uploadMultipart(fileToUpload, file_id, upload_id || '')
+      await uploadMultipart(fileToUpload, file_id, upload_id || '');
     }
-    
-    uploadSuccess.value = true
-    uploadStatus.value = 'success'
-    emit('upload-success', { file_id, filename: fileToUpload.name })
-  } catch (err) {
-    const error = err as Error
-    uploadError.value = error.message || '上传失败'
-    uploadStatus.value = 'exception'
-    emit('upload-error', error.message)
-  } finally {
-    isUploading.value = false
-  }
-}
 
-const uploadDirect = async (fileToUpload: File, presignedUrl: string, fileId: string, retryCount = 0) => {
-  const startTime = Date.now()
-  let uploadedBytes = 0
-  
+    uploadSuccess.value = true;
+    uploadStatus.value = 'success';
+    emit('upload-success', { file_id, filename: fileToUpload.name });
+  } catch (err) {
+    const error = err as Error;
+    uploadError.value = error.message || '上传失败';
+    uploadStatus.value = 'exception';
+    emit('upload-error', error.message);
+  } finally {
+    isUploading.value = false;
+  }
+};
+
+const uploadDirect = async (
+  fileToUpload: File,
+  presignedUrl: string,
+  fileId: string,
+  retryCount = 0
+) => {
+  const startTime = Date.now();
+  let uploadedBytes = 0;
+
   try {
     const response = await fetch(presignedUrl, {
       method: 'PUT',
       headers: {
         'Content-Type': fileToUpload.type || 'application/octet-stream',
       },
-      body: fileToUpload
-    })
-    
+      body: fileToUpload,
+    });
+
     if (!response.ok) {
-      throw new Error(`上传失败: ${response.statusText}`)
+      throw new Error(`上传失败: ${response.statusText}`);
     }
-    
-    uploadProgress.value = 100
-    return fileId
+
+    uploadProgress.value = 100;
+    return fileId;
   } catch (error) {
     if (retryCount < MAX_RETRIES) {
-      uploadProgress.value = 0
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
-      return uploadDirect(fileToUpload, presignedUrl, fileId, retryCount + 1)
+      uploadProgress.value = 0;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+      return uploadDirect(fileToUpload, presignedUrl, fileId, retryCount + 1);
     }
-    throw error
+    throw error;
   }
-}
+};
 
 const uploadMultipart = async (
-  fileToUpload: File, 
-  fileId: string, 
+  fileToUpload: File,
+  fileId: string,
   uploadId: string,
   retryCount = 0
 ) => {
-  const fileSize = fileToUpload.size
-  const chunkCount = Math.ceil(fileSize / CHUNK_SIZE)
-  const chunks: Array<{PartNumber: number; ETag: string}> = []
-  
+  const fileSize = fileToUpload.size;
+  const chunkCount = Math.ceil(fileSize / CHUNK_SIZE);
+  const chunks: Array<{ PartNumber: number; ETag: string }> = [];
+
   for (let partNumber = 1; partNumber <= chunkCount; partNumber++) {
-    const startByte = (partNumber - 1) * CHUNK_SIZE
-    const endByte = Math.min(partNumber * CHUNK_SIZE, fileSize)
-    const chunk = fileToUpload.slice(startByte, endByte)
-    
-    await uploadChunk(chunk, partNumber, uploadId, fileId)
-      .then((etag) => {
-        chunks.push({ PartNumber: partNumber, ETag: etag })
-        const progress = (partNumber / chunkCount) * 100
-        uploadProgress.value = Math.round(progress)
-      })
+    const startByte = (partNumber - 1) * CHUNK_SIZE;
+    const endByte = Math.min(partNumber * CHUNK_SIZE, fileSize);
+    const chunk = fileToUpload.slice(startByte, endByte);
+
+    await uploadChunk(chunk, partNumber, uploadId, fileId).then((etag) => {
+      chunks.push({ PartNumber: partNumber, ETag: etag });
+      const progress = (partNumber / chunkCount) * 100;
+      uploadProgress.value = Math.round(progress);
+    });
   }
-  
+
   // 完成上传
-  const completeResponse = await filesApi.completeUpload(fileId, uploadId, chunks)
-  return completeResponse.file_id
-}
+  const completeResponse = await filesApi.completeUpload(fileId, uploadId, chunks);
+  return completeResponse.file_id;
+};
 
 const uploadChunk = async (
   chunk: Blob,
@@ -391,81 +361,87 @@ const uploadChunk = async (
   retryCount = 0
 ): Promise<string> => {
   try {
-    const partResponse = await filesApi.getUploadPart(fileId, partNumber, uploadId)
-    const presignedUrl = partResponse.presigned_url
-    
+    const partResponse = await filesApi.getUploadPart(fileId, partNumber, uploadId);
+    const presignedUrl = partResponse.presigned_url;
+
     const response = await fetch(presignedUrl, {
       method: 'PUT',
-      body: chunk
-    })
-    
+      body: chunk,
+    });
+
     if (!response.ok) {
-      throw new Error(`分片上传失败: ${response.statusText}`)
+      throw new Error(`分片上传失败: ${response.statusText}`);
     }
-    
+
     // 从响应头获取ETag
-    const etag = response.headers.get('ETag') || ''
-    return etag.replace(/"/g, '')
+    const etag = response.headers.get('ETag') || '';
+    return etag.replace(/"/g, '');
   } catch (error) {
     if (retryCount < MAX_RETRIES) {
-      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY))
-      return uploadChunk(chunk, partNumber, uploadId, fileId, retryCount + 1)
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
+      return uploadChunk(chunk, partNumber, uploadId, fileId, retryCount + 1);
     }
-    throw error
+    throw error;
   }
-}
+};
 
 const processQueue = async () => {
-  if (isUploading.value || queue.value.length === 0) return
-  
-  const currentItem = queue.value[0]
-  isUploading.value = true
-  
+  if (isUploading.value || queue.value.length === 0) return;
+
+  const currentItem = queue.value[0];
+  isUploading.value = true;
+
   try {
-    await startUpload(currentItem.file)
-    currentItem.progress = 100
-    currentItem.status = 'completed'
+    await startUpload(currentItem.file);
+    currentItem.progress = 100;
+    currentItem.status = 'completed';
   } catch (error) {
-    const err = error as Error
-    currentItem.status = 'failed'
-    currentItem.error = err.message
+    const err = error as Error;
+    currentItem.status = 'failed';
+    currentItem.error = err.message;
   }
-  
-  queue.value.shift()
-  isUploading.value = false
-  
+
+  queue.value.shift();
+  isUploading.value = false;
+
   // 继续处理队列中的下一个文件
   if (queue.value.length > 0) {
-    processQueue()
+    processQueue();
   }
-}
+};
 
 const clearQueue = () => {
-  queue.value = []
-}
+  queue.value = [];
+};
 
 const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
-  const k = 1024
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(k))
-  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`
-}
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+};
 
 const formatTimeRemaining = (seconds: number): string => {
-  if (seconds <= 0) return '计算中...'
-  if (seconds < 60) return `${Math.round(seconds)}秒`
-  if (seconds < 3600) return `${Math.round(seconds / 60)}分钟`
-  return `${Math.round(seconds / 3600)}小时`
-}
+  if (seconds <= 0) return '计算中...';
+  if (seconds < 60) return `${Math.round(seconds)}秒`;
+  if (seconds < 3600) return `${Math.round(seconds / 60)}分钟`;
+  return `${Math.round(seconds / 3600)}小时`;
+};
 
 const getFileIcon = (type: string) => {
-  if (type?.startsWith('image/')) return Picture
-  if (type?.startsWith('video/')) return VideoPlay
-  if (type?.startsWith('audio/')) return Headset
-  if (type?.includes('pdf') || type?.includes('word') || type?.includes('excel') || type?.includes('text')) return Files
-  return Folder
-}
+  if (type?.startsWith('image/')) return Picture;
+  if (type?.startsWith('video/')) return VideoPlay;
+  if (type?.startsWith('audio/')) return Headset;
+  if (
+    type?.includes('pdf') ||
+    type?.includes('word') ||
+    type?.includes('excel') ||
+    type?.includes('text')
+  )
+    return Files;
+  return Folder;
+};
 </script>
 
 <style scoped>

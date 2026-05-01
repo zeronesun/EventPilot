@@ -16,7 +16,7 @@
         <p class="error-message">
           {{ errorMessage }}
         </p>
-        
+
         <el-collapse v-if="showDetails && errorDetails" class="error-details">
           <el-collapse-item title="错误详情" name="details">
             <pre class="error-stack">{{ errorDetails }}</pre>
@@ -28,7 +28,7 @@
             <el-icon><RefreshRight /></el-icon>
             重新加载
           </el-button>
-          
+
           <el-button @click="handleReport">
             <el-icon><message /></el-icon>
             上报错误
@@ -45,69 +45,69 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
-import { Warning, RefreshRight, Message, View, Message as ElMessage } from 'element-plus'
+import { ref } from 'vue';
+import { Warning, RefreshRight, Message, View, Message as ElMessage } from 'element-plus';
 
 // Props
 interface Props {
   // 自定义错误处理函数
-  onError?: (error: Error, errorInfo: any) => void
+  onError?: (error: Error, errorInfo: any) => void;
   // 是否显示返回首页按钮
-  showHome?: boolean
+  showHome?: boolean;
   // 自定义错误消息
-  fallbackMessage?: string
+  fallbackMessage?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   onError: undefined,
   showHome: true,
   fallbackMessage: undefined,
-})
+});
 
 // 事件
 const emit = defineEmits<{
-  error: [error: Error, errorInfo: any]
-}>()
+  error: [error: Error, errorInfo: any];
+}>();
 
 // State
-const hasError = ref(false)
-const errorMessage = ref('')
-const errorDetails = ref('')
-const errorInstance = ref<Error | null>(null)
-const showDetails = ref(false)
+const hasError = ref(false);
+const errorMessage = ref('');
+const errorDetails = ref('');
+const errorInstance = ref<Error | null>(null);
+const showDetails = ref(false);
 
 // 配置对象（用于 ErrorBoundary 注册）
 const boundaryConfig = {
   onError: (error: Error, errorInfo: any) => {
-    hasError.value = true
-    errorMessage.value = props.fallbackMessage || error.message || '未知错误'
-    errorDetails.value = error.stack || ''
-    errorInstance.value = error
+    hasError.value = true;
+    errorMessage.value = props.fallbackMessage || error.message || '未知错误';
+    errorDetails.value = error.stack || '';
+    errorInstance.value = error;
 
     // 调用外部错误处理
     if (props.onError) {
-      props.onError(error, errorInfo)
+      props.onError(error, errorInfo);
     }
 
     // 触发事件
-    emit('error', error, errorInfo)
+    emit('error', error, errorInfo);
 
     // 记录错误
-    console.error('[ErrorBoundary]', error, errorInfo)
+    console.error('[ErrorBoundary]', error, errorInfo);
   },
-}
+};
 
 // 暴露配置对象，供外部注册使用
-defineExpose({ boundaryConfig })
+defineExpose({ boundaryConfig });
 
 // 方法
 function handleReload() {
   // 重新加载页面
-  window.location.reload()
+  window.location.reload();
 }
 
 function toggleDetails() {
-  showDetails.value = !showDetails.value
+  showDetails.value = !showDetails.value;
 }
 
 async function handleReport() {
@@ -119,14 +119,14 @@ async function handleReport() {
       url: window.location.href,
       userAgent: navigator.userAgent,
       timestamp: new Date().toISOString(),
-    }
+    };
 
     // 这里应该调用API上报错误
     // await api.reportError(errorData)
 
-    ElMessage.success('错误已上报，感谢您的反馈')
+    ElMessage.success('错误已上报，感谢您的反馈');
   } catch (err) {
-    ElMessage.error('错误上报失败')
+    ElMessage.error('错误上报失败');
   }
 }
 </script>

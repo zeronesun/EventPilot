@@ -6,8 +6,9 @@ import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import App from './App.vue'
 import router from './router'
+import { ToastPlugin } from './plugins/toast'
 
-console.log('📦 Modules loaded: Vue, Pinia, ElementPlus, Router');
+console.log('📦 Modules loaded: Vue, Pinia, ElementPlus, Router, Toast');
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -15,6 +16,7 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
+app.use(ToastPlugin)
 
 console.log('🔌 Plugins installed');
 

@@ -2,41 +2,80 @@
   <div class="home-container">
     <!-- 统计卡片 -->
     <el-row :gutter="20">
-      <el-col :span="6" v-for="(stat, index) in statistics" :key="index">
-        <el-card class="stat-card" :body-style="{ padding: '20px' }">
+      <el-col
+        v-for="(stat, index) in statistics"
+        :key="index"
+        :span="6"
+      >
+        <el-card
+          class="stat-card"
+          :body-style="{ padding: '20px' }"
+        >
           <div class="stat-content">
-            <div class="stat-icon" :style="{ backgroundColor: stat.color }">
-              <el-icon :size="24"><component :is="stat.icon" /></el-icon>
+            <div
+              class="stat-icon"
+              :style="{ backgroundColor: stat.color }"
+            >
+              <el-icon :size="24">
+                <component :is="stat.icon" />
+              </el-icon>
             </div>
             <div class="stat-details">
-              <div class="stat-value">{{ stat.value }}</div>
-              <div class="stat-label">{{ stat.label }}</div>
+              <div class="stat-value">
+                {{ stat.value }}
+              </div>
+              <div class="stat-label">
+                {{ stat.label }}
+              </div>
             </div>
           </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="16">
         <el-card>
           <template #header>
             <div class="card-header">
               <h3>最近活动</h3>
-              <el-button type="primary" link @click="router.push('/events')">
+              <el-button
+                type="primary"
+                link
+                @click="router.push('/events')"
+              >
                 查看全部
               </el-button>
             </div>
           </template>
 
-          <el-skeleton :loading="eventsStore.isLoading" :rows="3" animated>
-            <el-empty v-if="!eventsStore.isLoading && recentEvents.length === 0"
-              description="暂无活动" />
-            <div v-else class="event-list">
-              <div v-for="event in recentEvents" :key="event.id" class="event-item">
+          <el-skeleton
+            :loading="eventsStore.isLoading"
+            :rows="3"
+            animated
+          >
+            <el-empty
+              v-if="!eventsStore.isLoading && recentEvents.length === 0"
+              description="暂无活动"
+            />
+            <div
+              v-else
+              class="event-list"
+            >
+              <div
+                v-for="event in recentEvents"
+                :key="event.id"
+                class="event-item"
+              >
                 <div class="event-header">
                   <h4>{{ event.name }}</h4>
-                  <el-tag :type="getStatusType(event.status)" size="small">
+                  <el-tag
+                    :type="getStatusType(event.status)"
+                    size="small"
+                  >
                     {{ getStatusText(event.status) }}
                   </el-tag>
                 </div>
@@ -62,20 +101,39 @@
             <h3>待处理任务</h3>
           </template>
 
-          <el-skeleton :loading="tasksStore.isLoading" :rows="3" animated>
-            <el-empty v-if="!tasksStore.isLoading && pendingTasks.length === 0"
-              description="暂无待处理任务" />
-            <div v-else class="task-list">
-              <div v-for="task in pendingTasks.slice(0, 5)" :key="task.id" class="task-item">
+          <el-skeleton
+            :loading="tasksStore.isLoading"
+            :rows="3"
+            animated
+          >
+            <el-empty
+              v-if="!tasksStore.isLoading && pendingTasks.length === 0"
+              description="暂无待处理任务"
+            />
+            <div
+              v-else
+              class="task-list"
+            >
+              <div
+                v-for="task in pendingTasks.slice(0, 5)"
+                :key="task.id"
+                class="task-item"
+              >
                 <div class="task-header">
                   <h4>{{ task.title }}</h4>
-                  <el-tag :type="getPriorityType(task.priority)" size="small">
+                  <el-tag
+                    :type="getPriorityType(task.priority)"
+                    size="small"
+                  >
                     {{ getPriorityText(task.priority) }}
                   </el-tag>
                 </div>
                 <div class="task-meta">
                   <span class="task-progress">
-                    <el-progress :percentage="task.progress || 0" :stroke-width="4" />
+                    <el-progress
+                      :percentage="task.progress || 0"
+                      :stroke-width="4"
+                    />
                   </span>
                 </div>
               </div>
@@ -85,29 +143,52 @@
       </el-col>
     </el-row>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="24">
         <el-card>
           <template #header>
             <div class="card-header">
               <h3>实时动态</h3>
-              <el-tag type="success" size="small">
-                <el-icon class="is-loading"><Loading /></el-icon>
+              <el-tag
+                type="success"
+                size="small"
+              >
+                <el-icon class="is-loading">
+                  <Loading />
+                </el-icon>
                 实时连接
               </el-tag>
             </div>
           </template>
 
-          <div v-if="notifications.length === 0" class="empty-notifications">
+          <div
+            v-if="notifications.length === 0"
+            class="empty-notifications"
+          >
             <el-empty description="暂无最新动态" />
           </div>
-          <div v-else class="notifications-list">
-            <div v-for="notification in notifications" :key="notification.id"
-                 class="notification-item">
+          <div
+            v-else
+            class="notifications-list"
+          >
+            <div
+              v-for="notification in notifications"
+              :key="notification.id"
+              class="notification-item"
+            >
               <div class="notification-content">
-                <div class="notification-title">{{ notification.title }}</div>
-                <div class="notification-message">{{ notification.message }}</div>
-                <div class="notification-time">{{ formatTime(notification.timestamp) }}</div>
+                <div class="notification-title">
+                  {{ notification.title }}
+                </div>
+                <div class="notification-message">
+                  {{ notification.message }}
+                </div>
+                <div class="notification-time">
+                  {{ formatTime(notification.timestamp) }}
+                </div>
               </div>
             </div>
           </div>

@@ -7,122 +7,277 @@
           <el-icon><Search /></el-icon>
           高级搜索
         </el-button>
-        <el-button type="primary" @click="showCreateDialog = true">
+        <el-button
+          type="primary"
+          @click="showCreateDialog = true"
+        >
           <el-icon><Plus /></el-icon>
           新建知识条目
         </el-button>
       </div>
     </div>
 
-    <el-row :gutter="20" style="margin-top: 20px">
+    <el-row
+      :gutter="20"
+      style="margin-top: 20px"
+    >
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ statistics.total }}</div>
-          <div class="stat-label">总条目数</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ statistics.total }}
+          </div>
+          <div class="stat-label">
+            总条目数
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ statistics.issues }}</div>
-          <div class="stat-label">问题</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ statistics.issues }}
+          </div>
+          <div class="stat-label">
+            问题
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ statistics.experiences }}</div>
-          <div class="stat-label">经验</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ statistics.experiences }}
+          </div>
+          <div class="stat-label">
+            经验
+          </div>
         </el-card>
       </el-col>
       <el-col :span="6">
-        <el-card shadow="hover" class="stat-card">
-          <div class="stat-number">{{ statistics.bestPractices }}</div>
-          <div class="stat-label">最佳实践</div>
+        <el-card
+          shadow="hover"
+          class="stat-card"
+        >
+          <div class="stat-number">
+            {{ statistics.bestPractices }}
+          </div>
+          <div class="stat-label">
+            最佳实践
+          </div>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-card class="filter-card" style="margin-top: 20px">
-      <el-row :gutter="20" align="middle">
+    <el-card
+      class="filter-card"
+      style="margin-top: 20px"
+    >
+      <el-row
+        :gutter="20"
+        align="middle"
+      >
         <el-col :span="8">
-          <el-input v-model="searchQuery" placeholder="搜索知识条目..." clearable @input="handleSearch">
+          <el-input
+            v-model="searchQuery"
+            placeholder="搜索知识条目..."
+            clearable
+            @input="handleSearch"
+          >
             <template #prefix>
               <el-icon><Search /></el-icon>
             </template>
           </el-input>
         </el-col>
         <el-col :span="4">
-          <el-select v-model="filterType" placeholder="条目类型" clearable @change="handleSearch">
-            <el-option label="全部类型" value="" />
-            <el-option label="问题" value="issue" />
-            <el-option label="经验" value="experience" />
-            <el-option label="最佳实践" value="best_practice" />
+          <el-select
+            v-model="filterType"
+            placeholder="条目类型"
+            clearable
+            @change="handleSearch"
+          >
+            <el-option
+              label="全部类型"
+              value=""
+            />
+            <el-option
+              label="问题"
+              value="issue"
+            />
+            <el-option
+              label="经验"
+              value="experience"
+            />
+            <el-option
+              label="最佳实践"
+              value="best_practice"
+            />
           </el-select>
         </el-col>
         <el-col :span="4">
-          <el-select v-model="filterCategory" placeholder="分类" clearable @change="handleSearch">
-            <el-option label="全部分类" value="" />
-            <el-option v-for="cat in categories" :key="cat" :label="cat" :value="cat" />
+          <el-select
+            v-model="filterCategory"
+            placeholder="分类"
+            clearable
+            @change="handleSearch"
+          >
+            <el-option
+              label="全部分类"
+              value=""
+            />
+            <el-option
+              v-for="cat in categories"
+              :key="cat"
+              :label="cat"
+              :value="cat"
+            />
           </el-select>
         </el-col>
         <el-col :span="4">
-          <el-checkbox v-model="showPublicOnly">仅公开</el-checkbox>
+          <el-checkbox v-model="showPublicOnly">
+            仅公开
+          </el-checkbox>
         </el-col>
       </el-row>
     </el-card>
 
-    <el-card class="table-card" style="margin-top: 20px">
-      <el-table :data="entries" v-loading="loading" stripe border>
-        <el-table-column prop="title" label="标题" min-width="200">
+    <el-card
+      class="table-card"
+      style="margin-top: 20px"
+    >
+      <el-table
+        v-loading="loading"
+        :data="entries"
+        stripe
+        border
+      >
+        <el-table-column
+          prop="title"
+          label="标题"
+          min-width="200"
+        >
           <template #default="{ row }">
-            <div class="entry-title" @click="viewEntry(row)">
+            <div
+              class="entry-title"
+              @click="viewEntry(row)"
+            >
               {{ row.title }}
             </div>
           </template>
         </el-table-column>
-        <el-table-column prop="entry_type" label="类型" width="120">
+        <el-table-column
+          prop="entry_type"
+          label="类型"
+          width="120"
+        >
           <template #default="{ row }">
-            <el-tag :type="getEntryTypeTag(row.entry_type)" size="small">
+            <el-tag
+              :type="getEntryTypeTag(row.entry_type)"
+              size="small"
+            >
               {{ getEntryTypeText(row.entry_type) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="category" label="分类" width="120">
+        <el-table-column
+          prop="category"
+          label="分类"
+          width="120"
+        >
           <template #default="{ row }">
-            <el-tag type="info" size="small">{{ row.category || '未分类' }}</el-tag>
+            <el-tag
+              type="info"
+              size="small"
+            >
+              {{ row.category || '未分类' }}
+            </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="tags" label="标签" width="200">
+        <el-table-column
+          prop="tags"
+          label="标签"
+          width="200"
+        >
           <template #default="{ row }">
-            <el-tag v-for="tag in (row.tags || []).slice(0, 3)" :key="tag" size="small" style="margin-right: 5px">
+            <el-tag
+              v-for="tag in (row.tags || []).slice(0, 3)"
+              :key="tag"
+              size="small"
+              style="margin-right: 5px"
+            >
               {{ tag }}
             </el-tag>
             <span v-if="(row.tags || []).length > 3">+{{ row.tags.length - 3 }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="is_public" label="公开" width="80">
+        <el-table-column
+          prop="is_public"
+          label="公开"
+          width="80"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.is_public ? 'success' : 'info'" size="small">
+            <el-tag
+              :type="row.is_public ? 'success' : 'info'"
+              size="small"
+            >
               {{ row.is_public ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="is_verified" label="验证" width="80">
+        <el-table-column
+          prop="is_verified"
+          label="验证"
+          width="80"
+        >
           <template #default="{ row }">
-            <el-tag :type="row.is_verified ? 'success' : 'warning'" size="small">
+            <el-tag
+              :type="row.is_verified ? 'success' : 'warning'"
+              size="small"
+            >
               {{ row.is_verified ? '已验证' : '待验证' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="popularity" label="热度" width="80" />
-        <el-table-column prop="created_at" label="创建时间" width="160">
+        <el-table-column
+          prop="popularity"
+          label="热度"
+          width="80"
+        />
+        <el-table-column
+          prop="created_at"
+          label="创建时间"
+          width="160"
+        >
           <template #default="{ row }">
             {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column
+          label="操作"
+          width="150"
+          fixed="right"
+        >
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="editEntry(row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleteEntry(row)">删除</el-button>
+            <el-button
+              type="primary"
+              size="small"
+              @click="editEntry(row)"
+            >
+              编辑
+            </el-button>
+            <el-button
+              type="danger"
+              size="small"
+              @click="deleteEntry(row)"
+            >
+              删除
+            </el-button>
           </template>
         </el-table-column>
       </el-table>
@@ -139,63 +294,170 @@
       />
     </el-card>
 
-    <el-dialog v-model="showCreateDialog" :title="editingEntry ? '编辑知识条目' : '新建知识条目'" width="600px">
-      <el-form :model="entryForm" :rules="entryRules" ref="entryFormRef" label-width="100px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="entryForm.title" placeholder="请输入标题" />
+    <el-dialog
+      v-model="showCreateDialog"
+      :title="editingEntry ? '编辑知识条目' : '新建知识条目'"
+      width="600px"
+    >
+      <el-form
+        ref="entryFormRef"
+        :model="entryForm"
+        :rules="entryRules"
+        label-width="100px"
+      >
+        <el-form-item
+          label="标题"
+          prop="title"
+        >
+          <el-input
+            v-model="entryForm.title"
+            placeholder="请输入标题"
+          />
         </el-form-item>
-        <el-form-item label="类型" prop="entry_type">
-          <el-select v-model="entryForm.entry_type" placeholder="请选择类型">
-            <el-option label="问题" value="issue" />
-            <el-option label="经验" value="experience" />
-            <el-option label="最佳实践" value="best_practice" />
+        <el-form-item
+          label="类型"
+          prop="entry_type"
+        >
+          <el-select
+            v-model="entryForm.entry_type"
+            placeholder="请选择类型"
+          >
+            <el-option
+              label="问题"
+              value="issue"
+            />
+            <el-option
+              label="经验"
+              value="experience"
+            />
+            <el-option
+              label="最佳实践"
+              value="best_practice"
+            />
           </el-select>
         </el-form-item>
-        <el-form-item label="分类" prop="category">
-          <el-input v-model="entryForm.category" placeholder="请输入分类" />
+        <el-form-item
+          label="分类"
+          prop="category"
+        >
+          <el-input
+            v-model="entryForm.category"
+            placeholder="请输入分类"
+          />
         </el-form-item>
-        <el-form-item label="内容" prop="content">
-          <el-input v-model="entryForm.content" type="textarea" :rows="6" placeholder="请输入内容" />
+        <el-form-item
+          label="内容"
+          prop="content"
+        >
+          <el-input
+            v-model="entryForm.content"
+            type="textarea"
+            :rows="6"
+            placeholder="请输入内容"
+          />
         </el-form-item>
         <el-form-item label="标签">
-          <el-select v-model="entryForm.tags" multiple filterable allow-create placeholder="请选择或输入标签">
-            <el-option v-for="tag in commonTags" :key="tag" :label="tag" :value="tag" />
+          <el-select
+            v-model="entryForm.tags"
+            multiple
+            filterable
+            allow-create
+            placeholder="请选择或输入标签"
+          >
+            <el-option
+              v-for="tag in commonTags"
+              :key="tag"
+              :label="tag"
+              :value="tag"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="关联活动">
-          <el-input v-model="entryForm.related_events" placeholder="活动ID，多个用逗号分隔" />
+          <el-input
+            v-model="entryForm.related_events"
+            placeholder="活动ID，多个用逗号分隔"
+          />
         </el-form-item>
         <el-form-item label="关联任务">
-          <el-input v-model="entryForm.related_tasks" placeholder="任务ID，多个用逗号分隔" />
+          <el-input
+            v-model="entryForm.related_tasks"
+            placeholder="任务ID，多个用逗号分隔"
+          />
         </el-form-item>
         <el-form-item label="公开">
           <el-switch v-model="entryForm.is_public" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="saveEntry">保存</el-button>
+        <el-button @click="showCreateDialog = false">
+          取消
+        </el-button>
+        <el-button
+          type="primary"
+          @click="saveEntry"
+        >
+          保存
+        </el-button>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showDetailDialog" title="知识条目详情" width="700px">
+    <el-dialog
+      v-model="showDetailDialog"
+      title="知识条目详情"
+      width="700px"
+    >
       <template v-if="currentEntry">
-        <el-descriptions :column="2" border>
-          <el-descriptions-item label="标题" :span="2">{{ currentEntry.title }}</el-descriptions-item>
+        <el-descriptions
+          :column="2"
+          border
+        >
+          <el-descriptions-item
+            label="标题"
+            :span="2"
+          >
+            {{ currentEntry.title }}
+          </el-descriptions-item>
           <el-descriptions-item label="类型">
-            <el-tag :type="getEntryTypeTag(currentEntry.entry_type)">{{ getEntryTypeText(currentEntry.entry_type) }}</el-tag>
+            <el-tag :type="getEntryTypeTag(currentEntry.entry_type)">
+              {{ getEntryTypeText(currentEntry.entry_type) }}
+            </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="分类">{{ currentEntry.category || '未分类' }}</el-descriptions-item>
-          <el-descriptions-item label="标签" :span="2">
-            <el-tag v-for="tag in currentEntry.tags" :key="tag" size="small" style="margin-right: 5px">{{ tag }}</el-tag>
+          <el-descriptions-item label="分类">
+            {{ currentEntry.category || '未分类' }}
           </el-descriptions-item>
-          <el-descriptions-item label="内容" :span="2">
-            <div style="white-space: pre-wrap">{{ currentEntry.content }}</div>
+          <el-descriptions-item
+            label="标签"
+            :span="2"
+          >
+            <el-tag
+              v-for="tag in currentEntry.tags"
+              :key="tag"
+              size="small"
+              style="margin-right: 5px"
+            >
+              {{ tag }}
+            </el-tag>
           </el-descriptions-item>
-          <el-descriptions-item label="公开">{{ currentEntry.is_public ? '是' : '否' }}</el-descriptions-item>
-          <el-descriptions-item label="验证">{{ currentEntry.is_verified ? '已验证' : '待验证' }}</el-descriptions-item>
-          <el-descriptions-item label="热度">{{ currentEntry.popularity }}</el-descriptions-item>
-          <el-descriptions-item label="创建时间">{{ formatDate(currentEntry.created_at) }}</el-descriptions-item>
+          <el-descriptions-item
+            label="内容"
+            :span="2"
+          >
+            <div style="white-space: pre-wrap">
+              {{ currentEntry.content }}
+            </div>
+          </el-descriptions-item>
+          <el-descriptions-item label="公开">
+            {{ currentEntry.is_public ? '是' : '否' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="验证">
+            {{ currentEntry.is_verified ? '已验证' : '待验证' }}
+          </el-descriptions-item>
+          <el-descriptions-item label="热度">
+            {{ currentEntry.popularity }}
+          </el-descriptions-item>
+          <el-descriptions-item label="创建时间">
+            {{ formatDate(currentEntry.created_at) }}
+          </el-descriptions-item>
         </el-descriptions>
       </template>
     </el-dialog>

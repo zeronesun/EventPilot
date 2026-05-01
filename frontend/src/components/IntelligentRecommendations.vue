@@ -16,16 +16,12 @@
       <div class="recommendation-config">
         <el-form :model="config" label-width="120px" inline>
           <el-form-item label="活动类型">
-            <el-input 
-              v-model="config.event_type" 
-              placeholder="例如：大型商务会议"
-              clearable
-            />
+            <el-input v-model="config.event_type" placeholder="例如：大型商务会议" clearable />
           </el-form-item>
 
           <el-form-item label="最低信用分">
-            <el-slider 
-              v-model="config.min_credit_score" 
+            <el-slider
+              v-model="config.min_credit_score"
               :max="100"
               :marks="{ 0: '0', 50: '50', 100: '100' }"
             />
@@ -40,12 +36,7 @@
           </el-form-item>
 
           <el-form-item label="推荐数量">
-            <el-input-number 
-              v-model="config.limit" 
-              :min="5" 
-              :max="20" 
-              :step="5"
-            />
+            <el-input-number v-model="config.limit" :min="5" :max="20" :step="5" />
           </el-form-item>
 
           <el-form-item>
@@ -60,14 +51,12 @@
       <!-- 推荐结果 -->
       <div v-loading="loading" class="recommendations-results">
         <el-empty v-if="!loading && recommendations.length === 0" description="暂无推荐结果">
-          <el-button type="primary" @click="getRecommendations">
-            开始推荐
-          </el-button>
+          <el-button type="primary" @click="getRecommendations"> 开始推荐 </el-button>
         </el-empty>
 
         <div v-else class="recommendations-list">
-          <div 
-            v-for="(recommendation, index) in recommendations" 
+          <div
+            v-for="(recommendation, index) in recommendations"
             :key="recommendation.profile_id"
             class="recommendation-card"
             :class="{ 'top-recommendation': index === 0 }"
@@ -78,9 +67,7 @@
                 <el-icon><Trophy /></el-icon>
                 No.1
               </div>
-              <div v-else class="rank-normal">
-                No.{{ index + 1 }}
-              </div>
+              <div v-else class="rank-normal">No.{{ index + 1 }}</div>
             </div>
 
             <!-- 推荐分数 -->
@@ -90,7 +77,7 @@
               </div>
               <div class="score-label">推荐分数</div>
               <div class="score-bar">
-                <el-progress 
+                <el-progress
                   :percentage="Math.min(recommendation.recommendation_score, 100)"
                   :color="getScoreColor(recommendation.recommendation_score)"
                   :show-text="false"
@@ -102,14 +89,11 @@
             <div class="recommendation-profile">
               <div class="profile-header">
                 <h4>{{ recommendation.name }}</h4>
-                <el-tag 
-                  :type="getTypeColor(recommendation.profile_type)" 
-                  size="small"
-                >
+                <el-tag :type="getTypeColor(recommendation.profile_type)" size="small">
                   {{ getTypeLabel(recommendation.profile_type) }}
                 </el-tag>
               </div>
-              
+
               <div v-if="recommendation.company_name" class="profile-company">
                 {{ recommendation.company_name }}
               </div>
@@ -117,19 +101,19 @@
               <div class="profile-details">
                 <div class="detail-item">
                   <span class="detail-label">信用评分:</span>
-                  <el-progress 
-                    :percentage="recommendation.credit_score" 
+                  <el-progress
+                    :percentage="recommendation.credit_score"
                     :color="getScoreColor(recommendation.credit_score)"
                     :stroke-width="6"
                     :show-text="false"
                   />
                   <span class="detail-value">{{ recommendation.credit_score }}</span>
                 </div>
-                
+
                 <div class="detail-item">
                   <span class="detail-label">质量评分:</span>
-                  <el-progress 
-                    :percentage="recommendation.quality_score" 
+                  <el-progress
+                    :percentage="recommendation.quality_score"
                     :color="getScoreColor(recommendation.quality_score)"
                     :stroke-width="6"
                     :show-text="false"
@@ -172,24 +156,11 @@
 
             <!-- 操作按钮 -->
             <div class="recommendation-actions">
-              <el-button 
-                type="primary" 
-                size="small" 
-                @click="viewProfile(recommendation)"
-              >
+              <el-button type="primary" size="small" @click="viewProfile(recommendation)">
                 查看详情
               </el-button>
-              <el-button 
-                size="small" 
-                @click="viewContacts(recommendation)"
-              >
-                联系方式
-              </el-button>
-              <el-button 
-                type="success" 
-                size="small" 
-                @click="selectSupplier(recommendation)"
-              >
+              <el-button size="small" @click="viewContacts(recommendation)"> 联系方式 </el-button>
+              <el-button type="success" size="small" @click="selectSupplier(recommendation)">
                 合作
               </el-button>
             </div>
@@ -207,8 +178,8 @@
       </template>
 
       <div class="presets-grid">
-        <div 
-          v-for="preset in presets" 
+        <div
+          v-for="preset in presets"
           :key="preset.name"
           class="preset-item"
           @click="applyPreset(preset)"
@@ -230,18 +201,27 @@
 import { ref, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
 import {
-  Refresh, Search, Trophy,
-  FolderOpened, DocumentChecked,
-  Briefcase, Star, Monitor
+  Refresh,
+  Search,
+  Trophy,
+  FolderOpened,
+  DocumentChecked,
+  Briefcase,
+  Star,
+  Monitor,
 } from '@element-plus/icons-vue';
-import { profilesApi, type RecommendationResult, type RecommendationRequest } from '@/lib/profiles-client';
+import {
+  profilesApi,
+  type RecommendationResult,
+  type RecommendationRequest,
+} from '@/lib/profiles-client';
 
 // 默认配置
 const defaultConfig: RecommendationRequest = {
   event_type: '',
   min_credit_score: 60,
   max_risk_level: 'medium',
-  limit: 10
+  limit: 10,
 };
 
 // 响应式数据
@@ -258,9 +238,9 @@ const presets = [
       event_type: '重大项目合作',
       min_credit_score: 80,
       max_risk_level: 'low' as const,
-      limit: 5
+      limit: 5,
     },
-    icon: Star
+    icon: Star,
   },
   {
     name: '风险可控型',
@@ -269,9 +249,9 @@ const presets = [
       event_type: '常规项目合作',
       min_credit_score: 60,
       max_risk_level: 'medium' as const,
-      limit: 10
+      limit: 10,
     },
-    icon: DocumentChecked
+    icon: DocumentChecked,
   },
   {
     name: '成本优先型',
@@ -280,9 +260,9 @@ const presets = [
       event_type: '成本敏感项目',
       min_credit_score: 40,
       max_risk_level: 'high' as const,
-      limit: 15
+      limit: 15,
     },
-    icon: Briefcase
+    icon: Briefcase,
   },
   {
     name: '紧急响应型',
@@ -291,10 +271,10 @@ const presets = [
       event_type: '紧急项目',
       min_credit_score: 70,
       max_risk_level: 'low' as const,
-      limit: 8
+      limit: 8,
     },
-    icon: Monitor
-  }
+    icon: Monitor,
+  },
 ];
 
 // 获取推荐结果
@@ -303,7 +283,7 @@ const getRecommendations = async () => {
   try {
     const response = await profilesApi.recommendSuppliers(config.value);
     recommendations.value = (response as any).recommendations || [];
-    
+
     if (recommendations.value.length === 0) {
       ElMessage.warning('未找到符合条件的推荐');
     } else {
@@ -325,7 +305,7 @@ const resetRecommendations = () => {
 };
 
 // 应用预设
-const applyPreset = (preset: typeof presets[0]) => {
+const applyPreset = (preset: (typeof presets)[0]) => {
   config.value = { ...preset.config };
   getRecommendations();
 };
@@ -341,9 +321,9 @@ const getScoreColor = (score: number) => {
 // 获取类型颜色
 const getTypeColor = (type: string) => {
   const colorMap: Record<string, string> = {
-    'client': 'success',
-    'supplier': 'warning',
-    'partner': 'primary'
+    client: 'success',
+    supplier: 'warning',
+    partner: 'primary',
   };
   return colorMap[type] || 'info';
 };
@@ -351,9 +331,9 @@ const getTypeColor = (type: string) => {
 // 获取类型标签
 const getTypeLabel = (type: string) => {
   const labelMap: Record<string, string> = {
-    'client': '客户',
-    'supplier': '供应商',
-    'partner': '合作伙伴'
+    client: '客户',
+    supplier: '供应商',
+    partner: '合作伙伴',
   };
   return labelMap[type] || type;
 };
@@ -361,9 +341,9 @@ const getTypeLabel = (type: string) => {
 // 获取风险类型
 const getRiskType = (level: string) => {
   const typeMap: Record<string, string> = {
-    'low': 'success',
-    'medium': 'warning',
-    'high': 'danger'
+    low: 'success',
+    medium: 'warning',
+    high: 'danger',
   };
   return typeMap[level] || 'info';
 };
@@ -371,9 +351,9 @@ const getRiskType = (level: string) => {
 // 获取风险标签
 const getRiskLabel = (level: string) => {
   const labelMap: Record<string, string> = {
-    'low': '低风险',
-    'medium': '中风险',
-    'high': '高风险'
+    low: '低风险',
+    medium: '中风险',
+    high: '高风险',
   };
   return labelMap[level] || level;
 };
@@ -443,7 +423,7 @@ onMounted(() => {
 }
 
 .recommendation-card.top-recommendation {
-  border-color: #409EFF;
+  border-color: #409eff;
   background: linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%);
 }
 
@@ -463,14 +443,14 @@ onMounted(() => {
   align-items: center;
   justify-content: center;
   font-weight: bold;
-  color: #409EFF;
+  color: #409eff;
   font-size: 14px;
 }
 
 .rank-first .el-icon {
   font-size: 20px;
   margin-bottom: 4px;
-  color: #FFD700;
+  color: #ffd700;
 }
 
 .rank-normal {
@@ -495,7 +475,7 @@ onMounted(() => {
 .score-value {
   font-size: 32px;
   font-weight: bold;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .score-label {
@@ -605,7 +585,7 @@ onMounted(() => {
 }
 
 .preset-item:hover {
-  border-color: #409EFF;
+  border-color: #409eff;
   background: #f5f7ff;
 }
 
@@ -617,7 +597,7 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #409EFF;
+  color: #409eff;
 }
 
 .preset-info h4 {

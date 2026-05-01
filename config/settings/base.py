@@ -22,15 +22,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    
+
     #第三方应用
     'rest_framework',
     'rest_framework.authtoken',
     'corsheaders',
-    
+    'django_filters',  # 添加过滤支持
+
     # WebSocket支持
     'channels',
-    
+
     # 本地应用 - 核心模块
     'apps.users',
     'apps.events',
@@ -135,8 +136,8 @@ CHANNEL_LAYERS = {
 }
 
 # WebSocket安全配置
-ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
-CSRF_TRUSTED_ORIGINS = [f"http://{host}" for host in os.getenv('CSRF_TRUSTED_ORIGINS', 'localhost,127.0.0.1').split(',')]
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1,testserver').split(',')
+CSRF_TRUSTED_ORIGINS = os.getenv('CSRF_TRUSTED_ORIGINS', 'http://localhost,http://127.0.0.1').split(',')
 
 # WebSocket并发设置
 WEBSOCKET_CONCURRENT_DEVICES = 3
@@ -195,6 +196,11 @@ REST_FRAMEWORK = {
         'rest_framework.parsers.JSONParser',
         'rest_framework.parsers.MultiPartParser',
         'rest_framework.parsers.FormParser',
+    ],
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
     ],
 }
 

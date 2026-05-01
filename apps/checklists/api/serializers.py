@@ -16,10 +16,10 @@ class ChecklistItemTemplateSerializer(serializers.ModelSerializer):
     class Meta:
         model = ChecklistItemTemplate
         fields = [
-            'id', 'template', 'title', 'description', 'required', 
+            'id', 'template', 'title', 'description', 'required',
             'order', 'weight', 'status', 'metadata'
         ]
-        read_only_fields = ['id']
+        read_only_fields = ['id', 'template']  # template 由父级设置
 
     def validate_weight(self, value):
         """验证权重"""

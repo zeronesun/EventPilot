@@ -10,8 +10,15 @@ export interface ApiError {
 }
 
 export class ApiErrorHandler extends Error {
-  constructor(public status: number, public body: unknown) {
-    super(body && typeof body === 'object' && 'message' in body ? String(body.message) : `API error ${status}`);
+  constructor(
+    public status: number,
+    public body: unknown
+  ) {
+    super(
+      body && typeof body === 'object' && 'message' in body
+        ? String(body.message)
+        : `API error ${status}`
+    );
     this.name = 'ApiError';
   }
 }
@@ -126,10 +133,7 @@ export function clearAuthToken(): void {
 }
 
 // Main API client function
-async function api<T>(
-  path: string,
-  options: RequestInit = {}
-): Promise<T> {
+async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = getAuthToken();
   const url = `${API_BASE_URL}${path}`;
 
@@ -230,14 +234,14 @@ export const authApi = {
   refresh: () =>
     apiClient.post<ApiResponse<{ token: string; expires_in: number }>>('/auth/refresh/'),
   verify: () =>
-    apiClient.post<ApiResponse<{ valid: boolean; user_id: string; username: string }>>('/auth/verify/'),
+    apiClient.post<ApiResponse<{ valid: boolean; user_id: string; username: string }>>(
+      '/auth/verify/'
+    ),
 };
 
 export const usersApi = {
-  me: () =>
-    apiClient.get<User>('/users/me/'),
-  list: () =>
-    apiClient.get<PaginatedResponse<User>>('/users/'),
+  me: () => apiClient.get<User>('/users/me/'),
+  list: () => apiClient.get<PaginatedResponse<User>>('/users/'),
 };
 
 export const eventsApi = {
@@ -245,18 +249,12 @@ export const eventsApi = {
     const query = new URLSearchParams(params).toString();
     return apiClient.get<PaginatedResponse<Event>>(`/events/${query ? `?${query}` : ''}`);
   },
-  get: (id: string) =>
-    apiClient.get<Event>(`/events/${id}/`),
-  create: (data: Partial<Event>) =>
-    apiClient.post<Event>('/events/', data),
-  update: (id: string, data: Partial<Event>) =>
-    apiClient.put<Event>(`/events/${id}/`, data),
-  delete: (id: string) =>
-    apiClient.delete<void>(`/events/${id}/`),
-  statistics: (id: string) =>
-    apiClient.get<any>(`/events/${id}/statistics/`),
-  complete: (id: string) =>
-    apiClient.post<{ message: string }>(`/events/${id}/complete/`),
+  get: (id: string) => apiClient.get<Event>(`/events/${id}/`),
+  create: (data: Partial<Event>) => apiClient.post<Event>('/events/', data),
+  update: (id: string, data: Partial<Event>) => apiClient.put<Event>(`/events/${id}/`, data),
+  delete: (id: string) => apiClient.delete<void>(`/events/${id}/`),
+  statistics: (id: string) => apiClient.get<any>(`/events/${id}/statistics/`),
+  complete: (id: string) => apiClient.post<{ message: string }>(`/events/${id}/complete/`),
 };
 
 export const tasksApi = {
@@ -264,23 +262,17 @@ export const tasksApi = {
     const query = new URLSearchParams(params).toString();
     return apiClient.get<PaginatedResponse<Task>>(`/tasks/${query ? `?${query}` : ''}`);
   },
-  get: (id: string) =>
-    apiClient.get<Task>(`/tasks/${id}/`),
-  create: (data: Partial<Task>) =>
-    apiClient.post<Task>('/tasks/', data),
-  update: (id: string, data: Partial<Task>) =>
-    apiClient.put<Task>(`/tasks/${id}/`, data),
-  bulkUpdateStatus: (updates: Array<{id: string; status: string}>) =>
-    apiClient.post<{updated: number; failed: Array<{id: string; error: string}>}>(
+  get: (id: string) => apiClient.get<Task>(`/tasks/${id}/`),
+  create: (data: Partial<Task>) => apiClient.post<Task>('/tasks/', data),
+  update: (id: string, data: Partial<Task>) => apiClient.put<Task>(`/tasks/${id}/`, data),
+  bulkUpdateStatus: (updates: Array<{ id: string; status: string }>) =>
+    apiClient.post<{ updated: number; failed: Array<{ id: string; error: string }> }>(
       '/tasks/bulk_update_status/',
       updates
     ),
-  delete: (id: string) =>
-    apiClient.delete<void>(`/tasks/${id}/`),
-  complete: (id: string) =>
-    apiClient.patch<{ message: string }>(`/tasks/${id}/complete/`),
-  kanbanData: (eventId: string) =>
-    apiClient.get<any>(`/kanban_data?event=${eventId}`),
+  delete: (id: string) => apiClient.delete<void>(`/tasks/${id}/`),
+  complete: (id: string) => apiClient.patch<{ message: string }>(`/tasks/${id}/complete/`),
+  kanbanData: (eventId: string) => apiClient.get<any>(`/kanban_data?event=${eventId}`),
 };
 
 // File types and API
@@ -342,41 +334,57 @@ export const filesApi = {
     const query = new URLSearchParams(params).toString();
     return apiClient.get<FileListResponse>(`/files/${query ? `?${query}` : ''}`);
   },
-  get: (fileId: string) =>
-    apiClient.get<FileMetadata>(`/files/${fileId}/`),
+  get: (fileId: string) => apiClient.get<FileMetadata>(`/files/${fileId}/`),
   initiateUpload: (data: FileUploadRequest) =>
     apiClient.post<FileUploadInitiateResponse>('/files/', data),
   getUploadPart: (fileId: string, partNumber: number, uploadId: string) =>
-    apiClient.post<{presigned_url: string; part_number: number; upload_id: string; expires_in: number}>(
-      `/files/${fileId}/upload_part/`,
-      { part_number: partNumber, upload_id: uploadId }
-    ),
-  completeUpload: (fileId: string, uploadId: string, parts: Array<{PartNumber: number; ETag: string}>) =>
-    apiClient.post<{file_id: string; status: string; file_size: number; etag: string}>(
+    apiClient.post<{
+      presigned_url: string;
+      part_number: number;
+      upload_id: string;
+      expires_in: number;
+    }>(`/files/${fileId}/upload_part/`, { part_number: partNumber, upload_id: uploadId }),
+  completeUpload: (
+    fileId: string,
+    uploadId: string,
+    parts: Array<{ PartNumber: number; ETag: string }>
+  ) =>
+    apiClient.post<{ file_id: string; status: string; file_size: number; etag: string }>(
       `/files/${fileId}/complete_upload/`,
       { file_id: fileId, upload_id: uploadId, parts }
     ),
   download: (fileId: string, expiresIn: number = 3600) =>
-    apiClient.post<FileDownloadResponse>(`/files/${fileId}/download/`, { file_id: fileId, expires_in: expiresIn }),
+    apiClient.post<FileDownloadResponse>(`/files/${fileId}/download/`, {
+      file_id: fileId,
+      expires_in: expiresIn,
+    }),
   delete: (fileId: string) =>
-    apiClient.delete<{file_id: string; status: string; message: string}>(`/files/${fileId}/`),
+    apiClient.delete<{ file_id: string; status: string; message: string }>(`/files/${fileId}/`),
   update: (fileId: string, data: Partial<FileMetadata>) =>
     apiClient.patch<FileMetadata>(`/files/${fileId}/`, data),
-  share: (fileId: string, settings: {
-    allow_download?: boolean;
-    allow_preview?: boolean;
-    expires_hours?: number;
-    description?: string;
-  }) =>
-    apiClient.post<{share_id: string; share_url: string; expires_at?: string; password_protected: boolean; settings: Record<string, unknown>}>(
-      `/files/${fileId}/share/`,
-      settings
-    ),
+  share: (
+    fileId: string,
+    settings: {
+      allow_download?: boolean;
+      allow_preview?: boolean;
+      expires_hours?: number;
+      description?: string;
+    }
+  ) =>
+    apiClient.post<{
+      share_id: string;
+      share_url: string;
+      expires_at?: string;
+      password_protected: boolean;
+      settings: Record<string, unknown>;
+    }>(`/files/${fileId}/share/`, settings),
   batchDelete: (fileIds: string[]) =>
-    apiClient.post<{success: boolean; deleted_count: number; failed_count: number; errors: Array<Record<string, string>>}>(
-      '/files/batch_delete/',
-      { file_ids: fileIds }
-    ),
+    apiClient.post<{
+      success: boolean;
+      deleted_count: number;
+      failed_count: number;
+      errors: Array<Record<string, string>>;
+    }>('/files/batch_delete/', { file_ids: fileIds }),
   search: (params: Record<string, string>) => {
     const query = new URLSearchParams(params).toString();
     return apiClient.get<FileListResponse>(`/files/search?${query}`);
@@ -415,16 +423,15 @@ export interface KnowledgeEntry {
 export const knowledgeApi = {
   list: (params?: Record<string, string>) => {
     const query = new URLSearchParams(params).toString();
-    return apiClient.get<PaginatedResponse<KnowledgeEntry>>(`/knowledge/${query ? `?${query}` : ''}`);
+    return apiClient.get<PaginatedResponse<KnowledgeEntry>>(
+      `/knowledge/${query ? `?${query}` : ''}`
+    );
   },
-  get: (id: string) =>
-    apiClient.get<KnowledgeEntry>(`/knowledge/${id}/`),
-  create: (data: Partial<KnowledgeEntry>) =>
-    apiClient.post<KnowledgeEntry>('/knowledge/', data),
+  get: (id: string) => apiClient.get<KnowledgeEntry>(`/knowledge/${id}/`),
+  create: (data: Partial<KnowledgeEntry>) => apiClient.post<KnowledgeEntry>('/knowledge/', data),
   update: (id: string, data: Partial<KnowledgeEntry>) =>
     apiClient.put<KnowledgeEntry>(`/knowledge/${id}/`, data),
-  delete: (id: string) =>
-    apiClient.delete<void>(`/knowledge/${id}/`),
+  delete: (id: string) => apiClient.delete<void>(`/knowledge/${id}/`),
 };
 
 export interface Review {
@@ -453,14 +460,9 @@ export const reviewsApi = {
     const query = new URLSearchParams(params).toString();
     return apiClient.get<PaginatedResponse<Review>>(`/reviews/${query ? `?${query}` : ''}`);
   },
-  get: (id: string) =>
-    apiClient.get<Review>(`/reviews/${id}/`),
-  create: (data: Partial<Review>) =>
-    apiClient.post<Review>('/reviews/', data),
-  update: (id: string, data: Partial<Review>) =>
-    apiClient.put<Review>(`/reviews/${id}/`, data),
-  patch: (id: string, data: Partial<Review>) =>
-    apiClient.patch<Review>(`/reviews/${id}/`, data),
-  delete: (id: string) =>
-    apiClient.delete<void>(`/reviews/${id}/`),
+  get: (id: string) => apiClient.get<Review>(`/reviews/${id}/`),
+  create: (data: Partial<Review>) => apiClient.post<Review>('/reviews/', data),
+  update: (id: string, data: Partial<Review>) => apiClient.put<Review>(`/reviews/${id}/`, data),
+  patch: (id: string, data: Partial<Review>) => apiClient.patch<Review>(`/reviews/${id}/`, data),
+  delete: (id: string) => apiClient.delete<void>(`/reviews/${id}/`),
 };

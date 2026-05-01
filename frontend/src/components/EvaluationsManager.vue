@@ -25,14 +25,20 @@
           <div class="stat-label">平均质量评分</div>
           <div class="stat-value">{{ avgScores.quality }}</div>
           <div class="stat-bar">
-            <el-progress :percentage="avgScores.quality" :color="getScoreColor(avgScores.quality)" />
+            <el-progress
+              :percentage="avgScores.quality"
+              :color="getScoreColor(avgScores.quality)"
+            />
           </div>
         </div>
         <div class="stat-card">
           <div class="stat-label">平均综合评分</div>
           <div class="stat-value">{{ avgScores.overall }}</div>
           <div class="stat-bar">
-            <el-progress :percentage="avgScores.overall" :color="getScoreColor(avgScores.overall)" />
+            <el-progress
+              :percentage="avgScores.overall"
+              :color="getScoreColor(avgScores.overall)"
+            />
           </div>
         </div>
         <div class="stat-card">
@@ -45,13 +51,9 @@
       <!-- 评估记录列表 -->
       <div v-loading="loading" class="evaluations-list">
         <el-empty v-if="!loading && evaluations.length === 0" description="暂无评估记录" />
-        
+
         <div v-else class="evaluation-timeline">
-          <div 
-            v-for="evaluation in evaluations" 
-            :key="evaluation.id"
-            class="evaluation-item"
-          >
+          <div v-for="evaluation in evaluations" :key="evaluation.id" class="evaluation-item">
             <div class="evaluation-header">
               <div class="evaluation-info">
                 <div class="evaluator-name">
@@ -63,7 +65,7 @@
                   {{ formatDate(evaluation.evaluation_date) }}
                 </div>
               </div>
-              
+
               <div class="evaluation-scores">
                 <el-tooltip content="信用评分">
                   <div class="score-badge" :class="getScoreClass(evaluation.credit_score || 0)">
@@ -87,27 +89,27 @@
               <div class="dimension-scores">
                 <div class="dimension-item">
                   <span class="dimension-label">服务质量:</span>
-                  <el-rate 
-                    v-model="evaluation.service_quality" 
-                    disabled 
+                  <el-rate
+                    v-model="evaluation.service_quality"
+                    disabled
                     show-score
                     text-color="#ff9900"
                   />
                 </div>
                 <div class="dimension-item">
                   <span class="dimension-label">响应速度:</span>
-                  <el-rate 
-                    v-model="evaluation.response_speed" 
-                    disabled 
+                  <el-rate
+                    v-model="evaluation.response_speed"
+                    disabled
                     show-score
                     text-color="#ff9900"
                   />
                 </div>
                 <div class="dimension-item">
                   <span class="dimension-label">专业能力:</span>
-                  <el-rate 
-                    v-model="evaluation.professional_ability" 
-                    disabled 
+                  <el-rate
+                    v-model="evaluation.professional_ability"
+                    disabled
                     show-score
                     text-color="#ff9900"
                   />
@@ -136,12 +138,8 @@
             </div>
 
             <div class="evaluation-footer">
-              <el-button size="small" @click="viewDetails(evaluation)">
-                查看详情
-              </el-button>
-              <el-button size="small" @click="editEvaluation(evaluation)">
-                编辑
-              </el-button>
+              <el-button size="small" @click="viewDetails(evaluation)"> 查看详情 </el-button>
+              <el-button size="small" @click="editEvaluation(evaluation)"> 编辑 </el-button>
               <el-button size="small" type="danger" @click="deleteEvaluation(evaluation)">
                 删除
               </el-button>
@@ -158,12 +156,7 @@
       width="800px"
       @close="resetForm"
     >
-      <el-form
-        ref="formRef"
-        :model="evaluationForm"
-        :rules="formRules"
-        label-width="120px"
-      >
+      <el-form ref="formRef" :model="evaluationForm" :rules="formRules" label-width="120px">
         <el-divider content-position="left">评分输入</el-divider>
 
         <div class="scores-input">
@@ -214,7 +207,7 @@
               v-model="evaluationForm.professional_ability"
               show-score
               text-color="#ff9900"
-              :texts=" ['很弱', '较弱', '一般', '较强', '很强']"
+              :texts="['很弱', '较弱', '一般', '较强', '很强']"
             />
           </el-form-item>
         </div>
@@ -275,13 +268,22 @@
             <el-collapse-item title="配置评估标准" name="criteria">
               <div class="criteria-config">
                 <el-form-item label="服务权重">
-                  <el-slider v-model="evaluationForm.evaluation_criteria.service_weight" :max="100" />
+                  <el-slider
+                    v-model="evaluationForm.evaluation_criteria.service_weight"
+                    :max="100"
+                  />
                 </el-form-item>
                 <el-form-item label="响应权重">
-                  <el-slider v-model="evaluationForm.evaluation_criteria.response_weight" :max="100" />
+                  <el-slider
+                    v-model="evaluationForm.evaluation_criteria.response_weight"
+                    :max="100"
+                  />
                 </el-form-item>
                 <el-form-item label="专业权重">
-                  <el-slider v-model="evaluationForm.evaluation_criteria.professional_weight" :max="100" />
+                  <el-slider
+                    v-model="evaluationForm.evaluation_criteria.professional_weight"
+                    :max="100"
+                  />
                 </el-form-item>
               </div>
             </el-collapse-item>
@@ -298,11 +300,7 @@
     </el-dialog>
 
     <!-- 评估详情对话框 -->
-    <el-dialog
-      v-model="showDetailDialog"
-      title="评估详情"
-      width="700px"
-    >
+    <el-dialog v-model="showDetailDialog" title="评估详情" width="700px">
       <div v-if="selectedEvaluation" class="evaluation-detail">
         <el-descriptions :column="2" border>
           <el-descriptions-item label="评估人">
@@ -312,37 +310,25 @@
             {{ formatDate(selectedEvaluation.evaluation_date) }}
           </el-descriptions-item>
           <el-descriptions-item label="信用评分" :span="2">
-            <el-progress 
-              :percentage="selectedEvaluation.credit_score || 0" 
+            <el-progress
+              :percentage="selectedEvaluation.credit_score || 0"
               :color="getScoreColor(selectedEvaluation.credit_score || 0)"
             />
           </el-descriptions-item>
           <el-descriptions-item label="质量评分" :span="2">
-            <el-progress 
-              :percentage="selectedEvaluation.quality_score || 0" 
+            <el-progress
+              :percentage="selectedEvaluation.quality_score || 0"
               :color="getScoreColor(selectedEvaluation.quality_score || 0)"
             />
           </el-descriptions-item>
           <el-descriptions-item label="服务质量">
-            <el-rate 
-              :model-value="selectedEvaluation.service_quality" 
-              disabled 
-              show-score
-            />
+            <el-rate :model-value="selectedEvaluation.service_quality" disabled show-score />
           </el-descriptions-item>
           <el-descriptions-item label="响应速度">
-            <el-rate 
-              :model-value="selectedEvaluation.response_speed" 
-              disabled 
-              show-score
-            />
+            <el-rate :model-value="selectedEvaluation.response_speed" disabled show-score />
           </el-descriptions-item>
           <el-descriptions-item label="专业能力" :span="2">
-            <el-rate 
-              :model-value="selectedEvaluation.professional_ability" 
-              disabled 
-              show-score
-            />
+            <el-rate :model-value="selectedEvaluation.professional_ability" disabled show-score />
           </el-descriptions-item>
           <el-descriptions-item label="风险等级">
             <el-tag :type="getRiskType(selectedEvaluation.risk_level)">
@@ -372,8 +358,8 @@
         <div class="detail-section">
           <h4>评估标准</h4>
           <el-descriptions :column="1" size="small">
-            <el-descriptions-item 
-              v-for="(value, key) in selectedEvaluation.evaluation_criteria" 
+            <el-descriptions-item
+              v-for="(value, key) in selectedEvaluation.evaluation_criteria"
               :key="key"
               :label="formatCriteriaKey(key)"
             >
@@ -425,30 +411,18 @@ const evaluationForm = ref({
   evaluation_criteria: {
     service_weight: 33,
     response_weight: 33,
-    professional_weight: 34
-  }
+    professional_weight: 34,
+  },
 });
 
 // 表单验证规则
 const formRules = {
-  credit_score: [
-    { required: true, message: '请输入信用评分', trigger: 'blur' }
-  ],
-  quality_score: [
-    { required: true, message: '请输入质量评分', trigger: 'blur' }
-  ],
-  service_quality: [
-    { required: true, message: '请评估服务质量', trigger: 'change' }
-  ],
-  response_speed: [
-    { required: true, message: '请评估响应速度', trigger: 'change' }
-  ],
-  professional_ability: [
-    { required: true, message: '请评估专业能力', trigger: 'change' }
-  ],
-  risk_level: [
-    { required: true, message: '请选择风险等级', trigger: 'change' }
-  ]
+  credit_score: [{ required: true, message: '请输入信用评分', trigger: 'blur' }],
+  quality_score: [{ required: true, message: '请输入质量评分', trigger: 'blur' }],
+  service_quality: [{ required: true, message: '请评估服务质量', trigger: 'change' }],
+  response_speed: [{ required: true, message: '请评估响应速度', trigger: 'change' }],
+  professional_ability: [{ required: true, message: '请评估专业能力', trigger: 'change' }],
+  risk_level: [{ required: true, message: '请选择风险等级', trigger: 'change' }],
 };
 
 // 计算平均分数
@@ -460,7 +434,7 @@ const avgScores = computed(() => {
   const creditSum = evaluations.value.reduce((sum, e) => sum + (e.credit_score || 0), 0);
   const qualitySum = evaluations.value.reduce((sum, e) => sum + (e.quality_score || 0), 0);
   const overallSum = evaluations.value.reduce(
-    (sum, e) => sum + ((e.credit_score || 0) + (e.quality_score || 0)) / 2, 
+    (sum, e) => sum + ((e.credit_score || 0) + (e.quality_score || 0)) / 2,
     0
   );
 
@@ -468,7 +442,7 @@ const avgScores = computed(() => {
   return {
     credit: Math.round(creditSum / count),
     quality: Math.round(qualitySum / count),
-    overall: Math.round(overallSum / count)
+    overall: Math.round(overallSum / count),
   };
 });
 
@@ -507,9 +481,9 @@ const getScoreClass = (score: number) => {
 // 获取风险等级类型
 const getRiskType = (level: string) => {
   const typeMap: Record<string, string> = {
-    'low': 'success',
-    'medium': 'warning',
-    'high': 'danger'
+    low: 'success',
+    medium: 'warning',
+    high: 'danger',
   };
   return typeMap[level] || 'info';
 };
@@ -517,9 +491,9 @@ const getRiskType = (level: string) => {
 // 获取风险等级文本
 const getRiskText = (level: string) => {
   const textMap: Record<string, string> = {
-    'low': '低风险',
-    'medium': '中风险',
-    'high': '高风险'
+    low: '低风险',
+    medium: '中风险',
+    high: '高风险',
   };
   return textMap[level] || level;
 };
@@ -533,9 +507,9 @@ const formatDate = (dateString: string) => {
 // 格式化评估标准键名
 const formatCriteriaKey = (key: string) => {
   const keyMap: Record<string, string> = {
-    'service_weight': '服务权重',
-    'response_weight': '响应权重',
-    'professional_weight': '专业权重'
+    service_weight: '服务权重',
+    response_weight: '响应权重',
+    professional_weight: '专业权重',
   };
   return keyMap[key] || key;
 };
@@ -559,63 +533,58 @@ const editEvaluation = (evaluation: ProfileEvaluation) => {
     risk_assessment: evaluation.risk_assessment || '',
     recommendations: evaluation.recommendations || '',
     overall_conclusion: evaluation.overall_conclusion || '',
-    next_evaluation_date: evaluation.next_evaluation_date 
-      ? new Date(evaluation.next_evaluation_date) 
+    next_evaluation_date: evaluation.next_evaluation_date
+      ? new Date(evaluation.next_evaluation_date)
       : new Date(),
     evaluation_criteria: evaluation.evaluation_criteria || {
       service_weight: 33,
       response_weight: 33,
-      professional_weight: 34
-    }
+      professional_weight: 34,
+    },
   };
   showAddDialog.value = true;
 };
 
 // 删除评估
 const deleteEvaluation = (evaluation: ProfileEvaluation) => {
-  ElMessageBox.confirm(
-    `确定要删除此次评估记录吗？`,
-    '确认删除',
-    {
-      confirmButtonText: '删除',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      // 这里应该调用删除API，目前先从本地状态移除
-      evaluations.value = evaluations.value.filter(e => e.id !== evaluation.id);
-      ElMessage.success('删除成功');
-    } catch (error) {
-      console.error('删除评估记录失败:', error);
-      ElMessage.error('删除评估记录失败');
-    }
-  }).catch(() => {
-    // 用户取消删除
-  });
+  ElMessageBox.confirm(`确定要删除此次评估记录吗？`, '确认删除', {
+    confirmButtonText: '删除',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+    .then(async () => {
+      try {
+        // 这里应该调用删除API，目前先从本地状态移除
+        evaluations.value = evaluations.value.filter((e) => e.id !== evaluation.id);
+        ElMessage.success('删除成功');
+      } catch (error) {
+        console.error('删除评估记录失败:', error);
+        ElMessage.error('删除评估记录失败');
+      }
+    })
+    .catch(() => {
+      // 用户取消删除
+    });
 };
 
 // 提交表单
 const submitForm = async () => {
   try {
     await formRef.value.validate();
-    
+
     const evaluationData = {
       ...evaluationForm.value,
-      next_evaluation_date: evaluationForm.value.next_evaluation_date.toISOString()
+      next_evaluation_date: evaluationForm.value.next_evaluation_date.toISOString(),
     };
-    
+
     if (editingEvaluation.value) {
       // 更新评估
       ElMessage.info('更新功能开发中');
       showAddDialog.value = false;
     } else {
       // 创建评估
-      const result = await profilesStore.addEvaluation(
-        props.profileId,
-        evaluationData
-      );
-      
+      const result = await profilesStore.addEvaluation(props.profileId, evaluationData);
+
       if (typeof result === 'object' && 'success' in result) {
         if (result.success) {
           ElMessage.success('评估创建成功');
@@ -655,8 +624,8 @@ const resetForm = () => {
     evaluation_criteria: {
       service_weight: 33,
       response_weight: 33,
-      professional_weight: 34
-    }
+      professional_weight: 34,
+    },
   };
   if (formRef.value) {
     formRef.value.resetFields();
@@ -737,7 +706,8 @@ onMounted(() => {
   align-items: center;
 }
 
-.evaluator-name, .evaluation-date {
+.evaluator-name,
+.evaluation-date {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -760,22 +730,22 @@ onMounted(() => {
 
 .score-badge.high-score {
   background: #f0f9ff;
-  color: #67C23A;
+  color: #67c23a;
 }
 
 .score-badge.medium-score {
-  background: #ecf5ff; 
-  color: #409EFF;
+  background: #ecf5ff;
+  color: #409eff;
 }
 
 .score-badge.low-score {
   background: #fef0f0;
-  color: #E6A23C;
+  color: #e6a23c;
 }
 
 .score-badge.very-low-score {
   background: #fef0f0;
-  color: #F56C6C;
+  color: #f56c6c;
 }
 
 .evaluation-body {
@@ -799,11 +769,13 @@ onMounted(() => {
   color: #303133;
 }
 
-.risk-assessment, .recommendations, .overall-conclusion {
+.risk-assessment,
+.recommendations,
+.overall-conclusion {
   margin-bottom: 16px;
   padding: 12px;
   background: #fafafa;
-  border-left: 3px solid #409EFF;
+  border-left: 3px solid #409eff;
   border-radius: 2px;
 }
 
@@ -813,7 +785,9 @@ onMounted(() => {
   margin-bottom: 8px;
 }
 
-.risk-assessment p, .recommendations p, .overall-conclusion p {
+.risk-assessment p,
+.recommendations p,
+.overall-conclusion p {
   margin: 0;
   color: #606266;
   line-height: 1.6;
