@@ -337,7 +337,8 @@ class TaskViewSet(viewsets.ModelViewSet):
         """管理任务依赖关系"""
         try:
             task = self.get_object()
-            depends_on_ids = request.data.get('depends_on', [])
+            # 使用 getlist() 而不是 get()，因为 QueryDict 对多值数组有特殊处理
+            depends_on_ids = request.data.getlist('depends_on', [])
 
             # 删除现有依赖
             task.dependencies.all().delete()
@@ -355,6 +356,7 @@ class TaskViewSet(viewsets.ModelViewSet):
                             status=status.HTTP_400_BAD_REQUEST
                         )
 
+                    # 获取依赖任务，验证是否存在
                     dep_task = Task.objects.get(id=dep_id, event=task.event)
                     # 防止循环依赖
                     if TaskService._has_circular_dependency(task, dep_task):
@@ -369,6 +371,9 @@ class TaskViewSet(viewsets.ModelViewSet):
                         status=status.HTTP_400_BAD_REQUEST
                     )
                 except Exception as e:
+                    logger.error(f"处理依赖任务 {dep_id} 时出错: {e}")
+                    import traceback
+                    traceback.print_exc()
                     return Response(
                         {'error': f'处理依赖任务 {dep_id} 时出错: {str(e)}'},
                         status=status.HTTP_400_BAD_REQUEST
@@ -382,12 +387,21 @@ class TaskViewSet(viewsets.ModelViewSet):
                 'message': '依赖关系已更新',
                 'data': TaskSerializer(task).data
             })
-        except django.core.exceptions.DisallowedHost:
-            # 测试环境：忽略 ALLOWED_HOSTS 验证
-            return Response({
-                'message': '依赖关系已更新',
-                'data': TaskSerializer(task).data
-            })
+        except Task.DoesNotExist:
+            # 任务不存在
+            return Response(
+                {'error': '任务不存在'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.error(f"依赖关系处理错误: {e}")
+            import traceback
+            traceback.print_exc()
+            # 返回400而不是500，因为这是业务逻辑错误
+            return Response(
+                {'error': f'处理依赖关系时出错: {str(e)}'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
     
     @action(detail=False, methods=['post'])
     def bulk_update_status(self, request):

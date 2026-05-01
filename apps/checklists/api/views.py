@@ -16,7 +16,7 @@ from .serializers import (
 class ChecklistTemplateViewSet(viewsets.ModelViewSet):
     """核验清单模板视图集"""
     permission_classes = [IsAuthenticatedOrReadOnly]
-    filterset_fields = ['checklist_type', 'status', 'is_default', 'event_types']
+    filterset_fields = ['checklist_type', 'status', 'is_default']
     search_fields = ['name', 'description', 'tags']
     ordering_fields = ['created_at', 'updated_at', 'name']
     
