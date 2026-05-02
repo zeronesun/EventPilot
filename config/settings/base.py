@@ -45,6 +45,9 @@ INSTALLED_APPS = [
     'apps.notifications',  # 通知系统
 ]
 
+# 注意：以下应用已安装但当前未使用
+# - 'rest_framework.authtoken': Token认证（项目使用JWT认证）
+
 # 中间件
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # CORS最早
@@ -159,14 +162,25 @@ TIME_ZONE = 'Asia/Shanghai'
 USE_I18N = True
 USE_TZ = True
 
-# 静态文件配置
+# ==============================
+# 静态文件和媒体文件配置
+# ==============================
+# 
+# 重要说明：
+# - 当前项目系统性地使用 AWS S3 对象存储，不使用本地文件存储
+# - 以下配置用于多环境兼容和特定场景（如Docker环境）
+# - 实际文件上传功能通过 apps.files 模块实现，直接上传至S3
+# - public/media 和 public/static 路径在当前版本中未实际使用
+#
 USE_LOCAL_STORAGE = os.getenv('USE_LOCAL_STORAGE', 'True').lower() in ('true', '1', 'yes')
 if USE_LOCAL_STORAGE:
+    # 本地存储路径（当前未使用，保留用于配置灵活性）
     MEDIA_ROOT = os.getenv('MEDIA_ROOT', str(BASE_DIR / 'public' / 'media'))
     MEDIA_URL = '/media/'
     STATIC_ROOT = os.getenv('STATIC_ROOT', str(BASE_DIR / 'public' / 'static'))
     STATIC_URL = '/static/'
 else:
+    # Docker环境路径（共享存储卷，用于容器化部署）
     MEDIA_ROOT = '/app/media'
     MEDIA_URL = '/media/'
     STATIC_ROOT = '/app/static'
@@ -268,10 +282,11 @@ LOGGING = {
 AUTH_USER_MODEL = 'users.User'
 
 # 认证配置
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-    'guardian.backends.ObjectPermissionBackend',
-)
+# 注意：django-guardian未在项目中使用，以下配置保留用于多环境兼容
+# AUTHENTICATION_BACKENDS = (
+#     'django.contrib.auth.backends.ModelBackend',
+#     'guardian.backends.ObjectPermissionBackend',  # 对象级权限（当前未启用）
+# )
 
 # JWT认证配置（主认证方式）
 # 注意：上方L182已经配置了JWTAuthentication作为DEFAULT_AUTHENTICATION_CLASSES

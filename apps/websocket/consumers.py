@@ -2,6 +2,9 @@
 通知WebSocket Consumer
 
 处理通知相关的WebSocket连接和消息推送
+
+注意：当前项目使用统一的 EventPilotConsumer 处理所有WebSocket连接
+此类保留用于多环境兼容和未来扩展
 """
 
 import json

@@ -13,8 +13,8 @@ from django.conf import settings
 # 导入WebSocket路由
 from apps.websocket.routing import websocket_urlpatterns
 
-# 导入JWT认证
-from rest_framework_simplejwt.authentication import JWTAuthentication
+# 注意：以下导入未使用，保留用于多环境兼容
+# from rest_framework_simplejwt.authentication import JWTAuthentication  # 当前不使用，项目使用自定义JWT认证
 
 # 配置ASGI应用
 from channels.routing import ProtocolTypeRouter, URLRouter
