@@ -102,9 +102,26 @@ temp/
 tmp/
 *.tmp
 *.bak
+*.bak*
 *.swp
 *.backup
 temp_*.json
+
+# Process IDs
+*.pid
+.*.pid
+
+# Test outputs
+dogfood-output/
+*-output/
+*-report.*
+reports/*.log
+
+# Debug files
+inspect-*.js
+debug-*.js
+debug-*.log
+inspection-*
 
 # System
 Thumbs.db
