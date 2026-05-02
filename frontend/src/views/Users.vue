@@ -270,7 +270,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, onActivated } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 临时状态管理（实际应该连接到后端API）
@@ -330,6 +330,16 @@ const userRules = {
     { required: true, message: '请选择角色', trigger: 'change' }
   ]
 }
+
+onMounted(() => {
+  // 数据已硬编码，无需加载
+  console.log('Users page mounted')
+})
+
+onActivated(() => {
+  // 页面激活时确保数据可见
+  console.log('Users page activated')
+})
 
 function formatDate(dateStr) {
   if (!dateStr) return ''

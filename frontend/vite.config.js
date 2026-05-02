@@ -11,16 +11,24 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    port: 3000,
+    port: 5173,
+    watch: {
+      usePolling: true,
+      interval: 100,
+    },
+    // 跨域和API代理配置（解决CORS问题）
     proxy: {
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://172.28.166.164:8000',
         changeOrigin: true,
+        secure: false,
+        // 不重写路径，直接转发 /api/* 到后端
       },
     },
   },
-  // 临时禁用 rolldown 以规避版本不兼容导致的构建问题
-  build: {
-    minify: 'esbuild',
+  optimizeDeps: {
+    force: true,
+    include: ['vue', 'vue-router', 'pinia', 'element-plus'],
   },
+  cacheDir: undefined,
 })

@@ -277,14 +277,13 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
-import { useEventsStore } from '../store'
+import { ref, onMounted, computed, onActivated } from 'vue'
+import { useEventsStore } from '@/stores'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { createBudgetItem, updateBudgetItem, deleteBudgetItem } from '../api/budget'
 
 const eventsStore = useEventsStore()
 const loading = ref(false)
-const events = ref([])
 const selectedEventId = ref(null)
 const currentEvent = ref(null)
 const budgetItems = ref([])
@@ -293,6 +292,9 @@ const dialogTitle = ref('添加预算项')
 const formRef = ref(null)
 const isEditing = ref(false)
 const editingId = ref(null)
+
+// 使用computed直接绑定到store
+const events = computed(() => (eventsStore.events || []))
 
 const form = ref({
   category_name: '',
@@ -327,6 +329,11 @@ const budgetUsageRate = computed(() => {
 })
 
 onMounted(async () => {
+  await loadEvents()
+})
+
+onActivated(async () => {
+  // 每次页面激活时刷新数据
   await loadEvents()
 })
 

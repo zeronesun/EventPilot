@@ -1,5 +1,5 @@
 import { ref, computed } from 'vue';
-import { useAuthStore } from '@/store';
+import { useAuthStore } from '@/stores';
 import { securityConfig } from '@/utils/security';
 
 // 角色定义

@@ -230,12 +230,12 @@ export const apiClient = {
 // Domain-specific API methods
 export const authApi = {
   login: (credentials: LoginRequest) =>
-    apiClient.post<ApiResponse<LoginResponse>>('/auth/login/', credentials),
+    apiClient.post<ApiResponse<LoginResponse>>('/users/auth/login/', credentials),
   refresh: () =>
-    apiClient.post<ApiResponse<{ token: string; expires_in: number }>>('/auth/refresh/'),
+    apiClient.post<ApiResponse<{ token: string; expires_in: number }>>('/users/auth/refresh/'),
   verify: () =>
     apiClient.post<ApiResponse<{ valid: boolean; user_id: string; username: string }>>(
-      '/auth/verify/'
+      '/users/auth/verify/'
     ),
 };
 
@@ -247,14 +247,14 @@ export const usersApi = {
 export const eventsApi = {
   list: (params?: Record<string, string>) => {
     const query = new URLSearchParams(params).toString();
-    return apiClient.get<PaginatedResponse<Event>>(`/events/${query ? `?${query}` : ''}`);
+    return apiClient.get<PaginatedResponse<Event>>(`/events/events/${query ? `?${query}` : ''}`);
   },
-  get: (id: string) => apiClient.get<Event>(`/events/${id}/`),
-  create: (data: Partial<Event>) => apiClient.post<Event>('/events/', data),
-  update: (id: string, data: Partial<Event>) => apiClient.put<Event>(`/events/${id}/`, data),
-  delete: (id: string) => apiClient.delete<void>(`/events/${id}/`),
-  statistics: (id: string) => apiClient.get<any>(`/events/${id}/statistics/`),
-  complete: (id: string) => apiClient.post<{ message: string }>(`/events/${id}/complete/`),
+  get: (id: string) => apiClient.get<Event>(`/events/events/${id}/`),
+  create: (data: Partial<Event>) => apiClient.post<Event>('/events/events/', data),
+  update: (id: string, data: Partial<Event>) => apiClient.put<Event>(`/events/events/${id}/`, data),
+  delete: (id: string) => apiClient.delete<void>(`/events/events/${id}/`),
+  statistics: (id: string) => apiClient.get<any>(`/events/events/${id}/statistics/`),
+  complete: (id: string) => apiClient.post<{ message: string }>(`/events/events/${id}/complete/`),
 };
 
 export const tasksApi = {
@@ -466,3 +466,54 @@ export const reviewsApi = {
   patch: (id: string, data: Partial<Review>) => apiClient.patch<Review>(`/reviews/${id}/`, data),
   delete: (id: string) => apiClient.delete<void>(`/reviews/${id}/`),
 };
+
+export interface Notification {
+  id: string;
+  type: 'info' | 'warning' | 'error' | 'success';
+  title: string;
+  message: string;
+  data: Record<string, unknown>;
+  source: string;
+  related_object_type?: string;
+  related_object_id?: string;
+  read: boolean;
+  read_at?: string;
+  created_at: string;
+  relative_time: string;
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface NotificationStatsResponse {
+  total: number;
+  unread: number;
+  read: number;
+  by_type: Array<{ type: string; count: number }>;
+  by_source: Array<{ source: string; count: number }>;
+}
+
+export const notificationsApi = {
+  list: (params?: {
+    type?: string;
+    read?: string;
+    page?: number;
+    page_size?: number;
+  }) => {
+    const query = new URLSearchParams(
+      params as Record<string, string>
+    ).toString();
+    return apiClient.get<NotificationListResponse>(`/notifications/${query ? `?${query}` : ''}`);
+  },
+  getUnreadCount: () => apiClient.get<{ unread_count: number }>('/notifications/unread_count/'),
+  markRead: (id: string) => apiClient.post<{ message: string }>(`/notifications/${id}/mark_read/`, {}),
+  bulkMarkRead: (notificationIds?: string[]) =>
+    apiClient.post<{ message: string }>('/notifications/bulk_mark_read/', notificationIds ? { notification_ids: notificationIds } : {}),
+  delete: (id: string) => apiClient.delete<{ message: string }>(`/notifications/${id}/delete/`),
+  statistics: () => apiClient.get<NotificationStatsResponse>('/notifications/statistics/'),
+};
+

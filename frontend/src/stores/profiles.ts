@@ -318,7 +318,8 @@ export const useProfilesStore = defineStore('profiles', () => {
     createContact,
     updateContact,
     deleteContact,
-    addContact,
+    // Alias for backward compatibility
+    addContact: createContact,
     addInteraction,
     addEvaluation,
     searchProfiles,

@@ -8,7 +8,7 @@
 </template>
 
 <script setup>
-import { useAuthStore } from '../store'
+import { useAuthStore } from '@/stores'
 const authStore = useAuthStore()
 </script>
 

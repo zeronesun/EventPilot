@@ -15,8 +15,8 @@
         <div class="sidebar-menu">
           <div
             class="menu-item"
-            :class="{ active: $route.path === '/' }"
-            @click="$router.push('/')"
+            :class="{ active: $route.path === '/dashboard' }"
+            @click="$router.push('/dashboard')"
           >
             <el-icon><HomeFilled /></el-icon>
             <span>工作台</span>
@@ -77,6 +77,30 @@
             <el-icon><User /></el-icon>
             <span>关联方档案</span>
           </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/knowledge' }"
+            @click="$router.push('/knowledge')"
+          >
+            <el-icon><Document /></el-icon>
+            <span>知识库</span>
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/reviews' }"
+            @click="$router.push('/reviews')"
+          >
+            <el-icon><Memo /></el-icon>
+            <span>活动复盘</span>
+          </div>
+          <div
+            class="menu-item"
+            :class="{ active: $route.path === '/analytics' }"
+            @click="$router.push('/analytics')"
+          >
+            <el-icon><DataLine /></el-icon>
+            <span>数据分析</span>
+          </div>
 
           <div class="menu-divider" />
 
@@ -96,7 +120,7 @@
         <div class="main-header">
           <div class="header-left">
             <el-breadcrumb>
-              <el-breadcrumb-item :to="{ path: '/' }">
+              <el-breadcrumb-item :to="{ path: '/dashboard' }">
                 首页
               </el-breadcrumb-item>
               <el-breadcrumb-item v-if="currentPage !== '首页'">
@@ -105,17 +129,7 @@
             </el-breadcrumb>
           </div>
           <div class="header-right">
-            <el-badge
-              :value="unreadCount"
-              class="notification-badge"
-            >
-              <el-button
-                circle
-                @click="showNotifications"
-              >
-                <el-icon><Bell /></el-icon>
-              </el-button>
-            </el-badge>
+            <NotificationCenter />
             <el-dropdown @command="handleUserMenu">
               <div class="user-avatar">
                 <el-avatar :size="32">
@@ -125,17 +139,17 @@
               <template #dropdown>
                 <el-dropdown-menu>
                   <el-dropdown-item disabled>
-                    <span>{{ authStore.username }}</span>
+                    {{ authStore.username }}
                   </el-dropdown-item>
-                  <el-dropdown-item divided>
-                    <el-icon />
+                  <el-dropdown-item divided @click="router.push('/settings')">
+                    <el-icon><Setting /></el-icon>
                     个人资料
                   </el-dropdown-item>
-                  <el-dropdown-item>
-                    <el-icon />
+                  <el-dropdown-item @click="router.push('/settings')">
+                    <el-icon><Setting /></el-icon>
                     系统设置
                   </el-dropdown-item>
-                  <el-dropdown-item @command="handleLogout">
+                  <el-dropdown-item divided @click="handleLogout">
                     <el-icon><SwitchButton /></el-icon>
                     退出登录
                   </el-dropdown-item>
@@ -189,19 +203,24 @@
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useAuthStore } from './store';
+import { useAuthStore } from '@/stores';
+import { ElMessage } from 'element-plus';
 import {
   HomeFilled,
   List,
   User,
   DocumentChecked,
+  Document,
   Folder,
   Coin,
   Setting,
-  Bell,
   SwitchButton,
   Link,
-} from '@element-plus/icons-vue';
+  Memo,
+  DataLine,
+} from '@element-plus/icons-vue'
+
+import NotificationCenter from './components/NotificationCenter.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -209,7 +228,7 @@ const authStore = useAuthStore();
 
 const activeMenu = ref('/');
 const currentPage = ref('首页');
-const unreadCount = ref(0);
+
 const userInitial = computed(
   () => authStore.currentUser?.username?.charAt(0)?.toUpperCase() || 'U'
 );
@@ -227,32 +246,45 @@ watch(
 
 function getPageTitle(path) {
   const titles = {
+    '/dashboard': '工作台',
     '/': '工作台',
     '/events': '活动管理',
     '/tasks': '任务管理',
     '/users': '用户管理',
     '/checklists': '清单管理',
     '/files': '文件管理',
+    '/budget': '预算管理',
+    '/profiles': '关联方档案',
+    '/knowledge': '知识库',
+    '/reviews': '活动复盘',
+    '/analytics': '数据分析',
+    '/notifications': '通知中心',
     '/settings': '系统设置',
   };
-  return titles[path] || 'EventPilot';
+  return titles[path] || path.slice(1).charAt(0).toUpperCase() + path.slice(2) || '首页';
 }
 
-function showNotifications() {
-  if (unreadCount.value === 0) {
-    ElMessage.info('暂未读通知');
-  } else {
-    ElMessage.success(`有 ${unreadCount.value} 条未读通知`);
-  }
+function getUserInitial() {
+  return authStore.currentUser?.username?.charAt(0).toUpperCase() || 'U';
 }
 
 function handleUserMenu(command) {
-  console.log('User menu command:', command);
+  switch (command) {
+    case 'profile':
+      router.push('/profiles');
+      break;
+    case 'settings':
+      ElMessage.info('系统设置即将开放');
+      break;
+    case 'logout':
+      handleLogout();
+      break;
+  }
 }
 
-async function handleLogout() {
+function handleLogout() {
   try {
-    await authStore.logout();
+    authStore.logout();
     ElMessage.success('已退出登录');
     router.push('/login');
   } catch (error) {

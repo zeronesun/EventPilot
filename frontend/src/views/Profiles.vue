@@ -3,19 +3,11 @@
     <div class="page-header">
       <h1>关联方档案管理</h1>
       <div class="header-actions">
-        <el-button @click="showRecommendations = true">
-          <el-icon><Star /></el-icon>
-          智能推荐
+        <el-button @click="refreshData">
+          <el-icon><Refresh /></el-icon>
+          刷新
         </el-button>
-        <el-button @click="showAdvancedSearch = true">
-          <el-icon><Search /></el-icon>
-          高级搜索
-        </el-button>
-        <el-button @click="showAnalytics = true">
-          <el-icon><Trend-chart /></el-icon>
-          数据分析
-        </el-button>
-        <el-button type="primary" @click="showCreateDialog = true">
+        <el-button type="primary" @click="handleCreate">
           <el-icon><Plus /></el-icon>
           新建档案
         </el-button>
@@ -28,7 +20,7 @@
         <el-col :span="6">
           <el-card shadow="hover">
             <div class="stat-card">
-              <div class="stat-number">{{ dashboardStats.total_profiles }}</div>
+              <div class="stat-number">{{ dashboardStats.total_profiles || 0 }}</div>
               <div class="stat-label">总档案数</div>
             </div>
           </el-card>
@@ -36,7 +28,7 @@
         <el-col :span="6">
           <el-card shadow="hover">
             <div class="stat-card">
-              <div class="stat-number">{{ dashboardStats.high_score_count }}</div>
+              <div class="stat-number">{{ dashboardStats.high_score_count || 0 }}</div>
               <div class="stat-label">高评分档案</div>
             </div>
           </el-card>
@@ -44,7 +36,7 @@
         <el-col :span="6">
           <el-card shadow="hover">
             <div class="stat-card stat-warning">
-              <div class="stat-number">{{ dashboardStats.high_risk_count }}</div>
+              <div class="stat-number">{{ dashboardStats.high_risk_count || 0 }}</div>
               <div class="stat-label">高风险档案</div>
             </div>
           </el-card>
@@ -52,7 +44,7 @@
         <el-col :span="6">
           <el-card shadow="hover">
             <div class="stat-card">
-              <div class="stat-number">{{ dashboardStats.recent_interactions }}</div>
+              <div class="stat-number">{{ dashboardStats.recent_interactions || 0 }}</div>
               <div class="stat-label">近期交互</div>
             </div>
           </el-card>
@@ -116,7 +108,7 @@
         <el-table-column label="综合评分" width="100" align="center">
           <template #default="{ row }">
             <div :class="getScoreClass(row.aggregate_score)">
-              {{ row.aggregate_score }}
+              {{ row.aggregate_score || 0 }}
             </div>
           </template>
         </el-table-column>
@@ -212,64 +204,26 @@
         </el-button>
       </template>
     </el-dialog>
-
-    <!-- 智能推荐对话框 -->
-    <el-dialog
-      v-model="showRecommendations"
-      title="智能推荐"
-      width="80%"
-      top="5vh"
-    >
-      <IntelligentRecommendations />
-    </el-dialog>
-
-    <!-- 高级搜索对话框 -->
-    <el-dialog
-      v-model="showAdvancedSearch"
-      title="高级搜索"
-      width="80%"
-      top="5vh"
-    >
-      <AdvancedSearch />
-    </el-dialog>
-
-    <!-- 数据分析对话框 -->
-    <el-dialog
-      v-model="showAnalytics"
-      title="数据分析"
-      width="90%"
-      top="3vh"
-    >
-      <AnalyticsDashboard />
-    </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue';
-import { Plus, Refresh, Search, Star } from '@element-plus/icons-vue';
-import { useProfilesStore } from '@/stores/profiles';
+import { ref, reactive, onMounted, computed, onActivated } from 'vue';
+import { Plus, Refresh, Search } from '@element-plus/icons-vue';
+import { useProfilesStore } from '@/stores';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import type { ContactProfile, ProfileType } from '@/lib/profiles-client';
-import IntelligentRecommendations from '@/components/IntelligentRecommendations.vue';
-import AdvancedSearch from '@/components/AdvancedSearch.vue';
-import AnalyticsDashboard from '@/components/AnalyticsDashboard.vue';
 
 const profilesStore = useProfilesStore();
 
 const loading = computed(() => profilesStore.loading);
-const profiles = computed(() => profilesStore.profiles);
+const profiles = computed(() => profilesStore.profiles || []);
 const dashboardStats = computed(() => profilesStore.dashboardStats);
 
 const showCreateDialog = ref(false);
 const isEditing = ref(false);
 const submitLoading = ref(false);
 const profileFormRef = ref();
-
-// Dialog states for new components
-const showRecommendations = ref(false);
-const showAdvancedSearch = ref(false);
-const showAnalytics = ref(false);
 
 const searchForm = reactive({
   search: '',
@@ -294,9 +248,18 @@ const profileRules = {
   name: [{ required: true, message: '请输入档案名称', trigger: 'blur' }]
 };
 
-onMounted(async () => {
+async function refreshData() {
   await profilesStore.fetchProfiles();
   await profilesStore.getDashboardStats();
+  ElMessage.success('数据已刷新');
+}
+
+onMounted(async () => {
+  await refreshData();
+});
+
+onActivated(async () => {
+  await refreshData();
 });
 
 async function handleSearch() {
@@ -307,13 +270,17 @@ async function handleSearch() {
   });
 }
 
+function handleCreate() {
+  resetForm();
+  showCreateDialog.value = true;
+}
+
 function handleRowClick(row: ContactProfile) {
   viewProfile(row.id);
 }
 
 async function viewProfile(id: string) {
   await profilesStore.selectProfile(id);
-  // 路由到详情页
   ElMessage.success('查看档案详情');
 }
 
@@ -375,11 +342,6 @@ async function submitProfile() {
   }
 }
 
-async function fetchDashboardStats() {
-  await profilesStore.getDashboardStats();
-  ElMessage.success('数据已刷新');
-}
-
 function resetForm() {
   Object.assign(profileForm, {
     id: '',
@@ -395,7 +357,8 @@ function resetForm() {
   isEditing.value = false;
 }
 
-function formatDate(dateString: string) {
+function formatDate(dateString: string | undefined) {
+  if (!dateString) return '';
   return new Date(dateString).toLocaleDateString('zh-CN', {
     year: 'numeric',
     month: '2-digit',
@@ -492,19 +455,18 @@ function getScoreClass(score: number) {
 
 .stat-excellent {
   color: #67c23a;
-  font-weight: bold;
 }
 
 .stat-good {
-  color: #e6a23c;
+  color: #409eff;
 }
 
 .stat-average {
-  color: #f56c6c;
+  color: #e6a23c;
 }
 
 .stat-poor {
-  color: #909399;
+  color: #f56c6c;
 }
 
 .toolbar {
@@ -512,6 +474,7 @@ function getScoreClass(score: number) {
 }
 
 .profiles-list {
-  margin-top: 20px;
+  background: #fff;
+  border-radius: 4px;
 }
 </style>

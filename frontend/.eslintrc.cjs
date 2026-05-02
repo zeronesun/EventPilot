@@ -8,19 +8,27 @@ module.exports = {
   extends: [
     'eslint:recommended',
     'plugin:vue/vue3-recommended',
+    'plugin:@typescript-eslint/recommended',
   ],
   parser: 'vue-eslint-parser',
   parserOptions: {
     ecmaVersion: 'latest',
     sourceType: 'module',
+    parser: '@typescript-eslint/parser',
+    ecmaFeatures: {
+      jsx: true,
+    },
   },
-  plugins: ['vue'],
+  plugins: ['vue', '@typescript-eslint'],
   rules: {
     'vue/multi-word-component-names': 'off',
     'vue/no-v-html': 'warn',
     'no-console': 'warn',
     'no-debugger': 'error',
+    'no-undef': 'off',
+    '@typescript-eslint/no-undef': 'off',
     'no-unused-vars': 'warn',
+    '@typescript-eslint/no-unused-vars': 'warn',
   },
   ignorePatterns: [
     'dist',
@@ -28,6 +36,6 @@ module.exports = {
     '*.config.js',
     '*.config.ts',
     'coverage',
-    '**/*.ts',
+    '**/*.d.ts',
   ],
 }

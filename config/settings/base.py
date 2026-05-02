@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'apps.profiles',  # Phase 3 - 关联方档案管理
     'apps.knowledge',  # 知识库模块
     'apps.reviews',  # 复盘模块
+    'apps.notifications',  # 通知系统
 ]
 
 # 中间件

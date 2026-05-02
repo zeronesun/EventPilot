@@ -31,6 +31,8 @@ export default defineConfig({
     },
   },
   server: {
+    host: '0.0.0.0',
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://172.28.166.164:8000',
@@ -41,5 +43,24 @@ export default defineConfig({
         ws: true,
       },
     },
+  },
+  build: {
+    // 提高chunk大小警告阈值
+    chunkSizeWarningLimit: 800,
+    // 代码分割优化
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // 将第三方库单独打包
+          'element-plus': ['element-plus', '@element-plus/icons-vue'],
+          'vue-core': ['vue', 'vue-router', 'pinia'],
+          'axios': ['axios'],
+          'crypto': ['crypto-js'],
+        },
+      },
+    },
+    // 压缩配置
+    minify: 'esbuild',
+    cssCodeSplit: true,
   },
 })

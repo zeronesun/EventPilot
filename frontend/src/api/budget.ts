@@ -1,68 +1,48 @@
-import { fetchClient } from './client';
+/**
+ * Budget API Client
+ * 预算管理API客户端
+ */
+
+import { apiClient } from './client'
 
 export interface BudgetItem {
-  id: string;
-  event: string;
-  category_name: string;
-  name: string;
-  estimated_amount: number;
-  actual_amount: number;
-  variance: number;
-  responsible?: string;
-  responsible_name?: string;
-  status: 'pending' | 'in_progress' | 'completed';
-  created_at: string;
-  updated_at: string;
+  id: string
+  event: string
+  category_name: string
+  name: string
+  estimated_amount: number
+  actual_amount: number
+  variance: number
+  responsible?: string
+  responsible_name?: string
+  status: 'pending' | 'in_progress' | 'completed'
+  created_at: string
+  updated_at: string
 }
 
-export interface CreateBudgetItemRequest {
-  event: string;
-  category_name: string;
-  name: string;
-  estimated_amount: number;
-  actual_amount?: number;
-  responsible?: string;
-  status?: string;
+export const budgetApi = {
+  list: async (eventId?: string) => {
+    const url = eventId ? `/events/${eventId}/budget_items/` : '/budget-items/'
+    return apiClient.get<BudgetItem[]>(url)
+  },
+
+  get: async (id: string) => {
+    return apiClient.get<BudgetItem>(`/budget-items/${id}/`)
+  },
+
+  create: async (data: Partial<BudgetItem>) => {
+    return apiClient.post<BudgetItem>('/budget-items/', data)
+  },
+
+  update: async (id: string, data: Partial<BudgetItem>) => {
+    return apiClient.put<BudgetItem>(`/budget-items/${id}/`, data)
+  },
+
+  delete: async (id: string) => {
+    return apiClient.delete<void>(`/budget-items/${id}/`)
+  }
 }
 
-export interface UpdateBudgetItemRequest {
-  category_name?: string;
-  name?: string;
-  estimated_amount?: number;
-  actual_amount?: number;
-  responsible?: string;
-  status?: string;
-}
-
-export async function createBudgetItem(data: CreateBudgetItemRequest): Promise<BudgetItem> {
-  const client = fetchClient();
-  const response = await client.post('/events/budget-items/', data);
-  return response;
-}
-
-export async function getBudgetItems(eventId?: string): Promise<BudgetItem[]> {
-  const client = fetchClient();
-  const params = eventId ? { event: eventId } : {};
-  const response = await client.get('/events/budget-items/', params);
-  return response;
-}
-
-export async function getBudgetItem(id: string): Promise<BudgetItem> {
-  const client = fetchClient();
-  const response = await client.get(`/events/budget-items/${id}/`);
-  return response;
-}
-
-export async function updateBudgetItem(
-  id: string,
-  data: UpdateBudgetItemRequest
-): Promise<BudgetItem> {
-  const client = fetchClient();
-  const response = await client.patch(`/events/budget-items/${id}/`, data);
-  return response;
-}
-
-export async function deleteBudgetItem(id: string): Promise<void> {
-  const client = fetchClient();
-  await client.delete(`/events/budget-items/${id}/`);
-}
+export const createBudgetItem = budgetApi.create
+export const updateBudgetItem = budgetApi.update
+export const deleteBudgetItem = budgetApi.delete

@@ -510,8 +510,12 @@ const loadAnalytics = async () => {
       params.append('start_date_to', dateRange.value[1].toISOString().split('T')[0])
     }
 
-    const response = await apiClient.get(`/events/dashboard_analytics/?${params.toString()}`)
-    analytics.value = response.data || response
+    const response = await apiClient.get(`/events/events/dashboard_analytics/?${params.toString()}`)
+    if (response.data && typeof response.data === 'object') {
+      analytics.value = response.data
+    } else {
+      analytics.value = response
+    }
   } catch (error) {
     console.error('加载分析数据失败:', error)
     ElMessage.error('加载分析数据失败')

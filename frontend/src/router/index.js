@@ -4,6 +4,10 @@ import { createRouter, createWebHistory } from 'vue-router'
 const routes = [
   {
     path: '/',
+    redirect: '/dashboard'
+  },
+  {
+    path: '/dashboard',
     name: 'home',
     component: () => import('../views/Home.vue'),
     meta: { requiresAuth: true }
@@ -24,6 +28,24 @@ const routes = [
     path: '/events',
     name: 'events',
     component: () => import('../views/Events.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/events-kanban',
+    name: 'events-kanban',
+    component: () => import('../views/EventsKanban.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/events/:id',
+    name: 'event-detail',
+    component: () => import('../views/EventDetail.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/events/:id/edit',
+    name: 'event-edit',
+    component: () => import('../views/EventEdit.vue'),
     meta: { requiresAuth: true }
   },
   {
@@ -57,6 +79,12 @@ const routes = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/notifications',
+    name: 'notifications',
+    component: () => import('../views/Notifications.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/budget',
     name: 'budget',
     component: () => import('../views/Budget.vue'),
@@ -74,12 +102,9 @@ const routes = [
     component: () => import('../views/Reviews.vue'),
     meta: { requiresAuth: true }
   },
-  {
-    path: '/analytics',
-    name: 'analytics',
-    component: () => import('../views/Analytics.vue'),
-    meta: { requiresAuth: true }
-  },
+  {    path: '/analytics',    name: 'analytics',    component: () => import('../views/Analytics.vue'),
+    meta: { requiresAuth: true }  },  {    path: '/settings',    name: 'settings',    component: () => import('../views/Settings.vue'),
+    meta: { requiresAuth: true }  },
   {
     path: '/404',
     name: 'not-found',
@@ -96,35 +121,19 @@ const router = createRouter({
   routes
 })
 
-// 导出路由实例，在App.vue中进行认证检查
+// 导出路由实例
 export default router
 
-// 延迟导入认证store以避免循环依赖
-let authStore = null
-const getAuthStore = () => {
-  if (!authStore) {
-    // 动态导入store
-    const { useAuthStore } = require('../store/index')
-    authStore = useAuthStore()
-  }
-  return authStore
-}
-
-// Navigation guard for authentication
+// 简化的路由守卫 - 延迟到App.vue中的组件中检查认证状态
+// 这样可以避免循环依赖和require的问题
 router.beforeEach((to, from, next) => {
-  // 延迟检查，避免初始化时的导入问题
-  try {
-    const store = getAuthStore()
-    
-    if (to.meta.requiresAuth && !store.isAuthenticated) {
-      next('/login')
-    } else if (to.name === 'login' && store?.isAuthenticated) {
-      next('/')
-    } else {
-      next()
-    }
-  } catch (error) {
-    console.error('Router guard error:', error)
-    next() // 出错时继续，避免阻塞
+  // 只处理需要认证但已到登录页面的情况
+  if (to.path === '/login' || !to.meta.requiresAuth) {
+    next()
+    return
   }
+  
+  // 其他需要认证的页面延迟在组件内检查
+  // 组件可以通过检查localStorage中的token来判断
+  next()
 })

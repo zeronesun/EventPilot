@@ -19,6 +19,7 @@ urlpatterns = [
     path('api/profiles/', include('apps.profiles.api.urls')),  # Phase 3 包含profiles/等
     path('api/knowledge/', include('apps.knowledge.api.urls')),  # 知识库模块
     path('api/reviews/', include('apps.reviews.api.urls')),  # 复盘模块
+    path('api/notifications/', include('apps.notifications.api.urls')),  # 通知系统
 
     # API文档（后续集成）
     # path('api/docs/', include('rest_framework.urls')),

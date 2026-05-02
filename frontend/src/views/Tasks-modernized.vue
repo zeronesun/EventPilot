@@ -404,9 +404,9 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useTasksStore } from '../store'
-import { useWebSocketStore } from '../stores/websocket'
-import { useAuthStore } from '../store'
+import { useTasksStore } from '@/stores'
+import { useWebSocketStore } from '@/stores'
+import { useAuthStore } from '@/stores'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { tasksApi } from '../api/client'
 import notification from '../services/notification'

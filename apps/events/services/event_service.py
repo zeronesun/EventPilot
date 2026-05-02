@@ -796,15 +796,20 @@ class EventService:
             ).values('month').annotate(
                 count=Count('id'),
                 total_budget=Sum('estimated_budget')
-            ).order_by('month')[-12:]  # 最近12个月
-            
+            ).order_by('month')
+
+            # 取最近12个月（在Python中切片，避免负数索引错误）
+            monthly_stats_list = list(monthly_stats)
+            if len(monthly_stats_list) > 12:
+                monthly_stats_list = monthly_stats_list[-12:]
+
             monthly_trend = [
                 {
                     'month': item['month'].strftime('%Y-%m') if item['month'] else None,
                     'count': item['count'],
                     'total_budget': float(item['total_budget'] or 0)
                 }
-                for item in monthly_stats
+                for item in monthly_stats_list
             ]
             
             # 7. 高风险活动
