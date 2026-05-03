@@ -124,16 +124,25 @@ const router = createRouter({
 // 导出路由实例
 export default router
 
-// 简化的路由守卫 - 延迟到App.vue中的组件中检查认证状态
-// 这样可以避免循环依赖和require的问题
+// 获取token的辅助函数
+const getToken = () => localStorage.getItem('eventpilot_token')
+
+// 路由守卫 - 实际检查认证状态
 router.beforeEach((to, from, next) => {
-  // 只处理需要认证但已到登录页面的情况
-  if (to.path === '/login' || !to.meta.requiresAuth) {
-    next()
+  const token = getToken()
+  const requiresAuth = to.meta.requiresAuth !== false
+
+  // 如果页面需要认证但没有token，重定向到登录
+  if (requiresAuth && !token) {
+    next('/login')
     return
   }
-  
-  // 其他需要认证的页面延迟在组件内检查
-  // 组件可以通过检查localStorage中的token来判断
+
+  // 如果已登录用户访问登录页，重定向到首页
+  if (to.path === '/login' && token) {
+    next('/dashboard')
+    return
+  }
+
   next()
 })

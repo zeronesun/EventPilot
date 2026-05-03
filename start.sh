@@ -150,6 +150,13 @@ start_backend() {
     
     log_info "正在启动后端..."
     
+    # 检查端口是否被占用
+    if lsof -i :$BACKEND_PORT > /dev/null 2>&1; then
+        log_warning "端口 $BACKEND_PORT 已被占用，正在清理..."
+        lsof -ti :$BACKEND_PORT | xargs kill -9 2>/dev/null || true
+        sleep 2
+    fi
+    
     # 检查是否有虚拟环境
     USE_VENV=false
     if [ -d "venv" ] && [ -f "venv/bin/activate" ]; then
@@ -175,14 +182,11 @@ start_backend() {
         }
     fi
     
-    # 启动后端
+    # 启动后端 - 使用 --noreload 避免进程 ID 变化
     if [ "$USE_VENV" = true ]; then
-        nohup bash -c "
-            source venv/bin/activate
-            python manage.py runserver $BACKEND_HOST:$BACKEND_PORT
-        " > "$BACKEND_LOG" 2>&1 &
+        nohup venv/bin/python manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
     else
-        nohup python manage.py runserver $BACKEND_HOST:$BACKEND_PORT > "$BACKEND_LOG" 2>&1 &
+        nohup python manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
     fi
     
     local pid=$!

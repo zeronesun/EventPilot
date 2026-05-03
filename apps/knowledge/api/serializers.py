@@ -55,19 +55,24 @@ class KnowledgeEntryListSerializer(serializers.ModelSerializer):
     """知识条目列表序列化器（简化版）"""
     entry_type_display = serializers.CharField(source='get_entry_type_display', read_only=True)
     author_name = serializers.CharField(source='created_by.username', read_only=True)
+    content_preview = serializers.SerializerMethodField()
     
     class Meta:
         model = KnowledgeEntry
         fields = [
-            'id', 'entry_type', 'entry_type_display', 'title', 'category',
-            'tags', 'is_public', 'is_verified', 'popularity',
-            'author_name', 'created_at'
+            'id', 'entry_type', 'entry_type_display', 'title', 'content_preview',
+            'category', 'tags', 'is_public', 'is_verified', 'popularity',
+            'author_name', 'created_at', 'updated_at'
         ]
+    
+    def get_content_preview(self, obj):
+        """获取内容预览（前100字符）"""
+        return obj.content[:100] + '...' if obj.content and len(obj.content) > 100 else obj.content
 
 
 class KnowledgeEntryUpdateSerializer(serializers.ModelSerializer):
-    """知识条目更新序列化器（部分字段）"""
+    """知识条目更新序列化器"""
     
     class Meta:
         model = KnowledgeEntry
-        fields = ['title', 'content', 'tags', 'category', 'is_public', 'is_verified']
+        fields = ['title', 'entry_type', 'content', 'tags', 'category', 'related_events', 'related_tasks', 'is_public', 'is_verified']

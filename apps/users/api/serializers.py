@@ -302,7 +302,7 @@ class UserListSerializer(serializers.ModelSerializer):
         model = User
         fields = [
             'id', 'username', 'email', 'full_name', 'department',
-            'position', 'role', 'role_display', 'is_active',
+            'position', 'role', 'role_display', 'role_data', 'is_active',
             'is_locked', 'last_login', 'created_at'
         ]
     

@@ -63,7 +63,7 @@ class NotificationViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-    @action(detail=False, methods=['GET'])
+    @action(detail=False, methods=['get'])
     def unread_count(self, request):
         """
         获取未读通知数量
@@ -74,6 +74,9 @@ class NotificationViewSet(viewsets.ViewSet):
             count = NotificationService.get_unread_count(request.user)
             return Response({'unread_count': count}, status=status.HTTP_200_OK)
         except Exception as e:
+            import traceback
+            logger.error(f"获取未读通知数量失败: {type(e).__name__}: {str(e)}")
+            logger.error(traceback.format_exc())
             return Response(
                 {'error': f'获取未读数量失败: {str(e)}'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR

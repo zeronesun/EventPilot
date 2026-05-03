@@ -4,7 +4,7 @@
       <h1>用户管理</h1>
       <el-button
         type="primary"
-        @click="dialogVisible = true"
+        @click="openCreateDialog"
       >
         新增用户
       </el-button>
@@ -66,7 +66,7 @@
 
     <el-card class="table-card">
       <el-table 
-        v-loading="usersStore.isLoading" 
+        v-loading="isLoading" 
         :data="users"
         stripe
         border
@@ -130,6 +130,14 @@
               link
               type="primary"
               size="small"
+              @click="handleView(row)"
+            >
+              详情
+            </el-button>
+            <el-button
+              link
+              type="primary"
+              size="small"
               @click="handleEdit(row)"
             >
               编辑
@@ -157,145 +165,35 @@
       />
     </el-card>
 
-    <!-- 用户表单对话框 -->
-    <el-dialog 
-      v-model="dialogVisible" 
-      :title="isEdit ? '编辑用户' : '新增用户'"
-      width="600px"
-    >
-      <el-form
-        ref="userFormRef"
-        :model="userForm"
-        :rules="userRules"
-        label-width="100px"
-      >
-        <el-form-item
-          label="用户名"
-          prop="username"
-        >
-          <el-input
-            v-model="userForm.username"
-            placeholder="请输入用户名"
-          />
-        </el-form-item>
-        <el-form-item
-          label="邮箱"
-          prop="email"
-        >
-          <el-input
-            v-model="userForm.email"
-            type="email"
-            placeholder="请输入邮箱"
-          />
-        </el-form-item>
-        <el-form-item
-          label="密码"
-          prop="password"
-        >
-          <el-input 
-            v-model="userForm.password" 
-            type="password" 
-            placeholder="请输入密码"
-            show-password
-          />
-        </el-form-item>
-        <el-form-item
-          label="姓名"
-          prop="first_name"
-        >
-          <el-input
-            v-model="userForm.first_name"
-            placeholder="请输入姓名"
-          />
-        </el-form-item>
-        <el-form-item label="部门">
-          <el-input
-            v-model="userForm.department"
-            placeholder="请输入部门"
-          />
-        </el-form-item>
-        <el-form-item label="职位">
-          <el-input
-            v-model="userForm.position"
-            placeholder="请输入职位"
-          />
-        </el-form-item>
-        <el-form-item
-          label="角色"
-          prop="role"
-        >
-          <el-select
-            v-model="userForm.role"
-            placeholder="请选择角色"
-          >
-            <el-option
-              label="执行者"
-              value="executor"
-            />
-            <el-option
-              label="项目负责人"
-              value="project_owner"
-            />
-            <el-option
-              label="管理员"
-              value="admin"
-            />
-            <el-option
-              label="观察者"
-              value="observer"
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态">
-          <el-switch
-            v-model="userForm.is_active" 
-            :active-text="userForm.is_active ? '启用' : '禁用'"
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="dialogVisible = false">
-          取消
-        </el-button>
-        <el-button
-          type="primary"
-          :loading="submitting"
-          @click="handleSubmit"
-        >
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
+    <!-- 用户表单对话框（统一：详情/新建/编辑） -->
+    <UserFormDialog
+      v-model="dialogVisible"
+      :mode="formMode"
+      :user-data="selectedUserData"
+      @success="handleFormSuccess"
+      @delete="handleDeleteFromForm"
+    />
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted, onActivated } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { usersApi, apiClient } from '@/api/client'
+import UserFormDialog from '@/components/UserFormDialog.vue'
 
-// 临时状态管理（实际应该连接到后端API）
-const users = ref([
-  {
-    id: '1',
-    username: 'admin',
-    email: 'admin@example.com',
-    first_name: '管理员',
-    department: '技术部',
-    position: '系统管理员',
-    role: 'admin',
-    is_active: true,
-    created_at: '2026-04-19T10:00:00Z'
-  }
-])
+// 用户数据 - 从后端API加载
+const users = ref([])
+const isLoading = ref(false)
 
 const usersStore = reactive({
   isLoading: false
 })
 
+// 统一的对话框状态
 const dialogVisible = ref(false)
-const isEdit = ref(false)
-const submitting = ref(false)
-const userFormRef = ref()
+const formMode = ref<'view' | 'create' | 'edit'>('create')
+const selectedUserData = ref(null)
 
 const searchForm = reactive({
   username: '',
@@ -307,39 +205,34 @@ const pagination = reactive({
   total: 1
 })
 
-const userForm = reactive({
-  username: '',
-  email: '',
-  password: '',
-  first_name: '',
-  department: '',
-  position: '',
-  role: 'executor',
-  is_active: true
-})
-
-const userRules = {
-  username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' }
-  ],
-  email: [
-    { required: true, message: '请输入邮箱', trigger: 'blur' },
-    { type: 'email', message: '请输入正确的邮箱格式', trigger: 'blur' }
-  ],
-  role: [
-    { required: true, message: '请选择角色', trigger: 'change' }
-  ]
-}
-
 onMounted(() => {
-  // 数据已硬编码，无需加载
-  console.log('Users page mounted')
+  fetchUsers()
 })
 
 onActivated(() => {
-  // 页面激活时确保数据可见
-  console.log('Users page activated')
+  // 页面激活时刷新数据
+  fetchUsers()
 })
+
+// 从后端加载用户列表
+async function fetchUsers() {
+  isLoading.value = true
+  try {
+    console.log('Calling usersApi.list()...')
+    const response = await usersApi.list()
+    console.log('usersApi.list() response:', response)
+    // 后端返回格式: {count, results, ...} 不是 {data, meta}
+    users.value = response.results || response.data || []
+    pagination.total = users.value.length
+    console.log('Users loaded:', users.value)
+  } catch (error) {
+    console.error('Failed to fetch users:', error)
+    console.error('Error details:', error.response)
+    ElMessage.error('获取用户列表失败')
+  } finally {
+    isLoading.value = false
+  }
+}
 
 function formatDate(dateStr) {
   if (!dateStr) return ''
@@ -363,55 +256,156 @@ function handleReset() {
   searchForm.role = ''
 }
 
-function handleEdit(row) {
-  isEdit.value = true
-  dialogVisible.value = true
-  Object.assign(userForm, {
-    ...row,
-    password: '' // 编辑时密码不回显
-  })
+function handleView(row) {
+  try {
+    if (!row || typeof row !== 'object') {
+      console.error('handleView: invalid row data', row)
+      ElMessage.error('无效的用户数据')
+      return
+    }
+
+    // 确保 selectedUserData 是 ref 对象
+    if (selectedUserData && typeof selectedUserData === 'object' && 'value' in selectedUserData) {
+      selectedUserData.value = row
+    } else {
+      console.error('selectedUserData is not a ref:', selectedUserData)
+      return
+    }
+
+    // 确保 formMode 是 ref 对象
+    if (formMode && typeof formMode === 'object' && 'value' in formMode) {
+      formMode.value = 'view'
+    } else {
+      console.error('formMode is not a ref:', formMode)
+      return
+    }
+
+    // 确保 dialogVisible 是 ref 对象
+    if (dialogVisible && typeof dialogVisible === 'object' && 'value' in dialogVisible) {
+      dialogVisible.value = true
+    } else {
+      console.error('dialogVisible is not a ref:', dialogVisible)
+      return
+    }
+  } catch (error) {
+    console.error('handleView error:', error)
+    ElMessage.error('操作失败')
+  }
 }
 
-function handleDelete(row) {
+function openCreateDialog() {
+  try {
+    if (selectedUserData && typeof selectedUserData === 'object' && 'value' in selectedUserData) {
+      selectedUserData.value = null
+    }
+    if (formMode && typeof formMode === 'object' && 'value' in formMode) {
+      formMode.value = 'create'
+    }
+    if (dialogVisible && typeof dialogVisible === 'object' && 'value' in dialogVisible) {
+      dialogVisible.value = true
+    }
+  } catch (error) {
+    console.error('openCreateDialog error:', error)
+    ElMessage.error('操作失败')
+  }
+}
+
+function handleEdit(row) {
+  try {
+    if (!row || typeof row !== 'object') {
+      console.error('handleEdit: invalid row data', row)
+      ElMessage.error('无效的用户数据')
+      return
+    }
+
+    // 确保 selectedUserData 是 ref 对象
+    if (selectedUserData && typeof selectedUserData === 'object' && 'value' in selectedUserData) {
+      selectedUserData.value = row
+    } else {
+      console.error('selectedUserData is not a ref:', selectedUserData)
+      return
+    }
+
+    // 确保 formMode 是 ref 对象
+    if (formMode && typeof formMode === 'object' && 'value' in formMode) {
+      formMode.value = 'edit'
+    } else {
+      console.error('formMode is not a ref:', formMode)
+      return
+    }
+
+    // 确保 dialogVisible 是 ref 对象
+    if (dialogVisible && typeof dialogVisible === 'object' && 'value' in dialogVisible) {
+      dialogVisible.value = true
+    } else {
+      console.error('dialogVisible is not a ref:', dialogVisible)
+      return
+    }
+  } catch (error) {
+    console.error('handleEdit error:', error)
+    ElMessage.error('操作失败')
+  }
+}
+
+function handleFormSuccess(data) {
+  try {
+    // 刷新用户列表
+    fetchUsers()
+
+    // 如果是从查看模式切换到编辑模式
+    if (data?.action === 'edit') {
+      if (selectedUserData && typeof selectedUserData === 'object' && 'value' in selectedUserData) {
+        selectedUserData.value = data.data
+      }
+      if (formMode && typeof formMode === 'object' && 'value' in formMode) {
+        formMode.value = 'edit'
+      }
+      if (dialogVisible && typeof dialogVisible === 'object' && 'value' in dialogVisible) {
+        dialogVisible.value = true
+      }
+    } else {
+      const currentMode = formMode && typeof formMode === 'object' && 'value' in formMode ? formMode.value : 'create'
+      ElMessage.success(currentMode === 'create' ? '用户创建成功' : '用户更新成功')
+    }
+  } catch (error) {
+    console.error('handleFormSuccess error:', error)
+  }
+}
+
+async function handleDeleteFromForm(user) {
+  if (user?.id) {
+    try {
+      await apiClient.delete(`/users/${user.id}/`)
+      ElMessage.success('删除成功')
+    } catch (error) {
+      console.error('Delete failed:', error)
+      ElMessage.error('删除失败')
+    }
+    fetchUsers()
+  }
+}
+
+async function handleDelete(row) {
+  if (!row || typeof row !== 'object' || !row.id) {
+    console.error('handleDelete: invalid row data', row)
+    ElMessage.error('无效的用户数据')
+    return
+  }
   ElMessageBox.confirm(`确定要删除用户 "${row.username}" 吗？`, '提示', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    // TODO: 实现删除逻辑
-    ElMessage.success('删除成功')
+  }).then(async () => {
+    try {
+      await apiClient.delete(`/users/${row.id}/`)
+      ElMessage.success('删除成功')
+      // 刷新列表
+      await fetchUsers()
+    } catch (error) {
+      console.error('Delete failed:', error)
+      ElMessage.error(error.message || '删除失败')
+    }
   }).catch(() => {})
-}
-
-async function handleSubmit() {
-  if (!userFormRef.value) return
-  
-  try {
-    await userFormRef.value.validate()
-    submitting.value = true
-    
-    // TODO: 实现表单提交逻辑
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
-    dialogVisible.value = false
-    
-    // 重置表单
-    Object.assign(userForm, {
-      username: '',
-      email: '',
-      password: '',
-      first_name: '',
-      department: '',
-      position: '',
-      role: 'executor',
-      is_active: true
-    })
-  } catch (error) {
-    console.error('Validation failed:', error)
-  } finally {
-    submitting.value = false
-  }
 }
 
 function handlePageChange(page) {

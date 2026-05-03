@@ -173,17 +173,27 @@ class EventUpdateSerializer(serializers.ModelSerializer):
         """验证更新数据"""
         from apps.events.services.event_service import EventService
         
-        # 合并现有数据
-        update_data = {k: v for k, v in data.items() if k != 'budget_items'}
+        # 合并现有数据和更新数据
+        update_data = {
+            'name': data.get('name', self.instance.name),
+            'type': data.get('type', self.instance.type),
+            'start_date': data.get('start_date', self.instance.start_date),
+            'end_date': data.get('end_date', self.instance.end_date),
+        }
         
-        is_valid, errors = EventService.validate_event_data({
-            'name': self.instance.name,
-            'type': self.instance.type,
-            'start_date': self.instance.start_date,
-            'end_date': self.instance.end_date,
-            'owner_id': str(self.instance.owner_id),
-            **update_data
-        })
+        # 安全获取 owner_id
+        try:
+            owner_id = self.instance.owner_id
+            if owner_id:
+                update_data['owner_id'] = str(owner_id)
+        except Exception:
+            pass
+        
+        # 添加可选字段
+        if 'estimated_budget' in data:
+            update_data['estimated_budget'] = data['estimated_budget']
+        
+        is_valid, errors = EventService.validate_event_data(update_data)
         
         if not is_valid:
             raise serializers.ValidationError({'non_field_errors': errors})

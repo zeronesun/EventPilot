@@ -10,7 +10,7 @@ from . import jwt_views
 app_name = 'users'
 
 router = DefaultRouter()
-router.register(r'users', UserViewSet, basename='user')
+router.register(r'', UserViewSet, basename='user')
 
 urlpatterns = [
     # JWT认证端点
@@ -22,22 +22,22 @@ urlpatterns = [
     path('', include(router.urls)),
     
     # 批量操作端点
-    path('users/bulk/update-status/', 
+    path('bulk/update-status/', 
          BulkUpdateStatusView.as_view(), 
          name='bulk-update-status'),
-    path('users/bulk/assign-roles/', 
+    path('bulk/assign-roles/', 
          BulkAssignRolesView.as_view(), 
          name='bulk-assign-roles'),
-    path('users/bulk/delete/', 
+    path('bulk/delete/', 
          BulkDeleteView.as_view(), 
          name='bulk-delete'),
     
     # 用户导入
-    path('users/import/', UserImportView.as_view(), name='user-import'),
+    path('import/', UserImportView.as_view(), name='user-import'),
     
     # 统计和报告
-    path('users/statistics/', UserStatisticsView.as_view(), name='user-statistics'),
-    path('users/inactive/', InactiveUsersView.as_view(), name='inactive-users'),
+    path('statistics/', UserStatisticsView.as_view(), name='user-statistics'),
+    path('inactive/', InactiveUsersView.as_view(), name='inactive-users'),
     
     # 角色列表
     path('roles/', RoleListView.as_view(), name='roles'),

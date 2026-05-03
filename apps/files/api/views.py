@@ -1,8 +1,6 @@
-"""
-文件管理API视图集
-提供完整的文件上传、下载、管理等功能
-"""
+"""文件管理API视图集"""
 
+from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
 from rest_framework import viewsets, status
@@ -10,54 +8,113 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.exceptions import ValidationError, PermissionDenied, NotFound
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from django.contrib.auth import get_user_model
 from django.utils import timezone
-from django.db.models import Q, Count, Sum
+from django.db import transaction
+from django.db.models import Sum, Count
 import logging
 
 from ..models import (
-    FileMetadata, FileShare, FileAuditLog, FileVersion
+    FileMetadata,
+    FileShare,
+    FileAuditLog,
 )
-from ..api.serializers import (
-    FileMetadataSerializer, FileUploadInitiateSerializer,
-    FileUploadPartSerializer, FileUploadCompleteSerializer,
-    FileDownloadRequestSerializer, FileDeleteSerializer,
-    FileListFilterSerializer, FileShareCreateSerializer,
-    FileBatchDeleteSerializer, FileBatchShareSerializer,
-    FileSearchSerializer, FileStatsSerializer, FileQuotaSerializer,
-    FileUploadResponseSerializer, FileDownloadResponseSerializer,
-    FileListResponseSerializer, FileShareResponseSerializer,
-    FileErrorResponseSerializer, FileMetadataCompactSerializer
+from .serializers import (
+    FileMetadataSerializer,
+    FileUploadInitiateSerializer,
+    FileDownloadRequestSerializer,
+    FileListFilterSerializer,
+    FileShareCreateSerializer,
+    FileBatchDeleteSerializer,
+    FileUploadResponseSerializer,
+    FileDownloadResponseSerializer,
+    FileListResponseSerializer,
+    FileShareResponseSerializer,
+    FileErrorResponseSerializer,
+    FileMetadataCompactSerializer,
 )
 from ..services import (
-    FileService, FileUploadConfig, FileHealthMonitor,
-    FileSecurityValidator
+    FileService,
+    FileUploadConfig,
+    FileHealthMonitor,
 )
 
 User = get_user_model()
-
 logger = logging.getLogger(__name__)
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 @method_decorator(never_cache, name='dispatch')
 class FileViewSet(viewsets.ViewSet):
-    """
-    文件管理视图集
-    提供完整的文件管理功能
-    """
+    """文件管理视图集"""
     permission_classes = [IsAuthenticated]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.file_service = FileService()
         self.upload_config = FileUploadConfig()
     
-    def list(self, request):
-        """
-        列出用户文件
+    @action(detail=False, methods=['get'])
+    def test(self, request):
+        """测试端点"""
+        logger.info(f"====> FileViewSet.test 被调用!")
+        return Response({'status': 'ok', 'message': '文件管理API工作正常'})
+    
+    def create(self, request):
+        """上传文件（直接上传）"""
+        logger.info(f"====> FileViewSet.create 被调用!")
+        logger.info(f"收到上传请求，FILES: {list(request.FILES.keys())}, DATA: {list(request.data.keys())}")
         
-        GET /api/files/
-        """
+        try:
+            if 'file' not in request.FILES:
+                logger.warning("没有文件在请求中")
+                return Response(
+                    FileErrorResponseSerializer({
+                        'error': 'file_required',
+                        'message': '请选择要上传的文件',
+                        'details': {}
+                    }).data,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            file_obj = request.FILES['file']
+            filename = request.data.get('filename', file_obj.name)
+            logger.info(f"文件名: {filename}, 大小: {file_obj.size}, 类型: {file_obj.content_type}")
+            
+            result = self.file_service.direct_upload(
+                user=request.user,
+                file_obj=file_obj,
+                filename=filename
+            )
+            
+            logger.info(f"文件上传成功，file_id: {result.get('file_id')}")
+            return Response(result, status=status.HTTP_201_CREATED)
+            
+        except (ValidationError, PermissionDenied) as e:
+            logger.warning(f"验证失败: {str(e)}")
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'upload_error',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.exception(f"上传文件失败: {str(e)}")
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'internal_error',
+                    'message': '上传文件失败',
+                    'details': {'error': str(e)}
+                }).data,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def list(self, request):
+        """列出用户文件"""
         try:
             serializer = FileListFilterSerializer(data=request.query_params)
             if not serializer.is_valid():
@@ -71,8 +128,8 @@ class FileViewSet(viewsets.ViewSet):
                 )
             
             filters = serializer.validated_data
-            page = filters.pop('page')
-            page_size = filters.pop('page_size')
+            page = filters.get('page', 1)
+            page_size = filters.get('page_size', 20)
             
             result = self.file_service.list_user_files(
                 user=request.user,
@@ -81,10 +138,13 @@ class FileViewSet(viewsets.ViewSet):
                 page_size=page_size
             )
             
-            return Response(FileListResponseSerializer(result).data)
+            # 直接返回字典结果，避免 ModelSerializer 序列化字典时的类型错误
+            return Response(result)
             
         except Exception as e:
             logger.error(f"列出文件失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return Response(
                 FileErrorResponseSerializer({
                     'error': 'internal_error',
@@ -94,20 +154,9 @@ class FileViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def create(self, request):
-        """
-        初始化文件上传
-        
-        POST /api/files/
-        
-        请求体:
-        {
-            "filename": "test.pdf",
-            "file_size": 12345678,
-            "mime_type": "application/pdf",
-            "metadata": {}
-        }
-        """
+    @action(detail=False, methods=['post'])
+    def initiate_upload(self, request):
+        """初始化文件上传"""
         try:
             serializer = FileUploadInitiateSerializer(data=request.data)
             if not serializer.is_valid():
@@ -124,11 +173,9 @@ class FileViewSet(viewsets.ViewSet):
                 user=request.user,
                 **serializer.validated_data
             )
-            
-            return Response(
-                FileUploadResponseSerializer(result).data,
-                status=status.HTTP_201_CREATED
-            )
+
+            # 直接返回字典结果
+            return Response(result, status=status.HTTP_201_CREATED)
             
         except (ValidationError, PermissionDenied) as e:
             return Response(
@@ -150,15 +197,89 @@ class FileViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def retrieve(self, request, file_id=None):
-        """
-        获取文件详细信息
-        
-        GET /api/files/{file_id}/
-        """
+    @action(detail=True, methods=['post'])
+    def upload_part(self, request, pk=None):
+        """获取分片上传的预签名URL"""
+        try:
+            part_number = request.data.get('part_number')
+            upload_id = request.data.get('upload_id')
+            
+            if not part_number or not upload_id:
+                return Response(
+                    FileErrorResponseSerializer({
+                        'error': 'validation_error',
+                        'message': 'part_number和upload_id是必填参数',
+                        'details': {}
+                    }).data,
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            result = self.file_service.get_upload_part_url(
+                file_id=pk,
+                part_number=int(part_number),
+                upload_id=upload_id,
+                user=request.user
+            )
+            
+            return Response(result)
+            
+        except (ValidationError, PermissionDenied, NotFound) as e:
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'upload_part_error',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"获取分片上传URL失败: {str(e)}")
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'internal_error',
+                    'message': '获取分片上传URL失败',
+                    'details': {'error': str(e)}
+                }).data,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=True, methods=['post'])
+    def complete_upload(self, request, pk=None):
+        """完成文件上传"""
+        try:
+            result = self.file_service.complete_upload(
+                file_id=pk,
+                user=request.user,
+                parts=request.data.get('parts', [])
+            )
+            
+            return Response(result, status=status.HTTP_200_OK)
+            
+        except (ValidationError, PermissionDenied, NotFound) as e:
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'upload_complete_error',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"完成上传失败: {str(e)}")
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'internal_error',
+                    'message': '完成上传失败',
+                    'details': {'error': str(e)}
+                }).data,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    def retrieve(self, request, pk=None):
+        """获取文件详细信息"""
         try:
             file_metadata = self.file_service.get_file_metadata(
-                file_id=file_id,
+                file_id=pk,
                 user=request.user
             )
             
@@ -184,27 +305,18 @@ class FileViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def partial_update(self, request, file_id=None):
-        """
-        更新文件元数据
-        
-        PATCH /api/files/{file_id}/
-        """
+    def partial_update(self, request, pk=None):
+        """更新文件元数据"""
         try:
-            file_metadata = FileMetadata.objects.get(file_id=file_id)
+            file_metadata = FileMetadata.objects.get(file_id=pk)
             
-            # 权限验证
             if file_metadata.owner != request.user:
                 raise PermissionDenied("无权限修改此文件")
             
             if file_metadata.is_deleted:
                 raise ValidationError("文件已被删除")
             
-            # 更新可修改的字段
-            updatable_fields = [
-                'description', 'tags', 'category', 'visibility', 
-                'metadata', 'custom_attributes'
-            ]
+            updatable_fields = ['description', 'tags', 'category', 'visibility']
             
             for field in updatable_fields:
                 if field in request.data:
@@ -212,7 +324,6 @@ class FileViewSet(viewsets.ViewSet):
             
             file_metadata.save()
             
-            # 记录审计日志
             self.file_service._log_file_audit(
                 file_metadata=file_metadata,
                 action='edit',
@@ -252,15 +363,11 @@ class FileViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    def destroy(self, request, file_id=None):
-        """
-        删除文件
-        
-        DELETE /api/files/{file_id}/
-        """
+    def destroy(self, request, pk=None):
+        """删除文件"""
         try:
             result = self.file_service.delete_file(
-                file_id=file_id,
+                file_id=pk,
                 user=request.user
             )
             
@@ -296,21 +403,16 @@ class FileViewSet(viewsets.ViewSet):
             )
     
     @action(detail=True, methods=['post'])
-    def download(self, request, file_id=None):
-        """
-        生成文件下载URL
-        
-        POST /api/files/{file_id}/download/
-        
-        请求体:
-        {
-            "file_id": "xxx",
-            "expires_in": 3600
-        }
-        """
+    def download(self, request, pk=None):
+        """生成文件下载URL"""
         try:
-            serializer = FileDownloadRequestSerializer(data=request.data)
+            # 使用 dict() 安全转换 QueryDict
+            request_data = dict(request.data)
+            request_data['file_id'] = pk
+
+            serializer = FileDownloadRequestSerializer(data=request_data)
             if not serializer.is_valid():
+                logger.warning(f"下载参数验证失败: {serializer.errors}")
                 return Response(
                     FileErrorResponseSerializer({
                         'error': 'validation_error',
@@ -319,140 +421,59 @@ class FileViewSet(viewsets.ViewSet):
                     }).data,
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             result = self.file_service.create_download_url(
-                file_id=file_id,
+                file_id=pk,
                 user=request.user,
                 expires_in=serializer.validated_data.get('expires_in', 3600)
             )
-            
-            return Response(FileDownloadResponseSerializer(result).data)
-            
-        except (ValidationError, PermissionDenied, NotFound) as e:
-            return Response(
-                FileErrorResponseSerializer({
-                    'error': 'download_error',
-                    'message': '无法下载文件',
-                    'details': {}
-                }).data,
-                status=status.HTTP_404_NOT_FOUND
-            )
-        except Exception as e:
-            logger.error(f"生成下载URL失败: {str(e)}")
-            return Response(
-                FileErrorResponseSerializer({
-                    'error': 'internal_error',
-                    'message': '生成下载URL失败',
-                    'details': {'error': str(e)}
-                }).data,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
-    @action(detail=True, methods=['post'])
-    def upload_part(self, request, file_id=None):
-        """
-        获取分片上传URL（大文件分片上传）
-        
-        POST /api/files/{file_id}/upload_part/
-        """
-        try:
-            serializer = FileUploadPartSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(
-                    FileErrorResponseSerializer({
-                        'error': 'validation_error',
-                        'message': '分片上传参数验证失败',
-                        'details': serializer.errors
-                    }).data,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            result = self.file_service.get_upload_part_url(
-                file_id=file_id,
-                **serializer.validated_data,
-                user=request.user
-            )
-            
+
             return Response(result)
-            
-        except (ValidationError, PermissionDenied, NotFound) as e:
+
+        except PermissionDenied as e:
+            logger.warning(f"下载权限不足: {str(e)}")
             return Response(
                 FileErrorResponseSerializer({
-                    'error': 'upload_part_error',
-                    'message': '无法获取分片上传URL',
+                    'error': 'permission_denied',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_403_FORBIDDEN
+            )
+        except ValidationError as e:
+            logger.warning(f"下载验证失败: {str(e)}")
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'validation_error',
+                    'message': str(e),
                     'details': {}
                 }).data,
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
-            logger.error(f"获取分片上传URL失败: {str(e)}")
+            logger.error(f"创建下载URL失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return Response(
                 FileErrorResponseSerializer({
                     'error': 'internal_error',
-                    'message': '获取分片上传URL失败',
+                    'message': '创建下载URL失败',
                     'details': {'error': str(e)}
                 }).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
     @action(detail=True, methods=['post'])
-    def complete_upload(self, request, file_id=None):
-        """
-        完成文件上传（确认分片上传完成）
-        
-        POST /api/files/{file_id}/complete_upload/
-        """
+    def share(self, request, pk=None):
+        """创建文件分享链接"""
         try:
-            serializer = FileUploadCompleteSerializer(data=request.data)
+            # 使用 dict() 安全转换 QueryDict，避免展开问题
+            request_data = dict(request.data)
+            request_data['file_id'] = pk
+
+            serializer = FileShareCreateSerializer(data=request_data)
             if not serializer.is_valid():
-                return Response(
-                    FileErrorResponseSerializer({
-                        'error': 'validation_error',
-                        'message': '完成上传参数验证失败',
-                        'details': serializer.errors
-                    }).data,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            result = self.file_service.complete_upload(
-                file_id=serializer.validated_data['file_id_key'],
-                upload_id=serializer.validated_data['upload_id'],
-                parts=serializer.validated_data['parts'],
-                user=request.user
-            )
-            
-            return Response(result, status=status.HTTP_200_OK)
-            
-        except (ValidationError, PermissionDenied, NotFound) as e:
-            return Response(
-                FileErrorResponseSerializer({
-                    'error': 'complete_upload_error',
-                    'message': '完成上传失败',
-                    'details': {}
-                }).data,
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        except Exception as e:
-            logger.error(f"完成上传失败: {str(e)}")
-            return Response(
-                FileErrorResponseSerializer({
-                    'error': 'internal_error',
-                    'message': '完成上传失败',
-                    'details': {'error': str(e)}
-                }).data,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
-    @action(detail=True, methods=['post'])
-    def share(self, request, file_id=None):
-        """
-        创建文件分享链接
-        
-        POST /api/files/{file_id}/share/
-        """
-        try:
-            serializer = FileShareCreateSerializer(data=request.data)
-            if not serializer.is_valid():
+                logger.warning(f"分享参数验证失败: {serializer.errors}")
                 return Response(
                     FileErrorResponseSerializer({
                         'error': 'validation_error',
@@ -461,53 +482,51 @@ class FileViewSet(viewsets.ViewSet):
                     }).data,
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
-            # 获取分享设置
+
             share_settings = {
                 'allow_download': serializer.validated_data.get('allow_download', True),
                 'allow_preview': serializer.validated_data.get('allow_preview', True),
-                'permitir_comments': serializer.validated_data.get('permitir_comments', False),
-                'allow_reshare': serializer.validated_data.get('allow_reshare', False),
-                'password_protected': serializer.validated_data.get('password_protected', False),
                 'expires_at': None,
                 'description': serializer.validated_data.get('description', ''),
-                'metadata': {}
+                'base_url': request.build_absolute_uri('/api'),
             }
-            
-            # 处理过期时间
+
             expires_hours = serializer.validated_data.get('expires_hours')
             if expires_hours:
                 share_settings['expires_at'] = timezone.now() + timezone.timedelta(hours=expires_hours)
-            
-            # 处理密码保护
-            if share_settings['password_protected']:
-                from django.contrib.auth.hashers import make_password
-                password = serializer.validated_data.get('password')
-                share_settings['password_hash'] = make_password(password)
-            
-            # 获取基础URL
-            base_url = request.build_absolute_uri('/api/files/')
-            share_settings['base_url'] = base_url
-            
+
             result = self.file_service.create_file_share(
-                file_id=file_id,
+                file_id=pk,
                 user=request.user,
                 settings=share_settings
             )
-            
-            return Response(FileShareResponseSerializer(result).data, status=status.HTTP_201_CREATED)
-            
-        except (ValidationError, PermissionDenied, NotFound) as e:
+
+            return Response(result, status=status.HTTP_201_CREATED)
+
+        except PermissionDenied as e:
+            logger.warning(f"分享权限不足: {str(e)}")
             return Response(
                 FileErrorResponseSerializer({
-                    'error': 'share_error',
-                    'message': '无法创建分享链接',
+                    'error': 'permission_denied',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_403_FORBIDDEN
+            )
+        except ValidationError as e:
+            logger.warning(f"分享验证失败: {str(e)}")
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'validation_error',
+                    'message': str(e),
                     'details': {}
                 }).data,
                 status=status.HTTP_400_BAD_REQUEST
             )
         except Exception as e:
             logger.error(f"创建分享链接失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
             return Response(
                 FileErrorResponseSerializer({
                     'error': 'internal_error',
@@ -516,14 +535,87 @@ class FileViewSet(viewsets.ViewSet):
                 }).data,
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+    @action(detail=True, methods=['post'])
+    def revoke_share(self, request, pk=None):
+        """取消文件分享"""
+        try:
+            from ..models import FileShare
+
+            try:
+                file_metadata = FileMetadata.objects.get(file_id=pk)
+            except FileMetadata.DoesNotExist:
+                raise NotFound("文件不存在")
+
+            if file_metadata.owner != request.user:
+                raise PermissionDenied("无权限操作此文件的分享")
+
+            # 文件 owner 可取消该文件的所有活跃分享（不限制 created_by）
+            revoked_count = FileShare.objects.filter(
+                file_metadata=file_metadata,
+                is_active=True
+            ).update(is_active=False)
+
+            if revoked_count == 0:
+                raise ValidationError("没有找到可取消的分享链接（可能已过期或已取消）")
+
+            self.file_service._log_file_audit(
+                file_metadata=file_metadata,
+                action='revoke_share',
+                user=request.user,
+                success=True,
+                details={'revoked_count': revoked_count}
+            )
+
+            return Response({
+                'success': True,
+                'revoked_count': revoked_count,
+                'message': f'已取消 {revoked_count} 个分享链接'
+            })
+
+        except NotFound as e:
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'file_not_found',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except PermissionDenied as e:
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'permission_denied',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_403_FORBIDDEN
+            )
+        except ValidationError as e:
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'validation_error',
+                    'message': str(e),
+                    'details': {}
+                }).data,
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        except Exception as e:
+            logger.error(f"取消分享失败: {str(e)}")
+            import traceback
+            logger.error(traceback.format_exc())
+            return Response(
+                FileErrorResponseSerializer({
+                    'error': 'internal_error',
+                    'message': '取消分享失败',
+                    'details': {'error': str(e)}
+                }).data,
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
     
     @action(detail=False, methods=['post'])
     def batch_delete(self, request):
-        """
-        批量删除文件
-        
-        POST /api/files/batch_delete/
-        """
+        """批量删除文件"""
         try:
             serializer = FileBatchDeleteSerializer(data=request.data)
             if not serializer.is_valid():
@@ -567,142 +659,10 @@ class FileViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
-    @action(detail=False, methods=['post'])
-    def batch_share(self, request):
-        """
-        批量分享文件
-        
-        POST /api/files/batch_share/
-        """
-        try:
-            serializer = FileBatchShareSerializer(data=request.data)
-            if not serializer.is_valid():
-                return Response(
-                    FileErrorResponseSerializer({
-                        'error': 'validation_error',
-                        'message': '批量分享参数验证失败',
-                        'details': serializer.errors
-                    }).data,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            file_ids = serializer.validated_data['file_ids']
-            share_results = []
-            
-            base_url = request.build_absolute_uri('/api/files/')
-            
-            for file_id in file_ids:
-                try:
-                    share_settings = {
-                        'allow_download': serializer.validated_data.get('allow_download', True),
-                        'allow_preview': serializer.validated_data.get('allow_preview', True),
-                        'expires_at': timezone.now() + timezone.timedelta(
-                            hours=serializer.validated_data.get('expires_hours', 168)
-                        ),
-                        'base_url': base_url,
-                        'metadata': {}
-                    }
-                    
-                    result = self.file_service.create_file_share(
-                        file_id=file_id,
-                        user=request.user,
-                        settings=share_settings
-                    )
-                    
-                    share_results.append({
-                        'file_id': file_id,
-                        'share_url': result['share_url'],
-                        'success': True
-                    })
-                    
-                except Exception as e:
-                    share_results.append({
-                        'file_id': file_id,
-                        'success': False,
-                        'error': str(e)
-                    })
-            
-            return Response({
-                'success': True,
-                'total': len(file_ids),
-                'successful': len([r for r in share_results if r['success']]),
-                'failed': len([r for r in share_results if not r['success']]),
-                'results': share_results
-            })
-            
-        except Exception as e:
-            logger.error(f"批量分享失败: {str(e)}")
-            return Response(
-                FileErrorResponseSerializer({
-                    'error': 'internal_error',
-                    'message': '批量分享失败',
-                    'details': {'error': str(e)}
-                }).data,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
-    @action(detail=False, methods=['get'])
-    def search(self, request):
-        """
-        搜索文件
-        
-        GET /api/files/search/?query=test&category=document
-        """
-        try:
-            serializer = FileSearchSerializer(data=request.query_params)
-            if not serializer.is_valid():
-                return Response(
-                    FileErrorResponseSerializer({
-                        'error': 'validation_error',
-                        'message': '搜索参数验证失败',
-                        'details': serializer.errors
-                    }).data,
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            # 实现搜索逻辑
-            query = serializer.validated_data['query']
-            filters = {}
-            
-            if 'category' in serializer.validated_data:
-                filters['category'] = serializer.validated_data['category']
-            
-            if 'file_type' in serializer.validated_data:
-                filters['file_type'] = serializer.validated_data['file_type']
-            
-            page = serializer.validated_data.get('page', 1)
-            page_size = serializer.validated_data.get('page_size', 20)
-            
-            # 执行搜索
-            result = self.file_service.list_user_files(
-                user=request.user,
-                filters={'search': query, **filters},
-                page=page,
-                page_size=page_size
-            )
-            
-            return Response(FileListResponseSerializer(result).data)
-            
-        except Exception as e:
-            logger.error(f"搜索文件失败: {str(e)}")
-            return Response(
-                FileErrorResponseSerializer({
-                    'error': 'internal_error',
-                    'message': '搜索文件失败',
-                    'details': {'error': str(e)}
-                }).data,
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-    
     @action(detail=False, methods=['get'])
     def stats(self, request):
-        """
-        获取文件统计数据
-        
-        GET /api/files/stats/
-        """
+        """获取文件统计数据"""
         try:
-            # 获取用户文件统计
             queryset = FileMetadata.objects.filter(
                 owner=request.user,
                 is_deleted=False
@@ -711,7 +671,6 @@ class FileViewSet(viewsets.ViewSet):
             total_files = queryset.count()
             total_size = queryset.aggregate(Sum('file_size'))['file_size__sum'] or 0
             
-            # 按分类统计
             by_category = {}
             for category_choice in FileMetadata.FileCategory.choices:
                 category = category_choice[0]
@@ -719,26 +678,22 @@ class FileViewSet(viewsets.ViewSet):
                 if count > 0:
                     by_category[category] = count
             
-            # 按状态统计
             by_status = {}
             for status_choice in FileMetadata.FileStatus.choices:
-                status = status_choice[0]
-                count = queryset.filter(status=status).count()
+                st = status_choice[0]
+                count = queryset.filter(status=st).count()
                 if count > 0:
-                    by_status[status] = count
+                    by_status[st] = count
             
-            # 按类型统计
             by_type = {}
             type_counts = queryset.values('file_type').annotate(count=Count('id'))
             for item in type_counts:
                 by_type[item['file_type']] = item['count']
             
-            # 最近上传（7天内）
             recent_date = timezone.now() - timezone.timedelta(days=7)
             recent_uploads = queryset.filter(created_at__gte=recent_date).count()
             
-            # 存储配额
-            total_quota = self.upload_config.MAX_FILE_SIZE
+            total_quota = FileUploadConfig.MAX_FILE_SIZE
             storage_used = total_size
             storage_available = total_quota - storage_used
             quota_percentage = (storage_used / total_quota * 100) if total_quota > 0 else 0
@@ -769,30 +724,21 @@ class FileViewSet(viewsets.ViewSet):
 
 @method_decorator(never_cache, name='dispatch')
 class FileShareViewSet(viewsets.ViewSet):
-    """
-    文件分享视图集
-    处理公共分享链接访问
-    """
+    """文件分享视图集"""
     permission_classes = [AllowAny]
     
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.file_service = FileService()
     
-    def retrieve(self, request, share_id=None):
-        """
-        通过分享链接访问文件
-        
-        GET /api/files/share/{share_id}/
-        """
+    def retrieve(self, request, pk=None):
+        """通过分享链接访问文件"""
         try:
-            # 查找分享记录
             share = FileShare.objects.select_related('file_metadata').get(
-                share_id=share_id,
+                share_id=pk,
                 is_active=True
             )
             
-            # 验证分享有效性
             if not share.is_valid():
                 return Response(
                     FileErrorResponseSerializer({
@@ -803,57 +749,22 @@ class FileShareViewSet(viewsets.ViewSet):
                     status=status.HTTP_410_GONE
                 )
             
-            # 检查密码保护
-            if share.password_protected:
-                provided_password = request.query_params.get('password', '')
-                from django.contrib.auth.hashers import check_password
-                if not check_password(provided_password, share.password_hash):
-                    return Response(
-                        FileErrorResponseSerializer({
-                            'error': 'password_required',
-                            'message': '需要密码才能访问此文件',
-                            'details': {}
-                        }).data,
-                        status=status.HTTP_401_UNAUTHORIZED
-                    )
-            
-            # 获取文件信息
             file_metadata = share.file_metadata
             
-            # 生成预签名下载URL
             try:
-                download_url = self.file_service.storage_service.generate_presigned_download_url(
-                    key=file_metadata.storage_path,
-                    expires_in=3600  # 1小时
+                download_result = self.file_service.create_download_url(
+                    file_id=file_metadata.file_id,
+                    user=share.created_by,
+                    expires_in=3600
                 )
+                download_url = download_result['download_url']
             except Exception as e:
                 logger.error(f"生成下载URL失败: {str(e)}")
-                return Response(
-                    FileErrorResponseSerializer({
-                        'error': 'download_error',
-                        'message': '无法生成下载链接',
-                        'details': {}
-                    }).data,
-                    status=status.HTTP_500_INTERNAL_SERVER_ERROR
-                )
+                download_url = None
             
-            # 更新分享统计
             share.download_count += 1
             share.last_accessed_at = timezone.now()
             share.save(update_fields=['download_count', 'last_accessed_at'])
-            
-            # 记录访问日志
-            self.file_service._log_file_audit(
-                file_metadata=file_metadata,
-                action='download',
-                user=None,  # 公共分享可能没有用户
-                success=True,
-                details={
-                    'via_share': share_id,
-                    'user_agent': request.META.get('HTTP_USER_AGENT', ''),
-                    'ip_address': request.META.get('REMOTE_ADDR', '')
-                }
-            )
             
             return Response({
                 'file_id': file_metadata.file_id,
@@ -896,28 +807,18 @@ class FileShareViewSet(viewsets.ViewSet):
 
 @method_decorator(never_cache, name='dispatch')
 class FileHealthViewSet(viewsets.ViewSet):
-    """
-    文件系统健康检查视图集
-    """
+    """文件系统健康检查视图集"""
     permission_classes = [AllowAny]
     
     @action(detail=False, methods=['get'])
     def health(self, request):
-        """
-        系统健康检查
-        
-        GET /api/files/health/
-        """
+        """系统健康检查"""
         try:
             health_monitor = FileHealthMonitor()
             
-            # 检查存储健康
             storage_health = health_monitor.check_storage_health()
-            
-            # 检查数据库健康
             database_health = health_monitor.check_database_health()
             
-            # 系统健康状态
             overall_health = 'healthy'
             if storage_health['status'] != 'healthy' or database_health['status'] != 'healthy':
                 overall_health = 'unhealthy'

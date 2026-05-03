@@ -114,6 +114,8 @@ export interface Task {
 
 // Auth token management
 let currentToken: string | null = null;
+let isRefreshing = false;
+let refreshSubscribers: Array<(token: string) => void> = [];
 
 export function setAuthToken(token: string): void {
   currentToken = token;
@@ -130,6 +132,53 @@ export function getAuthToken(): string | null {
 export function clearAuthToken(): void {
   currentToken = null;
   localStorage.removeItem('eventpilot_token');
+}
+
+async function refreshToken(): Promise<string | null> {
+  const token = getAuthToken();
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/users/auth/refresh/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      clearAuthToken();
+      window.location.href = '/login';
+      return null;
+    }
+
+    const data = await response.json();
+    const newToken = data.token || data.data?.token;
+
+    if (newToken) {
+      setAuthToken(newToken);
+      return newToken;
+    }
+
+    return null;
+  } catch (error) {
+    console.error('Token refresh failed:', error);
+    clearAuthToken();
+    window.location.href = '/login';
+    return null;
+  }
+}
+
+function onTokenRefreshed(token: string): void {
+  refreshSubscribers.forEach((callback) => callback(token));
+  refreshSubscribers = [];
+}
+
+function addRefreshSubscriber(callback: (token: string) => void): void {
+  refreshSubscribers.push(callback);
 }
 
 // Main API client function
@@ -158,6 +207,104 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
+      // Handle 401/403 - Token expired or invalid
+      if (response.status === 401 || response.status === 403) {
+        clearTimeout(timeoutId);
+
+        // If already refreshing, queue this request
+        if (isRefreshing) {
+          return new Promise<T>((resolve, reject) => {
+            addRefreshSubscriber(async (newToken: string) => {
+              try {
+                const retryHeaders: HeadersInit = {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${newToken}`,
+                  ...options.headers,
+                };
+
+                const retryResponse = await fetch(url, {
+                  ...options,
+                  headers: retryHeaders,
+                  signal: controller.signal,
+                });
+
+                if (!retryResponse.ok) {
+                  const contentType = retryResponse.headers.get('content-type');
+                  let body: unknown;
+
+                  if (contentType?.includes('application/json')) {
+                    body = await retryResponse.json().catch(() => null);
+                  } else {
+                    body = await retryResponse.text().catch(() => null);
+                  }
+
+                  reject(new ApiErrorHandler(retryResponse.status, body));
+                  return;
+                }
+
+                if (retryResponse.status === 204) {
+                  resolve(undefined as T);
+                  return;
+                }
+
+                const json = await retryResponse.json();
+                resolve(json as T);
+              } catch (error) {
+                reject(error);
+              }
+            });
+          });
+        }
+
+        // Start token refresh
+        isRefreshing = true;
+
+        try {
+          const newToken = await refreshToken();
+
+          if (newToken) {
+            onTokenRefreshed(newToken);
+
+            // Retry original request with new token
+            const retryHeaders: HeadersInit = {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${newToken}`,
+              ...options.headers,
+            };
+
+            const retryResponse = await fetch(url, {
+              ...options,
+              headers: retryHeaders,
+              signal: controller.signal,
+            });
+
+            if (!retryResponse.ok) {
+              const contentType = retryResponse.headers.get('content-type');
+              let body: unknown;
+
+              if (contentType?.includes('application/json')) {
+                body = await retryResponse.json().catch(() => null);
+              } else {
+                body = await retryResponse.text().catch(() => null);
+              }
+
+              throw new ApiErrorHandler(retryResponse.status, body);
+            }
+
+            if (retryResponse.status === 204) {
+              return undefined as T;
+            }
+
+            const json = await retryResponse.json();
+            return json as T;
+          } else {
+            throw new ApiErrorHandler(response.status, { message: 'Session expired. Please login again.' });
+          }
+        } finally {
+          isRefreshing = false;
+        }
+      }
+
       const contentType = response.headers.get('content-type');
       let body: unknown;
 
@@ -219,6 +366,59 @@ export const apiClient = {
     }),
   delete: <T>(path: string, options?: RequestInit) =>
     api<T>(path, { ...options, method: 'DELETE' }),
+  upload: <T>(path: string, formData: FormData, onProgress?: (progress: number) => void) => {
+    return new Promise<T>(async (resolve, reject) => {
+      try {
+        const token = getAuthToken();
+        const url = `${API_BASE_URL}${path}`;
+        
+        const xhr = new XMLHttpRequest();
+        
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable && onProgress) {
+            const progress = Math.round((e.loaded / e.total) * 100);
+            onProgress(progress);
+          }
+        });
+        
+        xhr.addEventListener('load', () => {
+          if (xhr.status >= 200 && xhr.status < 300) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response as T);
+            } catch {
+              resolve(xhr.responseText as T);
+            }
+          } else {
+            try {
+              const errorData = JSON.parse(xhr.responseText);
+              reject(new ApiErrorHandler(xhr.status, errorData));
+            } catch {
+              reject(new ApiErrorHandler(xhr.status, xhr.responseText));
+            }
+          }
+        });
+        
+        xhr.addEventListener('error', () => {
+          reject(new Error('上传失败'));
+        });
+        
+        xhr.addEventListener('abort', () => {
+          reject(new Error('上传被取消'));
+        });
+        
+        xhr.open('POST', url);
+        
+        if (token) {
+          xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        }
+        
+        xhr.send(formData);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  },
   setAuthToken: (token: string) => {
     currentToken = token;
     localStorage.setItem('eventpilot_token', token);
@@ -247,14 +447,14 @@ export const usersApi = {
 export const eventsApi = {
   list: (params?: Record<string, string>) => {
     const query = new URLSearchParams(params).toString();
-    return apiClient.get<PaginatedResponse<Event>>(`/events/events/${query ? `?${query}` : ''}`);
+    return apiClient.get<PaginatedResponse<Event>>(`/events/${query ? `?${query}` : ''}`);
   },
-  get: (id: string) => apiClient.get<Event>(`/events/events/${id}/`),
-  create: (data: Partial<Event>) => apiClient.post<Event>('/events/events/', data),
-  update: (id: string, data: Partial<Event>) => apiClient.put<Event>(`/events/events/${id}/`, data),
-  delete: (id: string) => apiClient.delete<void>(`/events/events/${id}/`),
-  statistics: (id: string) => apiClient.get<any>(`/events/events/${id}/statistics/`),
-  complete: (id: string) => apiClient.post<{ message: string }>(`/events/events/${id}/complete/`),
+  get: (id: string) => apiClient.get<Event>(`/events/${id}/`),
+  create: (data: Partial<Event>) => apiClient.post<Event>('/events/', data),
+  update: (id: string, data: Partial<Event>) => apiClient.put<Event>(`/events/${id}/`, data),
+  delete: (id: string) => apiClient.delete<void>(`/events/${id}/`),
+  statistics: (id: string) => apiClient.get<any>(`/events/${id}/statistics/`),
+  complete: (id: string) => apiClient.post<{ message: string }>(`/events/${id}/complete/`),
 };
 
 export const tasksApi = {
@@ -293,6 +493,7 @@ export interface FileMetadata {
   category?: string;
   description?: string;
   metadata?: Record<string, unknown>;
+  has_share?: boolean;
 }
 
 export interface FileUploadRequest {
@@ -335,8 +536,18 @@ export const filesApi = {
     return apiClient.get<FileListResponse>(`/files/${query ? `?${query}` : ''}`);
   },
   get: (fileId: string) => apiClient.get<FileMetadata>(`/files/${fileId}/`),
+  upload: (file: File, onProgress?: (progress: number) => void) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('filename', file.name);
+    return apiClient.upload<{ file_id: string; status: string; file_size: number; filename: string }>(
+      '/files/',
+      formData,
+      onProgress
+    );
+  },
   initiateUpload: (data: FileUploadRequest) =>
-    apiClient.post<FileUploadInitiateResponse>('/files/', data),
+    apiClient.post<FileUploadInitiateResponse>('/files/initiate_upload/', data),
   getUploadPart: (fileId: string, partNumber: number, uploadId: string) =>
     apiClient.post<{
       presigned_url: string;
@@ -378,6 +589,10 @@ export const filesApi = {
       password_protected: boolean;
       settings: Record<string, unknown>;
     }>(`/files/${fileId}/share/`, settings),
+  revokeShare: (fileId: string) =>
+    apiClient.post<{ success: boolean; revoked_count: number; message: string }>(
+      `/files/${fileId}/revoke_share/`
+    ),
   batchDelete: (fileIds: string[]) =>
     apiClient.post<{
       success: boolean;

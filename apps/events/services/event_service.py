@@ -84,13 +84,6 @@ class EventService:
                 
                 if end_date <= start_date:
                     errors.append('结束时间必须大于开始时间')
-                
-                # 检查时间范围是否合理
-                duration_days = (end_date - start_date).days
-                if duration_days < 1:
-                    errors.append('活动持续时间至少1天')
-                elif duration_days > 365:
-                    errors.append('活动持续时间不能超过1年')
                     
             except (ValueError, TypeError) as e:
                 errors.append('时间格式不正确')

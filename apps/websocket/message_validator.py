@@ -47,11 +47,12 @@ class WebSocketMessageValidator:
     def __init__(self, secret: Optional[str] = None):
         """
         初始化验证器
-        
+
         Args:
             secret: 用于签名的密钥，默认从settings获取
         """
-        self.secret = secret or getattr(settings, 'WEBSOCKET_MESSAGE_SECRET', 'default-secret-change-in-production')
+        from apps.security.utils import WS_MESSAGE_SECRET
+        self.secret = secret or getattr(settings, 'WEBSOCKET_MESSAGE_SECRET', WS_MESSAGE_SECRET)
         
     def validate_message(self, message: Dict[str, Any], user_id: Optional[int] = None) -> bool:
         """

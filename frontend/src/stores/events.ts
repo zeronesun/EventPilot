@@ -7,7 +7,6 @@ import { defineStore } from 'pinia';
 import { ref } from 'vue';
 import { apiClient, ApiErrorHandler } from '@/api/client';
 
-// Event type definition (simplified)
 export interface Event {
   id: number | string;
   name: string;
@@ -41,11 +40,9 @@ export const useEventsStore = defineStore('events', () => {
     error.value = null;
 
     try {
-      // 修复路径: /api/events/events/ 而不是 /api/events/
-      const response = await apiClient.get(`/events/events/${params ? `?${new URLSearchParams(params)}` : ''}`);
-      // 后端返回格式: {count, results, ...} 不是 {data, meta}
+      const response = await apiClient.get(`/events/${params ? `?${new URLSearchParams(params)}` : ''}`);
       events.value = (response as any).results || [];
-      
+
       if ('count' in response) {
         pagination.value = {
           current: 1,
@@ -66,7 +63,7 @@ export const useEventsStore = defineStore('events', () => {
     error.value = null;
 
     try {
-      const event = await apiClient.get(`/events/events/${id}/`);
+      const event = await apiClient.get(`/events/${id}/`);
       currentEvent.value = event;
     } catch (err) {
       error.value = getErrorMessage(err);
@@ -76,12 +73,12 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
-  async function createEvent(data: any): Promise<void> {
+  async function createEvent(data: any): Promise<any> {
     isLoading.value = true;
     error.value = null;
 
     try {
-      const event = await apiClient.post('/events/events/', data);
+      const event = await apiClient.post('/events/', data);
       events.value.unshift(event);
       return event;
     } catch (err) {
@@ -92,12 +89,12 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
-  async function updateEvent(id: string, data: any): Promise<void> {
+  async function updateEvent(id: string, data: any): Promise<any> {
     isLoading.value = true;
     error.value = null;
 
     try {
-      const event = await apiClient.put(`/events/events/${id}/`, data);
+      const event = await apiClient.put(`/events/${id}/`, data);
       const index = events.value.findIndex(e => e.id === id);
       if (index !== -1) {
         events.value[index] = event;
@@ -119,7 +116,7 @@ export const useEventsStore = defineStore('events', () => {
     error.value = null;
 
     try {
-      await apiClient.delete(`/events/events/${id}/`);
+      await apiClient.delete(`/events/${id}/`);
       events.value = events.value.filter(e => e.id !== id);
       if (currentEvent.value?.id === id) {
         currentEvent.value = null;
@@ -134,7 +131,7 @@ export const useEventsStore = defineStore('events', () => {
 
   async function fetchEventStatistics(id: string): Promise<any> {
     try {
-      return await apiClient.get(`/events/events/${id}/statistics/`);
+      return await apiClient.get(`/events/${id}/statistics/`);
     } catch (err) {
       error.value = getErrorMessage(err);
       throw err;
@@ -142,14 +139,11 @@ export const useEventsStore = defineStore('events', () => {
   }
 
   return {
-    // State
     events,
     currentEvent,
     isLoading,
     error,
     pagination,
-    
-    // Actions
     fetchEvents,
     fetchEvent,
     createEvent,
@@ -159,7 +153,6 @@ export const useEventsStore = defineStore('events', () => {
   };
 });
 
-// Error message helper
 function getErrorMessage(error: unknown): string {
   if (error instanceof ApiErrorHandler) {
     const body = error.body;
@@ -177,8 +170,7 @@ function getErrorMessage(error: unknown): string {
         return String(body.detail);
       }
     }
-    
-    // Map HTTP status codes to user-friendly messages
+
     switch (error.status) {
       case 401:
         return '请登录以继续操作';
@@ -196,10 +188,10 @@ function getErrorMessage(error: unknown): string {
         return '服务器错误，请稍后重试';
     }
   }
-  
+
   if (error instanceof Error) {
     return error.message;
   }
-  
+
   return '发生未知错误';
 }

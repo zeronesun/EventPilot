@@ -169,16 +169,20 @@
                 </el-col>
               </el-row>
 
-              <el-form-item label="活动地点">
+              <el-form-item label="客户名称">
                 <el-input
-                  v-model="form.location"
-                  placeholder="请输入活动地点"
+                  v-model="form.client"
+                  placeholder="请输入客户名称"
                   clearable
-                >
-                  <template #prefix>
-                    <el-icon><Location /></el-icon>
-                  </template>
-                </el-input>
+                />
+              </el-form-item>
+
+              <el-form-item label="客户联系人">
+                <el-input
+                  v-model="form.client_contact"
+                  placeholder="请输入客户联系人"
+                  clearable
+                />
               </el-form-item>
             </el-card>
 
@@ -194,7 +198,7 @@
                 <el-col :span="12">
                   <el-form-item label="预算金额">
                     <el-input-number
-                      v-model="form.budget"
+                      v-model="form.estimated_budget"
                       :min="0"
                       :precision="2"
                       :step="1000"
@@ -208,7 +212,7 @@
                 <el-col :span="12">
                   <el-form-item label="实际支出">
                     <el-input-number
-                      v-model="form.actual_cost"
+                      v-model="form.actual_budget"
                       :min="0"
                       :precision="2"
                       :step="1000"
@@ -280,7 +284,7 @@
                   <div class="preview-stats">
                     <div class="preview-stat">
                       <span class="stat-label">预算</span>
-                      <span class="stat-value">￥{{ (form.budget || 0).toLocaleString() }}</span>
+                      <span class="stat-value">￥{{ (form.estimated_budget || 0).toLocaleString() }}</span>
                     </div>
                     <div class="preview-stat">
                       <span class="stat-label">开始时间</span>
@@ -380,14 +384,14 @@ const editTips = [
 const form = ref({
   name: '',
   type: 'conference',
-  status: 'pending',
+  status: 'planning',
   start_date: '',
   end_date: '',
-  location: '',
-  budget: 0,
-  actual_cost: null as number | null,
+  estimated_budget: 0,
+  actual_budget: null as number | null,
   description: '',
-  owner_name: ''
+  client: '',
+  client_contact: ''
 })
 
 const rules: FormRules = {
@@ -409,16 +413,18 @@ const rules: FormRules = {
 // 下拉选项
 const typeOptions = [
   { label: '会议', value: 'conference' },
+  { label: '展会', value: 'exhibition' },
+  { label: '演出', value: 'performance' },
+  { label: '派对', value: 'party' },
   { label: '培训', value: 'training' },
-  { label: '活动', value: 'event' },
-  { label: '团建', value: 'team_building' },
   { label: '其他', value: 'other' }
 ]
 
 const statusOptions = [
-  { label: '策划中', value: 'pending' },
-  { label: '进行中', value: 'in_progress' },
+  { label: '策划中', value: 'planning' },
+  { label: '执行中', value: 'executing' },
   { label: '已完成', value: 'completed' },
+  { label: '已复盘', value: 'reviewed' },
   { label: '已取消', value: 'cancelled' }
 ]
 
@@ -456,14 +462,14 @@ function fillForm(event: any) {
   form.value = {
     name: event.name || '',
     type: event.type || 'conference',
-    status: event.status || 'pending',
+    status: event.status || 'planning',
     start_date: event.start_date || '',
     end_date: event.end_date || '',
-    location: event.location || '',
-    budget: event.budget || 0,
-    actual_cost: event.actual_cost ?? null,
+    estimated_budget: event.estimated_budget || 0,
+    actual_budget: event.actual_budget ?? null,
     description: event.description || '',
-    owner_name: event.owner_name || ''
+    client: event.client || '',
+    client_contact: event.client_contact || ''
   }
 }
 
@@ -523,9 +529,10 @@ function formatDate(date: string): string {
 function formatEventType(type: string): string {
   const types: Record<string, string> = {
     conference: '会议',
+    exhibition: '展会',
+    performance: '演出',
+    party: '派对',
     training: '培训',
-    event: '活动',
-    team_building: '团建',
     other: '其他'
   }
   return types[type] || type
@@ -533,9 +540,10 @@ function formatEventType(type: string): string {
 
 function getStatusType(status: string): string {
   const types: Record<string, string> = {
-    pending: 'info',
-    in_progress: 'warning',
+    planning: 'info',
+    executing: 'warning',
     completed: 'success',
+    reviewed: 'success',
     cancelled: 'danger'
   }
   return types[status] || 'info'
@@ -543,9 +551,10 @@ function getStatusType(status: string): string {
 
 function getStatusText(status: string): string {
   const texts: Record<string, string> = {
-    pending: '策划中',
-    in_progress: '进行中',
+    planning: '策划中',
+    executing: '执行中',
     completed: '已完成',
+    reviewed: '已复盘',
     cancelled: '已取消'
   }
   return texts[status] || status

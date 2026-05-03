@@ -3,6 +3,10 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.contrib.auth import get_user_model
+from django.conf import settings
+import logging
+
+logger = logging.getLogger(__name__)
 
 from ..authentication import generate_jwt_token, decode_jwt_token
 from .serializers import UserSerializer, ChangePasswordSerializer
@@ -69,18 +73,47 @@ def jwt_refresh(request):
     """
     JWT刷新端点
     刷新过期或即将过期的token
+    允许使用过期的 access token 进行刷新（宽容模式）
     """
-    # 简化版本：重新生成token
-    # 生产环境应该使用refresh token机制
+    from ..authentication import decode_jwt_token as decode_token
     
-    if not request.user or not request.user.is_authenticated:
+    auth_header = request.META.get('HTTP_AUTHORIZATION', '')
+    token = None
+    
+    if auth_header:
+        parts = auth_header.split()
+        if len(parts) == 2 and parts[0].lower() == 'bearer':
+            token = parts[1]
+    
+    # 尝试解码 token（即使过期也尝试获取用户信息）
+    user = None
+    if token:
+        try:
+            import jwt as jwt_lib
+            payload = jwt_lib.decode(
+                token,
+                settings.JWT_SECRET_KEY,
+                algorithms=['HS256'],
+                options={'verify_exp': False}  # 不验证过期时间
+            )
+            user_id = payload.get('user_id')
+            if user_id:
+                User = get_user_model()
+                try:
+                    user = User.objects.get(id=user_id, is_active=True)
+                except User.DoesNotExist:
+                    pass
+        except Exception as e:
+            logger.error(f"Refresh token decode failed: {e}")
+    
+    if not user or not user.is_authenticated:
         return Response(
-            {'message': '用户未认证'},
+            {'message': '无法验证用户身份，请重新登录'},
             status=status.HTTP_401_UNAUTHORIZED
         )
     
     try:
-        token = generate_jwt_token(request.user)
+        token = generate_jwt_token(user)
     except Exception as e:
         return Response(
             {'message': '生成token失败', 'detail': str(e)},
@@ -90,7 +123,7 @@ def jwt_refresh(request):
     return Response({
         'data': {
             'token': token,
-            'expires_in': int(900)
+            'expires_in': int(settings.JWT_ACCESS_TOKEN_EXPIRY)
         }
     })
 

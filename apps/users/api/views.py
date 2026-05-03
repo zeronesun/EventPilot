@@ -48,8 +48,12 @@ class UserViewSet(viewsets.ModelViewSet):
         
         # 状态过滤
         status_filter = self.request.query_params.get('status', 'active')
-        status_logic = UserService.STATUS_LOGIC.get(status_filter, lambda u: u.is_active)
-        queryset = [user for user in queryset if status_logic(user)]
+        
+        if status_filter == 'active':
+            queryset = queryset.filter(is_active=True)
+        elif status_filter == 'inactive':
+            queryset = queryset.filter(is_active=False)
+        # 其他状态保持原样
         
         return queryset
     
@@ -419,7 +423,7 @@ class UserStatisticsView(generics.GenericAPIView):
         
         # 活跃用户（过去7天内登录）
         active_users = User.objects.filter(
-            is_deleted=True,
+            is_deleted=False,
             last_login__gte=timezone.now() - timezone.timedelta(days=7)
         ).count()
         

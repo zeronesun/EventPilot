@@ -53,7 +53,7 @@
           <el-icon><Delete /></el-icon>
           批量删除
         </el-button>
-        <el-button type="primary" @click="showCreateDialog = true" :shortcut="'N'">
+        <el-button type="primary" @click="formDialogMode = 'create'; showFormDialog = true" :shortcut="'N'">
           <el-icon><Plus /></el-icon>
           新建活动
         </el-button>
@@ -230,7 +230,7 @@
                 </el-tooltip>
 
                 <el-dropdown @command="(cmd) => handleMoreAction(cmd, row)" trigger="click">
-                  <el-button size="small" circle>
+                  <el-button size="small" circle @click.stop>
                     <el-icon><MoreFilled /></el-icon>
                   </el-button>
                   <template #dropdown>
@@ -274,34 +274,20 @@
           description="暂无活动数据"
           :image-size="120"
         >
-          <el-button type="primary" @click="showCreateDialog = true">
+          <el-button type="primary" @click="formDialogMode = 'create'; showFormDialog = true">
             创建第一个活动
           </el-button>
         </el-empty>
       </div>
     </el-card>
 
-    <!-- 详情抽屉 -->
-    <EventDetailDrawer
-      v-model="showDetailDrawer"
-      :event-id="selectedEventId"
-      @edit="handleEditFromDrawer"
-      @delete="handleDelete"
-      @success="refreshData"
-    />
-
-    <!-- 编辑对话框 -->
-    <EventEditDialog
-      v-model="showEditDialog"
+    <!-- 统一的活动表单对话框（详情/新建/编辑） -->
+    <EventFormDialog
+      v-model="showFormDialog"
+      :mode="formDialogMode"
       :event-data="selectedEventData"
-      mode="edit"
-      @success="handleEditSuccess"
-    />
-
-    <!-- 创建活动对话框 -->
-    <CreateEventDialog
-      v-model="showCreateDialog"
-      @success="handleEventCreated"
+      @success="handleFormSuccess"
+      @delete="handleDeleteFromForm"
     />
   </div>
 </template>
@@ -316,9 +302,7 @@ import {
   Plus, Search, Refresh, View, Edit, MoreFilled,
   CopyDocument, Download, Delete, Grid
 } from '@element-plus/icons-vue'
-import EventDetailDrawer from '../components/EventDetailDrawer.vue'
-import EventEditDialog from '../components/EventEditDialog.vue'
-import CreateEventDialog from '../components/CreateEventDialog.vue'
+import EventFormDialog from '../components/EventFormDialog.vue'
 import DateTimeDisplay from '../components/common/DateTimeDisplay.vue'
 import type { Event } from '@/stores'
 
@@ -341,9 +325,8 @@ const selectedEvents = ref<[]>([])
 const selectAll = ref(false)
 
 // 对话框状态
-const showDetailDrawer = ref(false)
-const showEditDialog = ref(false)
-const showCreateDialog = ref(false)
+const showFormDialog = ref(false)
+const formDialogMode = ref<'view' | 'create' | 'edit'>('create')
 const selectedEventId = ref<string | null>(null)
 const selectedEventData = ref<Event | null>(null)
 
@@ -454,7 +437,8 @@ const keydownHandler = (e: KeyboardEvent) => {
 
   switch (e.key.toLowerCase()) {
     case 'n':
-      showCreateDialog.value = true
+      formDialogMode.value = 'create'
+      showFormDialog.value = true
       break
     case 'r':
       refreshData()
@@ -645,12 +629,15 @@ function handleRowClick(row: Event) {
 
 function handleViewDetails(event: Event) {
   selectedEventId.value = String(event.id)
-  showDetailDrawer.value = true
+  selectedEventData.value = event
+  formDialogMode.value = 'view'
+  showFormDialog.value = true
 }
 
 function handleEdit(event: Event) {
   selectedEventData.value = event
-  showEditDialog.value = true
+  formDialogMode.value = 'edit'
+  showFormDialog.value = true
 }
 
 function handleEditFromDrawer(eventId: string) {
@@ -660,14 +647,23 @@ function handleEditFromDrawer(eventId: string) {
   }
 }
 
-function handleEditSuccess() {
+function handleFormSuccess(data?: any) {
   refreshData()
-  ElMessage.success('活动更新成功')
+  
+  // 如果是从查看模式切换到编辑模式
+  if (data?.action === 'edit') {
+    selectedEventData.value = data.data
+    formDialogMode.value = 'edit'
+    showFormDialog.value = true
+  } else {
+    ElMessage.success(formDialogMode.value === 'create' ? '活动创建成功' : '活动更新成功')
+  }
 }
 
-function handleEventCreated() {
-  refreshData()
-  ElMessage.success('活动创建成功')
+function handleDeleteFromForm(data?: any) {
+  if (data) {
+    handleDelete(data)
+  }
 }
 
 function handleMoreAction(command: string, event: Event) {

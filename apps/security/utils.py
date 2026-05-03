@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import hashlib
 import secrets
 import json
+import os
 
 # 密码安全相关配置
 PASSWORD_SALT_LENGTH = 32
@@ -14,11 +15,23 @@ BCRYPT_ROUNDS = 12
 SESSION_TIMEOUT_MINUTES = 30
 
 # JWT令牌配置
-JWT_SECRET_KEY = "eventpilot-secret-key-change-in-production"  # TODO: 移至环境变量
+# 安全修复：从环境变量读取JWT密钥
+_JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+if not _JWT_SECRET_KEY:
+    raise ValueError("JWT_SECRET_KEY environment variable is required in production")
+JWT_SECRET_KEY = _JWT_SECRET_KEY
 JWT_ALGORITHM = "HS256"
 JWT_EXPIRATION_HOURS = 12
 
 # WebSocket安全配置
+# 安全修复：从环境变量读取WebSocket密钥
+_WEBSOCKET_MESSAGE_SECRET = os.getenv('WEBSOCKET_MESSAGE_SECRET')
+if not _WEBSOCKET_MESSAGE_SECRET:
+    if os.getenv('DJANGO_DEBUG', 'False').lower() in ('true', '1', 'yes'):
+        _WEBSOCKET_MESSAGE_SECRET = 'dev-only-secret-not-for-production'
+    else:
+        raise ValueError("WEBSOCKET_MESSAGE_SECRET environment variable is required in production")
+WS_MESSAGE_SECRET = _WEBSOCKET_MESSAGE_SECRET
 WS_MESSAGE_EXPIRY_SECONDS = 60  # WebSocket消息60秒后过期
 WS_MAX_MESSAGE_SIZE = 1024 * 1024  # 最大1MB消息
 

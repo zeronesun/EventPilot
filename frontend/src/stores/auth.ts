@@ -28,6 +28,7 @@ export const useAuthStore = defineStore('auth', () => {
 
     if (savedToken) {
       token.value = savedToken;
+      apiClient.setAuthToken(savedToken); // 设置 token 到 apiClient
       if (savedUser) {
         try {
           currentUser.value = JSON.parse(savedUser) as User;
@@ -49,6 +50,7 @@ export const useAuthStore = defineStore('auth', () => {
       // Store token
       token.value = response.data.token;
       localStorage.setItem('eventpilot_token', response.data.token);
+      apiClient.setAuthToken(response.data.token); // 设置 token 到 apiClient
 
       // Store user (directly from login response)
       currentUser.value = response.data.user;

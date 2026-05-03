@@ -98,7 +98,7 @@
             <div class="card-top">
               <div class="card-title">{{ event.name }}</div>
               <el-dropdown @command="(cmd) => handleCommand(cmd, event)" trigger="click">
-                <el-button size="small" circle text class="card-menu">
+                <el-button size="small" circle text class="card-menu" @click.stop>
                   <el-icon><MoreFilled /></el-icon>
                 </el-button>
                 <template #dropdown>

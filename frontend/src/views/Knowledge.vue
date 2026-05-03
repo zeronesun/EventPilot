@@ -543,8 +543,8 @@ const loadEntries = async () => {
     if (showPublicOnly.value) params.append('is_public', 'true')
 
     const response = await apiClient.get(`/knowledge/?${params.toString()}`)
-    entries.value = response.data || response.results || []
-    total.value = response.total || response.count || entries.value.length
+    entries.value = response.results || response.data || []
+    total.value = response.count || response.total || entries.value.length
   } catch (error) {
     console.error('加载知识条目失败:', error)
     ElMessage.error('加载知识条目失败')

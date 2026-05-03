@@ -129,8 +129,8 @@ function formatDate(date?: string): string {
 }
 
 function handleEdit() {
-  if (eventData.value) {
-    emit('edit', eventData.value)
+  if (eventData.value && eventData.value.id) {
+    emit('edit', String(eventData.value.id))
   }
 }
 

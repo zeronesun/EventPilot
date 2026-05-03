@@ -33,8 +33,8 @@
       />
     </div>
 
-    <!-- 传递的文件信息 -->
-    <div v-if="file" class="file-info" @click.stop>
+    <!-- 传递的文件信息（待确认状态） -->
+    <div v-if="file && !isUploading && !uploadSuccess" class="file-info-pending" @click.stop>
       <div class="file-thumbnail">
         <el-icon :size="32">
           <component :is="getFileIcon(file.type)" />
@@ -47,7 +47,27 @@
           <span>{{ file.type || '未知类型' }}</span>
         </div>
       </div>
-      <el-button type="danger" :icon="Delete" circle size="small" @click="removeFile" />
+      <div class="pending-actions">
+        <el-button type="primary" size="small" :icon="Upload" @click="confirmUpload">确认上传</el-button>
+        <el-button size="small" :icon="Delete" @click="removeFile">取消</el-button>
+      </div>
+    </div>
+
+    <!-- 上传中/已完成时显示的文件信息 -->
+    <div v-if="(isUploading || uploadSuccess) && file" class="file-info" @click.stop>
+      <div class="file-thumbnail">
+        <el-icon :size="32">
+          <component :is="getFileIcon(file.type)" />
+        </el-icon>
+      </div>
+      <div class="file-details">
+        <div class="file-name">{{ file.name }}</div>
+        <div class="file-meta">
+          <span>{{ formatFileSize(file.size) }}</span>
+          <span>{{ file.type || '未知类型' }}</span>
+        </div>
+      </div>
+      <el-button v-if="!isUploading && !uploadError" type="danger" :icon="Delete" circle size="small" @click="removeFile" />
     </div>
 
     <!-- 上传进度 -->
@@ -75,8 +95,34 @@
       <el-alert type="success" :closable="false" show-icon> 文件上传成功！ </el-alert>
     </div>
 
-    <!-- 批量上传队列 -->
-    <div v-if="queue.length > 0" class="upload-queue" @click.stop>
+    <!-- 批量上传队列（待确认状态） -->
+    <div v-if="queue.length > 0 && !isUploading" class="upload-queue pending-queue" @click.stop>
+      <div class="queue-header">
+        <span>待上传文件 ({{ queue.length }})</span>
+        <div class="queue-header-actions">
+          <el-button type="primary" size="small" :icon="Upload" @click="confirmQueueUpload">确认全部上传</el-button>
+          <el-button type="danger" text size="small" @click="clearQueue"> 清空队列 </el-button>
+        </div>
+      </div>
+      <div class="queue-items">
+        <div v-for="(item, index) in queue" :key="index" class="queue-item queue-item-pending">
+          <div class="queue-item-info">
+            <el-icon :size="20">
+              <component :is="getFileIcon(item.file.type)" />
+            </el-icon>
+            <div class="queue-item-details">
+              <div class="queue-item-name">{{ item.file.name }}</div>
+              <div class="queue-item-meta">{{ formatFileSize(item.file.size) }}</div>
+            </div>
+          </div>
+          <el-tag type="info" size="small">等待确认</el-tag>
+          <el-button type="danger" text size="small" @click="removeFromQueue(index)">移除</el-button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 批量上传队列（上传中/已完成） -->
+    <div v-if="uploadingQueue.length > 0 || (queue.length > 0 && isUploading)" class="upload-queue" @click.stop>
       <div class="queue-header">
         <span>上传队列 ({{ queue.length }})</span>
         <el-button type="danger" text size="small" @click="clearQueue"> 清空队列 </el-button>
@@ -159,6 +205,7 @@ const timeRemaining = ref(0);
 const fileInputRef = ref<HTMLInputElement>();
 const file = ref<File | null>(null);
 const queue = ref<FileUploadItem[]>([]);
+const uploadingQueue = ref<FileUploadItem[]>([]);
 
 const CHUNK_SIZE = 8 * 1024 * 1024; // 8MB
 const MAX_RETRIES = 3;
@@ -179,7 +226,7 @@ const handleDrop = (e: DragEvent) => {
     if (props.allowMultiple) {
       addFilesToQueue(Array.from(droppedFiles));
     } else {
-      handleFile(droppedFiles[0]);
+      selectFile(droppedFiles[0]);
     }
   }
 };
@@ -195,13 +242,32 @@ const handleFileSelect = (e: Event) => {
     if (props.allowMultiple) {
       addFilesToQueue(Array.from(selectedFiles));
     } else {
-      handleFile(selectedFiles[0]);
+      selectFile(selectedFiles[0]);
     }
   }
   // 重置input以允许再次选择相同文件
   target.value = '';
 };
 
+// 选择文件后暂存，等待用户确认（单文件模式）
+const selectFile = (selectedFile: File) => {
+  if (!validateFile(selectedFile)) return;
+  // 重置状态
+  uploadProgress.value = 0;
+  uploadStatus.value = undefined;
+  uploadError.value = '';
+  uploadSuccess.value = false;
+  // 暂存文件，不自动上传
+  file.value = selectedFile;
+};
+
+// 确认上传（单文件）
+const confirmUpload = async () => {
+  if (!file.value) return;
+  await startUpload(file.value);
+};
+
+// 添加文件到队列，等待确认（批量模式）
 const addFilesToQueue = (files: File[]) => {
   files.forEach((f) => {
     if (validateFile(f)) {
@@ -212,14 +278,18 @@ const addFilesToQueue = (files: File[]) => {
       });
     }
   });
-  processQueue();
+  // 不再自动调用 processQueue，等待用户确认
 };
 
-const handleFile = (selectedFile: File) => {
-  if (!validateFile(selectedFile)) return;
+// 确认批量上传
+const confirmQueueUpload = async () => {
+  if (queue.value.length === 0 || isUploading.value) return;
+  await processQueue();
+};
 
-  file.value = selectedFile;
-  startUpload(selectedFile);
+// 从队列中移除单个文件
+const removeFromQueue = (index: number) => {
+  queue.value.splice(index, 1);
 };
 
 const validateFile = (file: File): boolean => {
@@ -261,27 +331,17 @@ const startUpload = async (fileToUpload: File) => {
   uploadSuccess.value = false;
 
   try {
-    // 初始化上传
-    const initiateResponse = await filesApi.initiateUpload({
-      filename: fileToUpload.name,
-      file_size: fileToUpload.size,
-      mime_type: fileToUpload.type || 'application/octet-stream',
-    });
-
-    const { file_id, upload_strategy, presigned_url, upload_id } =
-      initiateResponse as FileUploadInitiateResponse;
-
-    if (upload_strategy === 'direct') {
-      // 直接上传小文件
-      await uploadDirect(fileToUpload, presigned_url || '', file_id);
-    } else {
-      // 分片上传大文件
-      await uploadMultipart(fileToUpload, file_id, upload_id || '');
-    }
+    // 直接上传文件
+    const result = await filesApi.upload(
+      fileToUpload,
+      (progress) => {
+        uploadProgress.value = progress;
+      }
+    );
 
     uploadSuccess.value = true;
     uploadStatus.value = 'success';
-    emit('upload-success', { file_id, filename: fileToUpload.name });
+    emit('upload-success', { file_id: result.file_id, filename: fileToUpload.name });
   } catch (err) {
     const error = err as Error;
     uploadError.value = error.message || '上传失败';
@@ -292,104 +352,13 @@ const startUpload = async (fileToUpload: File) => {
   }
 };
 
-const uploadDirect = async (
-  fileToUpload: File,
-  presignedUrl: string,
-  fileId: string,
-  retryCount = 0
-) => {
-  const startTime = Date.now();
-  let uploadedBytes = 0;
-
-  try {
-    const response = await fetch(presignedUrl, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': fileToUpload.type || 'application/octet-stream',
-      },
-      body: fileToUpload,
-    });
-
-    if (!response.ok) {
-      throw new Error(`上传失败: ${response.statusText}`);
-    }
-
-    uploadProgress.value = 100;
-    return fileId;
-  } catch (error) {
-    if (retryCount < MAX_RETRIES) {
-      uploadProgress.value = 0;
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-      return uploadDirect(fileToUpload, presignedUrl, fileId, retryCount + 1);
-    }
-    throw error;
-  }
-};
-
-const uploadMultipart = async (
-  fileToUpload: File,
-  fileId: string,
-  uploadId: string,
-  retryCount = 0
-) => {
-  const fileSize = fileToUpload.size;
-  const chunkCount = Math.ceil(fileSize / CHUNK_SIZE);
-  const chunks: Array<{ PartNumber: number; ETag: string }> = [];
-
-  for (let partNumber = 1; partNumber <= chunkCount; partNumber++) {
-    const startByte = (partNumber - 1) * CHUNK_SIZE;
-    const endByte = Math.min(partNumber * CHUNK_SIZE, fileSize);
-    const chunk = fileToUpload.slice(startByte, endByte);
-
-    await uploadChunk(chunk, partNumber, uploadId, fileId).then((etag) => {
-      chunks.push({ PartNumber: partNumber, ETag: etag });
-      const progress = (partNumber / chunkCount) * 100;
-      uploadProgress.value = Math.round(progress);
-    });
-  }
-
-  // 完成上传
-  const completeResponse = await filesApi.completeUpload(fileId, uploadId, chunks);
-  return completeResponse.file_id;
-};
-
-const uploadChunk = async (
-  chunk: Blob,
-  partNumber: number,
-  uploadId: string,
-  fileId: string,
-  retryCount = 0
-): Promise<string> => {
-  try {
-    const partResponse = await filesApi.getUploadPart(fileId, partNumber, uploadId);
-    const presignedUrl = partResponse.presigned_url;
-
-    const response = await fetch(presignedUrl, {
-      method: 'PUT',
-      body: chunk,
-    });
-
-    if (!response.ok) {
-      throw new Error(`分片上传失败: ${response.statusText}`);
-    }
-
-    // 从响应头获取ETag
-    const etag = response.headers.get('ETag') || '';
-    return etag.replace(/"/g, '');
-  } catch (error) {
-    if (retryCount < MAX_RETRIES) {
-      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-      return uploadChunk(chunk, partNumber, uploadId, fileId, retryCount + 1);
-    }
-    throw error;
-  }
-};
-
 const processQueue = async () => {
   if (isUploading.value || queue.value.length === 0) return;
 
   const currentItem = queue.value[0];
   isUploading.value = true;
+  // 移到上传中队列
+  uploadingQueue.value.push(currentItem);
 
   try {
     await startUpload(currentItem.file);
@@ -401,16 +370,26 @@ const processQueue = async () => {
     currentItem.error = err.message;
   }
 
-  queue.value.shift();
+  // 从待确认队列移除
+  const idx = queue.value.indexOf(currentItem);
+  if (idx > -1) {
+    queue.value.splice(idx, 1);
+  }
   isUploading.value = false;
 
   // 继续处理队列中的下一个文件
   if (queue.value.length > 0) {
     processQueue();
+  } else {
+    // 全部完成，清空上传中队列
+    setTimeout(() => {
+      uploadingQueue.value = [];
+    }, 2000);
   }
 };
 
 const clearQueue = () => {
+  if (isUploading.value) return;
   queue.value = [];
 };
 
@@ -507,6 +486,22 @@ const getFileIcon = (type: string) => {
   margin-top: 16px;
 }
 
+.file-info-pending {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #ecf5ff 0%, #f0f9ff 100%);
+  border: 1px solid #b3d8ff;
+  border-radius: 8px;
+  margin-top: 16px;
+}
+
+.pending-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .file-thumbnail {
   display: flex;
   align-items: center;
@@ -575,6 +570,11 @@ const getFileIcon = (type: string) => {
   margin-top: 16px;
 }
 
+.pending-queue {
+  border: 1px solid #b3d8ff;
+  background: linear-gradient(180deg, #ecf5ff 0%, #fff 100%);
+}
+
 .queue-header {
   display: flex;
   justify-content: space-between;
@@ -585,6 +585,12 @@ const getFileIcon = (type: string) => {
   font-size: 13px;
   font-weight: 500;
   color: #303133;
+}
+
+.queue-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .queue-items {
@@ -606,10 +612,19 @@ const getFileIcon = (type: string) => {
   border-bottom: none;
 }
 
+.queue-item-pending {
+  background: rgba(64, 158, 255, 0.03);
+}
+
+.queue-item-pending:hover {
+  background: rgba(64, 158, 255, 0.08);
+}
+
 .queue-item-info {
   display: flex;
   align-items: center;
-  width: 45%;
+  flex: 1;
+  min-width: 0;
 }
 
 .queue-item-details {

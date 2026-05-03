@@ -8,10 +8,15 @@
 import { computed } from 'vue'
 
 const props = defineProps<{
-  value: string | Date | null | undefined
+  value?: string | Date | null | undefined
+  datetime?: string | Date | null | undefined
   format?: 'full' | 'date' | 'time' | 'short'
   showEmpty?: string
+  showIcon?: boolean
 }>()
+
+// 兼容 value 和 datetime 两个 prop 名称
+const dateValue = computed(() => props.datetime ?? props.value)
 
 const formatMap = {
   full: 'YYYY-MM-DD HH:mm:ss',
@@ -21,12 +26,12 @@ const formatMap = {
 }
 
 const formattedDateTime = computed(() => {
-  if (!props.value) {
+  if (!dateValue.value) {
     return props.showEmpty || '未设置'
   }
 
   try {
-    const date = new Date(props.value)
+    const date = new Date(dateValue.value)
     if (isNaN(date.getTime())) {
       return props.showEmpty || '无效日期'
     }

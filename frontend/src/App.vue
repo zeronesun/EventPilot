@@ -310,9 +310,8 @@ onUnmounted(() => {
 <style scoped>
 .app-layout {
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
-  overflow: hidden;
 }
 
 .sidebar {
@@ -322,6 +321,9 @@ onUnmounted(() => {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
+  height: 100vh;
+  position: sticky;
+  top: 0;
   overflow-y: auto;
 }
 
@@ -426,8 +428,6 @@ onUnmounted(() => {
   flex: 1;
   background: #f5f7fa;
   padding: 20px;
-  overflow-y: auto;
-  overflow-x: hidden;
 }
 
 .main-footer {
@@ -485,8 +485,6 @@ onUnmounted(() => {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #2c3e50;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
 }
 </style>

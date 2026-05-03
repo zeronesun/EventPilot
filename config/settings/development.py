@@ -10,6 +10,9 @@ DEBUG = True
 # 允许的本地开发域名
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*', 'testserver']
 
+# 开发环境 JWT Token 有效期延长（8小时）
+JWT_ACCESS_TOKEN_EXPIRY = int(os.getenv('JWT_ACCESS_TOKEN_EXPIRY', '28800'))
+
 # 开发工具配置
 INSTALLED_APPS += [
     # 'django.contrib.admin',  # 暂时禁用admin
@@ -47,3 +50,21 @@ SESSION_COOKIE_SECURE = False
 CSRF_COOKIE_SECURE = False
 SECURE_BROWSER_XSS_FILTER = False
 SECURE_CONTENT_TYPE_NOSNIFF = False
+
+# 开发环境使用 Redis 缓存
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6379/1',
+    }
+}
+
+# 开发环境使用 Redis Channel Layer (WebSocket)
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],
+        },
+    }
+}

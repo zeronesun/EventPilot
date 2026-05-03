@@ -219,10 +219,20 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS配置
-CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 'yes')
+# CORS配置 - 安全强化
+# 生产环境禁止CORS_ALLOW_ALL_ORIGINS
+if DEBUG:
+    CORS_ALLOW_ALL_ORIGINS = os.getenv('CORS_ALLOW_ALL_ORIGINS', 'False').lower() in ('true', '1', 'yes')
+else:
+    CORS_ALLOW_ALL_ORIGINS = False  # 生产环境强制关闭
+
 CORS_ALLOWED_ORIGINS = os.getenv('ALLOWED_ORIGINS', '').split(',')
 CORS_ALLOW_CREDENTIALS = True
+
+# 生产环境验证CORS配置
+if not DEBUG and CORS_ALLOW_ALL_ORIGINS is False and not CORS_ALLOWED_ORIGINS:
+    import warnings
+    warnings.warn("CORS_ALLOWED_ORIGINS is empty in production! Set ALLOWED_ORIGINS environment variable.")
 
 # 安全配置
 if not DEBUG:

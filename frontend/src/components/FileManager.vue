@@ -278,7 +278,10 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="shareDialogVisible = false">取消</el-button>
+        <el-button @click="shareDialogVisible = false">关闭</el-button>
+        <el-button v-if="currentFile?.has_share" type="danger" plain @click="handleRevokeShare">
+          取消分享
+        </el-button>
         <el-button type="primary" @click="confirmShare">创建分享</el-button>
       </template>
     </el-dialog>
@@ -562,11 +565,38 @@ const confirmShare = async () => {
     // 复制分享链接到剪贴板
     await navigator.clipboard.writeText(response.share_url);
 
+    // 标记文件已有分享
+    currentFile.value.has_share = true;
+
     shareDialogVisible.value = false;
     ElMessage.success('分享链接已复制到剪贴板');
   } catch (error) {
     console.error('创建分享失败:', error);
     ElMessage.error('创建分享失败');
+  }
+};
+
+// 取消分享
+const handleRevokeShare = async () => {
+  if (!currentFile.value) return;
+
+  try {
+    await ElMessageBox.confirm(
+      '确定要取消该文件的分享链接吗？取消后所有分享链接将失效。',
+      '确认取消分享',
+      { confirmButtonText: '确定取消', cancelButtonText: '保留', type: 'warning' }
+    );
+
+    const response = await filesApi.revokeShare(currentFile.value.file_id);
+
+    // 更新状态
+    currentFile.value.has_share = false;
+    shareDialogVisible.value = false;
+    ElMessage.success(response.message || '已成功取消分享');
+  } catch (error: unknown) {
+    if (error === 'cancel') return;
+    console.error('取消分享失败:', error);
+    ElMessage.error('取消分享失败');
   }
 };
 

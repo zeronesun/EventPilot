@@ -3,7 +3,7 @@
     <div class="page-header">
       <h1>任务管理</h1>
       <div class="header-actions">
-        <el-button @click="showCreateDialog = true" type="primary">
+        <el-button @click="openCreateDialog" type="primary">
           <el-icon><Plus /></el-icon>
           新建任务
         </el-button>
@@ -12,7 +12,7 @@
 
     <!-- 看板视图 -->
     <el-row :gutter="20" class="kanban-container">
-      <el-col :span="6" v-for="status in taskStatuses" :key="status.key">
+      <el-col :span="8" v-for="status in taskStatuses" :key="status.key">
         <div class="kanban-column">
           <div class="column-header">
             <div class="column-title">
@@ -20,7 +20,7 @@
               <span class="task-count">{{ getTasksByStatus(status.key).length }}</span>
             </div>
           </div>
-          
+
           <div class="column-content">
             <div
               v-for="task in getTasksByStatus(status.key)"
@@ -34,7 +34,7 @@
                   {{ getPriorityText(task.priority) }}
                 </el-tag>
               </div>
-              
+
               <div class="task-card-body">
                 <p v-if="task.description">{{ task.description.substring(0, 100) }}...</p>
                 <div class="task-meta">
@@ -48,7 +48,7 @@
                   </span>
                 </div>
               </div>
-              
+
               <div class="task-card-footer">
                 <el-progress
                   :percentage="task.progress || 0"
@@ -61,58 +61,15 @@
       </el-col>
     </el-row>
 
-    <!-- 创建任务对话框 -->
-    <el-dialog v-model="showCreateDialog" title="新建任务" width="600px">
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="任务标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入任务标题" />
-        </el-form-item>
-        <el-form-item label="任务描述">
-          <el-input v-model="form.description" type="textarea" :rows="3" />
-        </el-form-item>
-        <el-form-item label="优先级" prop="priority">
-          <el-select v-model="form.priority" placeholder="选择优先级">
-            <el-option label="低" value="low" />
-            <el-option label="中" value="medium" />
-            <el-option label="高" value="high" />
-            <el-option label="紧急" value="urgent" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="截止日期">
-          <el-date-picker
-            v-model="form.due_date"
-            type="date"
-            placeholder="选择日期"
-            format="YYYY-MM-DD"
-            value-format="YYYY-MM-DD"
-            style="width: 100%"
-          />
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-select v-model="form.status" placeholder="选择状态">
-            <el-option label="待处理" value="pending" />
-            <el-option label="进行中" value="in_progress" />
-            <el-option label="已完成" value="completed" />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="关联活动">
-          <el-select v-model="form.event" placeholder="选择活动" clearable>
-            <el-option
-              v-for="event in eventsStore.events"
-              :key="event.id"
-              :label="event.name"
-              :value="event.id"
-            />
-          </el-select>
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="showCreateDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleCreate" :loading="tasksStore.isLoading">
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
+    <!-- 统一的任务表单对话框（详情/新建/编辑） -->
+    <TaskFormDialog
+      v-model="showFormDialog"
+      :mode="formDialogMode"
+      :task-data="selectedTaskData"
+      :events-list="eventsStore.events"
+      @success="handleFormSuccess"
+      @delete="handleDeleteTask"
+    />
   </div>
 </template>
 
@@ -121,33 +78,15 @@ import { ref, computed, onMounted, onActivated } from 'vue'
 import { useTasksStore, useEventsStore } from '@/stores'
 import { ElMessage } from 'element-plus'
 import { Plus, Calendar, User } from '@element-plus/icons-vue'
+import TaskFormDialog from '@/components/TaskFormDialog.vue'
 
 const tasksStore = useTasksStore()
 const eventsStore = useEventsStore()
 
-const showCreateDialog = ref(false)
-const formRef = ref()
-
-const form = ref({
-  title: '',
-  description: '',
-  priority: 'medium',
-  due_date: '',
-  status: 'pending',
-  event: ''
-})
-
-const rules = {
-  title: [
-    { required: true, message: '请输入任务标题', trigger: 'blur' }
-  ],
-  priority: [
-    { required: true, message: '请选择优先级', trigger: 'change' }
-  ],
-  status: [
-    { required: true, message: '请选择状态', trigger: 'change' }
-  ]
-}
+// 统一的对话框状态
+const showFormDialog = ref(false)
+const formDialogMode = ref<'view' | 'create' | 'edit'>('create')
+const selectedTaskData = ref(null)
 
 const taskStatuses = [
   { key: 'pending', label: '待处理', type: 'info' },
@@ -205,36 +144,42 @@ function formatDate(dateString) {
 }
 
 function viewTask(task) {
-  ElMessage.info(`查看任务: ${task.title}`)
+  selectedTaskData.value = task
+  formDialogMode.value = 'view'
+  showFormDialog.value = true
 }
 
-async function handleCreate() {
-  const valid = await formRef.value?.validate(validate => !validate)
-  if (!valid) {
-    ElMessage.error('请填写必要信息')
-    return
-  }
+function openCreateDialog() {
+  selectedTaskData.value = null
+  formDialogMode.value = 'create'
+  showFormDialog.value = true
+}
 
+function handleFormSuccess(data) {
+  // 刷新任务列表
+  tasksStore.fetchTasks()
+
+  // 如果是从查看模式切换到编辑模式
+  if (data?.action === 'edit') {
+    selectedTaskData.value = data.data
+    formDialogMode.value = 'edit'
+    showFormDialog.value = true
+  } else {
+    ElMessage.success(formDialogMode.value === 'create' ? '任务创建成功' : '任务更新成功')
+  }
+}
+
+async function handleDeleteTask(task) {
   try {
-    await tasksStore.createTask(form.value)
-    ElMessage.success('任务创建成功')
-    showCreateDialog.value = false
-    resetForm()
+    if (task?.id) {
+      await tasksStore.deleteTask(task.id)
+      ElMessage.success('任务删除成功')
+      // 刷新列表
+      tasksStore.fetchTasks()
+    }
   } catch (error) {
-    console.error('Create task failed:', error)
-    ElMessage.error('创建任务失败')
-  }
-}
-
-function resetForm() {
-  formRef.value?.resetFields()
-  form.value = {
-    title: '',
-    description: '',
-    priority: 'medium',
-    due_date: '',
-    status: 'pending',
-    event: ''
+    console.error('Delete task failed:', error)
+    ElMessage.error('删除失败')
   }
 }
 </script>

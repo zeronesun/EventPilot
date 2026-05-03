@@ -19,7 +19,7 @@ export default defineConfig({
     // 跨域和API代理配置（解决CORS问题）
     proxy: {
       '/api': {
-        target: 'http://172.28.166.164:8000',
+        target: 'http://localhost:8000',
         changeOrigin: true,
         secure: false,
         // 不重写路径，直接转发 /api/* 到后端
