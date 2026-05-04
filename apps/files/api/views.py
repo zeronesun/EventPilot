@@ -3,6 +3,8 @@
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views.decorators.cache import never_cache
+from django.http import FileResponse, HttpResponse
+import os
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -197,6 +199,54 @@ class FileViewSet(viewsets.ViewSet):
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
+    @action(detail=True, methods=['get'])
+    def download_file(self, request, pk=None):
+        """直接下载文件"""
+        try:
+            file_metadata = FileMetadata.objects.get(file_id=pk, is_deleted=False)
+            
+            if file_metadata.owner != request.user:
+                return Response(
+                    {'error': 'permission_denied', 'message': '无权限访问此文件'},
+                    status=status.HTTP_403_FORBIDDEN
+                )
+            
+            from django.conf import settings
+            
+            file_path = os.path.join(settings.MEDIA_ROOT, file_metadata.storage_path)
+            
+            if not os.path.exists(file_path):
+                logger.error(f"文件不存在: {file_path}")
+                return Response(
+                    {'error': 'not_found', 'message': '文件不存在'},
+                    status=status.HTTP_404_NOT_FOUND
+                )
+            
+            response = FileResponse(
+                open(file_path, 'rb'),
+                as_attachment=True,
+                filename=file_metadata.original_filename
+            )
+            
+            response['Content-Type'] = file_metadata.mime_type or 'application/octet-stream'
+            response['Content-Length'] = str(file_metadata.file_size)
+            
+            logger.info(f"文件下载成功: {pk}, 文件名: {file_metadata.original_filename}")
+            
+            return response
+            
+        except FileMetadata.DoesNotExist:
+            return Response(
+                {'error': 'not_found', 'message': '文件不存在'},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        except Exception as e:
+            logger.exception(f"文件下载失败: {str(e)}")
+            return Response(
+                {'error': 'internal_error', 'message': f'下载失败: {str(e)}'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+
     @action(detail=True, methods=['post'])
     def upload_part(self, request, pk=None):
         """获取分片上传的预签名URL"""

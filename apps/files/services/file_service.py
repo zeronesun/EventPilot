@@ -121,8 +121,10 @@ class FileStorageService:
         """保存文件"""
         try:
             file_content = ContentFile(content)
+            if content_type:
+                file_content.content_type = content_type
             saved_path = self.storage.save(key, file_content)
-            logger.info(f"文件保存成功: {saved_path}")
+            logger.info(f"文件保存成功: {saved_path}, 大小: {len(content)} bytes")
             return saved_path
         except Exception as e:
             logger.error(f"文件保存失败: {str(e)}")

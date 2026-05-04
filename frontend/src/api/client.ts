@@ -569,6 +569,57 @@ export const filesApi = {
       file_id: fileId,
       expires_in: expiresIn,
     }),
+  downloadFile: (fileId: string) => {
+    const token = apiClient.getAuthToken();
+    const url = `${API_BASE_URL}/files/${fileId}/download_file/`;
+    
+    return new Promise<void>((resolve, reject) => {
+      fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('下载失败');
+        }
+        
+        // 从 Content-Disposition 响应头获取文件名
+        const contentDisposition = response.headers.get('Content-Disposition') || '';
+        let filename = fileId;
+        
+        // 优先匹配 RFC 5987 格式: filename*=UTF-8''encoded_name
+        let utf8Match = contentDisposition.match(/filename\*=UTF-8''([^;\s]+)/i);
+        if (utf8Match && utf8Match[1]) {
+          filename = decodeURIComponent(utf8Match[1]);
+        } else {
+          // 匹配普通格式: filename="xxx"
+          const match = contentDisposition.match(/filename="?([^";]+)"?/i);
+          if (match && match[1]) {
+            filename = decodeURIComponent(match[1]);
+          }
+        }
+        
+        return response.blob().then(blob => ({ blob, filename }));
+      })
+      .then(({ blob, filename }) => {
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        resolve();
+      })
+      .catch(error => {
+        console.error('下载失败:', error);
+        reject(error);
+      });
+    });
+  },
   delete: (fileId: string) =>
     apiClient.delete<{ file_id: string; status: string; message: string }>(`/files/${fileId}/`),
   update: (fileId: string, data: Partial<FileMetadata>) =>

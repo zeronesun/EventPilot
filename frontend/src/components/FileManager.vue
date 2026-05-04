@@ -129,13 +129,17 @@
               <el-button :icon="Download" size="small" @click="handleDownload(row)">
                 下载
               </el-button>
+              <!-- 暂时禁用分享功能
               <el-button :icon="Share" size="small" @click="handleShare(row)"> 分享 </el-button>
+              -->
               <el-dropdown @command="(cmd) => handleDropdownCommand(cmd, row)">
                 <el-button :icon="More" circle size="small" />
                 <template #dropdown>
                   <el-dropdown-menu>
                     <el-dropdown-item command="view">查看详情</el-dropdown-item>
+                    <!-- 暂时禁用编辑元数据功能
                     <el-dropdown-item command="edit">编辑元数据</el-dropdown-item>
+                    -->
                     <el-dropdown-item command="rename">重命名</el-dropdown-item>
                     <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
                   </el-dropdown-menu>
@@ -177,7 +181,9 @@
             </div>
             <div class="file-actions" @click.stop>
               <el-button :icon="Download" size="small" @click="handleDownload(file)" />
+              <!-- 暂时禁用分享功能
               <el-button :icon="Share" size="small" @click="handleShare(file)" />
+              -->
               <el-dropdown @command="(cmd) => handleDropdownCommand(cmd, file)">
                 <el-button :icon="More" size="small" />
                 <template #dropdown>
@@ -510,16 +516,7 @@ const handleUploadError = (error: string) => {
 // 处理下载
 const handleDownload = async (file: FileMetadata) => {
   try {
-    const response = await filesApi.download(file.file_id);
-
-    // 创建临时下载链接
-    const link = document.createElement('a');
-    link.href = response.download_url;
-    link.download = response.filename;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-
+    filesApi.downloadFile(file.file_id);
     ElMessage.success('下载已开始');
   } catch (error) {
     console.error('下载失败:', error);
