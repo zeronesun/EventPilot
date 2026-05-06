@@ -75,7 +75,9 @@ class TestAPIContract:
             'description': '测试活动描述',
             'client': '测试客户',
             'status': 'planning',
-            'estimated_budget': 50000.00
+            'estimated_budget': 50000.00,
+            'start_date': '2026-06-01',
+            'end_date': '2026-06-03'
         }
         
         create_response = requests.post(
