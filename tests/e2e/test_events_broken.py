@@ -323,7 +323,7 @@ class TestEventsWorkflow:
         response = requests.get(f'http://172.28.166.164:8000/api/events/{event_id}/')
         assert response.status_code == 404, f"活动应该删除，但状态码: {response.status_code}"
 
-# ==================== 7. 活动搜索功能 ====================
+    # ==================== 7. 活动搜索功能 ====================
 
     def test_events_search_functionality(self, logged_in_page):
         """
@@ -345,6 +345,6 @@ class TestEventsWorkflow:
         logged_in_page.wait_for_timeout(2000)
 
         # 验证 URL 或页面状态
-        current_url = logged_in_page.url
-        print(f"搜索后 URL: {current_url}")
-        assert 'events' in current_url, "搜索后仍在活动列表页"
+        # 验证通过 API 确认删除
+        response = requests.get(f'http://172.28.166.164:8000/api/events/{event_id}/')
+        assert response.status_code == 404, f"活动应该删除，但状态码: {response.status_code}"

@@ -1,6 +1,8 @@
 """
 EventPilot E2E 测试配置
 结合 Playwright (前端) + Django ORM (后端数据库断言)
+
+使用 playwright 同步模式，避免与 pytest-asyncio 冲突
 """
 import os
 import sys
@@ -33,8 +35,9 @@ User = get_user_model()
 def django_db_setup():
     """确保测试数据库可用"""
     from django.conf import settings
-    # 测试时使用 SQLite 内存数据库或独立测试库
-    settings.DATABASES['default']['NAME'] = 'eventpilot_test'
+    # 使用开发数据库，E2E 测试不应该隔离数据库
+    # settings.DATABASES['default']['NAME'] = 'eventpilot_test'
+    pass
 
 
 @pytest.fixture
@@ -104,7 +107,7 @@ def test_task(db, test_event, test_user):
 
 
 # ============================================================
-# Playwright Fixtures (浏览器)
+# Playwright Fixtures (浏览器) - 使用同步模式
 # ============================================================
 
 @pytest.fixture(scope='session')
@@ -118,13 +121,16 @@ def browser_context_args(browser_context_args):
 
 
 @pytest.fixture
-async def authenticated_page(page, admin_user):
-    """已登录的页面（通过 API 获取 JWT Token）"""
+def authenticated_page(page, admin_user):
+    """
+    已登录的页面（通过 API 获取 JWT Token -> 浏览器设置 localStorage）
+    使用同步 Playwright API
+    """
     import requests
 
     # 通过后端 API 登录获取 token
     response = requests.post(
-        'http://localhost:8000/api/users/auth/login/',
+        'http://172.28.166.164:8000/api/users/auth/login/',
         json={'username': 'admin', 'password': 'admin123'}
     )
 
@@ -133,8 +139,8 @@ async def authenticated_page(page, admin_user):
         access_token = data.get('access')
 
         # 在浏览器中设置 localStorage
-        await page.goto('http://localhost:5173/login')
-        await page.evaluate(f"""
+        page.goto('http://172.28.166.164:5173/login')
+        page.evaluate(f"""
             localStorage.setItem('eventpilot_token', '{access_token}');
         """)
 
@@ -153,5 +159,5 @@ def api_client(admin_user):
 
     client = APIClient()
     tokens = generate_tokens(admin_user)
-    client.credentials(HTTP_AUTHORIZATION=f"Bearer {tokens['access']}")
+    client.credentials(HTTP_AUTHORIZATION=f'Bearer {tokens["access"]}')
     return client

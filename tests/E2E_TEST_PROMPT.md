@@ -545,6 +545,13 @@ def test_events_create_button_success(authenticated_page, db):
 # 1. 确保服务运行
 ./start.sh status
 
+重启的时候，建议使用
+先
+./start.sh stop
+
+再
+./start.sh start
+
 # 2. 检查服务健康状态
 curl http://localhost:8000/api/health/
 curl http://localhost:5173/

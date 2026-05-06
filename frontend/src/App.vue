@@ -21,14 +21,28 @@
             <el-icon><HomeFilled /></el-icon>
             <span>工作台</span>
           </div>
-          <div
-            class="menu-item"
-            :class="{ active: $route.path === '/events' }"
-            @click="$router.push('/events')"
-          >
-            <el-icon><HomeFilled /></el-icon>
-            <span>活动管理</span>
-          </div>
+          <el-dropdown @command="handleEventsMenuCommand" trigger="click">
+            <div
+              class="menu-item"
+              :class="{ active: $route.path.startsWith('/events') && !$route.path.includes('/events/') }"
+            >
+              <el-icon><HomeFilled /></el-icon>
+              <span>活动管理</span>
+              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="list">
+                  <el-icon><List /></el-icon>
+                  列表视图
+                </el-dropdown-item>
+                <el-dropdown-item command="kanban">
+                  <el-icon><Menu /></el-icon>
+                  看板视图
+                </el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
           <div
             class="menu-item"
             :class="{ active: $route.path === '/tasks' }"
@@ -218,6 +232,8 @@ import {
   Link,
   Memo,
   DataLine,
+  ArrowDown,
+  Menu,
 } from '@element-plus/icons-vue'
 
 import NotificationCenter from './components/NotificationCenter.vue';
@@ -248,7 +264,8 @@ function getPageTitle(path) {
   const titles = {
     '/dashboard': '工作台',
     '/': '工作台',
-    '/events': '活动管理',
+    '/events': '活动管理（列表视图）',
+    '/events-kanban': '活动管理（看板视图）',
     '/tasks': '任务管理',
     '/users': '用户管理',
     '/checklists': '清单管理',
@@ -278,6 +295,17 @@ function handleUserMenu(command) {
       break;
     case 'logout':
       handleLogout();
+      break;
+  }
+}
+
+function handleEventsMenuCommand(command) {
+  switch (command) {
+    case 'list':
+      router.push('/events');
+      break;
+    case 'kanban':
+      router.push('/events-kanban');
       break;
   }
 }

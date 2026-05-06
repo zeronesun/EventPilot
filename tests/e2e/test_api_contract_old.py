@@ -10,11 +10,10 @@ class TestAPIContract:
     """API 契约测试"""
 
     def test_swagger_docs_accessible(self):
-        """
-        [架构师视角] Swagger 文档可访问
-        注意: Swagger 文档暂时未启用，此测试标记为跳过
-        """
-        pytest.skip("Swagger 文档暂时未启用，待集成 drf-yasg")
+        """[架构师视角] Swagger 文档可访问"""
+        response = requests.get('http://localhost:8000/swagger/')
+        assert response.status_code == 200
+        assert 'swagger' in response.text.lower() or 'api' in response.text.lower()
 
     def test_api_health_check(self):
         """[开发者视角] 健康检查端点"""
@@ -97,6 +96,7 @@ class TestAPIContract:
             'http://localhost:8000/api/users/auth/login/',
             json={'username': 'admin', 'password': 'admin123'}
         )
+
         if response.status_code == 200:
             data = response.json()
             assert 'access' in data
@@ -109,10 +109,9 @@ class TestAPIContract:
             assert 'role' in user
 
     def test_unauthorized_access(self):
-        """[开发者视角] 未授权访问返回 403 (PermissionDenied)"""
+        """[开发者视角] 未授权访问返回 401"""
         response = requests.get('http://localhost:8000/api/events/')
-        # DRF 默认返回 403 而不是 401
-        assert response.status_code == 403
+        assert response.status_code == 401
 
     def test_cors_headers(self):
         """[架构师视角] CORS 头检查"""
@@ -123,9 +122,8 @@ class TestAPIContract:
                 'Access-Control-Request-Method': 'GET'
             }
         )
-        # CORS 可能未配置，暂时放宽检查
-        # assert 'Access-Control-Allow-Origin' in response.headers
-        assert response.status_code == 200
+
+        assert 'Access-Control-Allow-Origin' in response.headers
 
     def test_request_id_header(self, api_client):
         """[架构师视角] 请求 ID 中间件"""

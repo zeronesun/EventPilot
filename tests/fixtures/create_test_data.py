@@ -1,102 +1,189 @@
+#!/usr/bin/env python
+"""
+EventPilot 测试数据准备脚本
+
+根据 E2E_TEST_PROMPT.md 要求创建测试数据
+"""
+import os
+import sys
+import django
+
+# 添加项目根目录到 Python 路径
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# 设置 Django 环境
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
+django.setup()
+
+from django.contrib.auth import get_user_model
 from apps.events.models import Event
 from apps.tasks.models import Task
-from django.contrib.auth import get_user_model
-import datetime
+import random
+from datetime import datetime, timedelta
 
 User = get_user_model()
 
-# 获取admin用户
-admin_user = User.objects.get(username='admin')
-print(f"✅ 找到用户: {admin_user.username} (ID: {admin_user.id})")
 
-# 创建测试活动（owner必须是User实例）
-events = [
-    Event(
-        name="年度技术大会",
-        type="conference",
-        description="公司年度技术创新大会",
-        start_date=datetime.date(2026, 6, 15),
-        end_date=datetime.date(2026, 6, 16),
-        client="科大讯飞",
-        estimated_budget=500000,
-        actual_budget=0,
-        owner=admin_user,
-        status='planning'
-    ),
-    Event(
-        name="新产品发布会",
-        type="launch",
-        description="新产品全球首发仪式",
-        start_date=datetime.date(2026, 7, 20),
-        end_date=datetime.date(2026, 7, 20),
-        client="华为",
-        estimated_budget=800000,
-        actual_budget=0,
-        owner=admin_user,
-        status='planning'
-    ),
-    Event(
-        name="客户答谢会",
-        type="dinner",
-        description="VIP客户答谢晚宴",
-        start_date=datetime.date(2026, 8, 10),
-        end_date=datetime.date(2026, 8, 10),
-        client="中国移动",
-        estimated_budget=200000,
-        actual_budget=0,
-        owner=admin_user,
-        status='executing'
-    ),
-]
-
-created_events = []
-for event in events:
-    event.save()
-    created_events.append(event)
-    print(f"✅ 创建活动: {event.name} (ID: {event.id})")
-
-# 为每个活动创建任务
-task_templates = [
-    {
-        "title": "场地预订确认",
-        "task_type": "venue",
-        "status": "completed",
-        "progress": 100
-    },
-    {
-        "title": "参会名单收集",
-        "task_type": "guest",
-        "status": "in_progress",
-        "progress": 60
-    },
-    {
-        "title": "物料采购",
-        "task_type": "material",
-        "status": "pending",
-        "progress": 0
-    },
-    {
-        "title": "嘉宾邀请",
-        "task_type": "guest",
-        "status": "in_progress",
-        "progress": 40
-    },
-]
-
-for event in created_events:
-    for i, tpl in enumerate(task_templates):
-        task = Task(
-            event=event,  # 直接传event对象
-            title=f"{tpl['title']}",
-            description=tpl['title'],
-            task_type=tpl['task_type'],
-            status=tpl['status'],
-            progress=tpl['progress'],
-            assignee=admin_user  # assignee也是User实例
+def create_test_users():
+    """创建测试用户"""
+    test_users = {
+        'admin': {
+            'username': 'admin',
+            'password': 'admin123',
+            'role': 'admin',
+            'email': 'admin@eventpilot.test'
+        },
+        'owner': {
+            'username': 'owner',
+            'password': 'owner123',
+            'role': 'project_owner',
+            'email': 'owner@eventpilot.test'
+        },
+        'executor': {
+            'username': 'executor',
+            'password': 'executor123',
+            'role': 'executor',
+            'email': 'executor@eventpilot.test'
+        }
+    }
+    
+    created_users = {}
+    for key, user_data in test_users.items():
+        user, created = User.objects.get_or_create(
+            username=user_data['username'],
+            defaults={
+                'email': user_data['email'],
+                'is_staff': key == 'admin',
+                'is_superuser': key == 'admin',
+            }
         )
-        task.save()
-        print(f"  ✅ 创建任务: {task.title}")
+        if created:
+            user.set_password(user_data['password'])
+            user.save()
+            print(f"✅ 创建用户: {user.username}")
+        else:
+            # 更新密码确保一致
+            user.set_password(user_data['password'])
+            user.save()
+            print(f"✅ 用户已存在: {user.username}")
+        created_users[key] = user
+    
+    return created_users
 
-print(f"\n📊 数据创建完成!")
-print(f"   - 活动数: {Event.objects.count()}")
-print(f"   - 任务数: {Task.objects.count()}")
+
+def create_test_events(users):
+    """创建测试活动"""
+    events_data = [
+        {'name': '测试活动-策划中', 'status': 'planning', 'type': 'conference'},
+        {'name': '测试活动-执行中', 'status': 'executing', 'type': 'seminar'},
+        {'name': '测试活动-已完成', 'status': 'completed', 'type': 'workshop'},
+    ]
+    
+    created_events = []
+    for event_data in events_data:
+        # 随机分配一个负责人
+        owner = random.choice(list(users.values()))
+        
+        event, created = Event.objects.get_or_create(
+            name=event_data['name'],
+            defaults={
+                'description': f"自动化测试用活动 - {event_data['status']}",
+                'status': event_data['status'],
+                'type': event_data['type'],
+                'owner': owner,
+                'start_date': datetime.now(),
+                'end_date': datetime.now() + timedelta(hours=8),
+            }
+        )
+        if created:
+            print(f"✅ 创建活动: {event.name}")
+        else:
+            print(f"✅ 活动已存在: {event.name}")
+        created_events.append(event)
+    
+    return created_events
+
+
+def create_test_tasks(users, events):
+    """创建测试任务"""
+    tasks_data = [
+        {'title': '测试任务-待办', 'status': 'todo', 'priority': 'high'},
+        {'title': '测试任务-进行中', 'status': 'in_progress', 'priority': 'medium'},
+        {'title': '测试任务-已完成', 'status': 'done', 'priority': 'low'},
+    ]
+    
+    created_tasks = []
+    for task_data in tasks_data:
+        # 如果有活动，随机关联
+        if events:
+            event = random.choice(events)
+        else:
+            event = None
+        
+        # 随机分配负责人
+        assignee = random.choice(list(users.values()))
+        
+        task, created = Task.objects.get_or_create(
+            title=task_data['title'],
+            defaults={
+                'description': f"自动化测试用任务 - {task_data['status']}",
+                'status': task_data['status'],
+                'priority': task_data['priority'],
+                'assignee': assignee,
+                'event': event,
+            }
+        )
+        if created:
+            print(f"✅ 创建任务: {task.title}")
+        else:
+            print(f"✅ 任务已存在: {task.title}")
+        created_tasks.append(task)
+    
+    return created_tasks
+
+
+def main():
+    """主函数"""
+    print("=" * 60)
+    print("EventPilot 测试数据准备")
+    print("=" * 60)
+    
+    # 创建测试用户
+    print("\n【1/3】创建测试用户...")
+    users = create_test_users()
+    print(f"   共 {len(users)} 个用户")
+    
+    # 创建测试活动
+    print("\n【2/3】创建测试活动...")
+    events = create_test_events(users)
+    print(f"   共 {len(events)} 个活动")
+    
+    # 创建测试任务
+    print("\n【3/3】创建测试任务...")
+    tasks = create_test_tasks(users, events)
+    print(f"   共 {len(tasks)} 个任务")
+    
+    # 统计信息
+    print("\n" + "=" * 60)
+    print("测试数据创建完成！")
+    print("=" * 60)
+    print(f"用户数: {User.objects.count()}")
+    print(f"活动数: {Event.objects.count()}")
+    print(f"任务数: {Task.objects.count()}")
+    print("=" * 60)
+    
+    # 输出登录信息
+    print("\n测试账号信息:")
+    print("-" * 60)
+    for key, user in users.items():
+        pwd = 'admin123' if key == 'admin' else (key[:-1] + '123' if key.endswith('or') else key[:-1] + '123')
+        if key == 'owner':
+            pwd = 'owner123'
+        elif key == 'executor':
+            pwd = 'executor123'
+        print(f"  {key:10} - 用户名: {user.username:10} 密码: {pwd}")
+    print("-" * 60)
+
+
+if __name__ == '__main__':
+    main()

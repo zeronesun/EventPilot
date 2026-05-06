@@ -29,6 +29,12 @@
       </div>
       <div class="header-actions">
         <el-button
+          @click="switchToKanbanView"
+        >
+          <el-icon><Menu /></el-icon>
+          看板视图
+        </el-button>
+        <el-button
           @click="exportData"
           :disabled="selectedEvents.length === 0"
           :title="selectedEvents.length > 0 ? '导出选中的活动' : '请先选择活动'"
@@ -289,6 +295,13 @@
       @success="handleFormSuccess"
       @delete="handleDeleteFromForm"
     />
+
+    <!-- 批量编辑对话框 -->
+    <BatchEditEventsDialog
+      v-model="showBatchEditDialog"
+      :events="selectedEvents"
+      @success="handleBatchUpdate"
+    />
   </div>
 </template>
 
@@ -300,9 +313,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import type { ElTable } from 'element-plus'
 import {
   Plus, Search, Refresh, View, Edit, MoreFilled,
-  CopyDocument, Download, Delete, Grid
+  CopyDocument, Download, Delete, Grid, Menu
 } from '@element-plus/icons-vue'
 import EventFormDialog from '../components/EventFormDialog.vue'
+import BatchEditEventsDialog from '../components/BatchEditEventsDialog.vue'
 import DateTimeDisplay from '../components/common/DateTimeDisplay.vue'
 import type { Event } from '@/stores'
 
@@ -329,6 +343,7 @@ const showFormDialog = ref(false)
 const formDialogMode = ref<'view' | 'create' | 'edit'>('create')
 const selectedEventId = ref<string | null>(null)
 const selectedEventData = ref<Event | null>(null)
+const showBatchEditDialog = ref(false)
 
 // 视图状态
 const currentView = ref('list') // 'list' or 'kanban'
@@ -521,6 +536,10 @@ function toggleView() {
   }
 }
 
+function switchToKanbanView() {
+  router.push('/events-kanban')
+}
+
 // 选择相关
 function handleSelectionChange(selection: any[]) {
   selectedEvents.value = selection
@@ -543,7 +562,11 @@ function clearSelection() {
 
 // 批量操作
 function batchEdit() {
-  // 批量编辑逻辑
+  if (selectedEvents.value.length === 0) {
+    ElMessage.warning('请先选择要编辑的活动')
+    return
+  }
+  showBatchEditDialog.value = true
 }
 
 async function batchDelete() {
@@ -706,9 +729,25 @@ function handleDuplicate(event: Event) {
   ElMessage.info('复制功能即将开放')
 }
 
-function exportSingleEvent(event: Event) {
+async function exportSingleEvent(event: Event) {
   selectedEvents.value = [event]
   exportData()
+}
+
+// 批量更新
+async function handleBatchUpdate(updateData: any) {
+  const { ids, data } = updateData
+
+  try {
+    for (const id of ids) {
+      await eventsStore.updateEvent(String(id), data)
+    }
+    ElMessage.success(`成功更新 ${ids.length} 个活动`)
+    clearSelection()
+  } catch (error) {
+    console.error('Batch update failed:', error)
+    ElMessage.error('批量更新失败')
+  }
 }
 
 // 工具函数
