@@ -40,26 +40,32 @@ def django_db_setup():
 @pytest.fixture
 def test_user(db):
     """创建测试用户"""
+    from apps.users.models.user import UserRole
     user = User.objects.create_user(
         username='testuser',
         email='test@example.com',
         password='testpass123',
-        role='user',
         is_active=True
     )
+    # 创建 UserRole
+    UserRole.objects.create(user=user, role='user')
     return user
 
 
 @pytest.fixture
 def admin_user(db):
     """创建管理员用户"""
+    from apps.users.models.user import UserRole
     user = User.objects.create_user(
         username='admin',
         email='admin@example.com',
         password='admin123',
-        role='admin',
-        is_active=True
+        is_active=True,
+        is_staff=True,
+        is_superuser=True
     )
+    # 创建 UserRole
+    UserRole.objects.create(user=user, role='admin')
     return user
 
 
