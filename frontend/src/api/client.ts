@@ -206,10 +206,14 @@ async function api<T>(path: string, options: RequestInit = {}): Promise<T> {
 
     clearTimeout(timeoutId);
 
+    // Handle 204 No Content responses (successful, no body)
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
     if (!response.ok) {
       // Handle 401/403 - Token expired or invalid
       if (response.status === 401 || response.status === 403) {
-        clearTimeout(timeoutId);
 
         // If already refreshing, queue this request
         if (isRefreshing) {

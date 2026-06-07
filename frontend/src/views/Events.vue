@@ -335,7 +335,7 @@ const tableRef = ref<InstanceType<typeof ElTable>>()
 const searchInput = ref()
 
 // 选择相关
-const selectedEvents = ref<[]>([])
+const selectedEvents = ref<Event[]>([])
 const selectAll = ref(false)
 
 // 对话框状态
@@ -360,7 +360,7 @@ const hasActiveFilters = computed(() => {
 })
 
 const totalEvents = computed(() => {
-  return eventsStore.events?.length || 0
+  return Array.isArray(eventsStore.events) ? eventsStore.events.length : 0
 })
 
 // 选项数据
@@ -382,7 +382,7 @@ const typeOptions = [
 
 // 计算属性：过滤和排序
 const filteredEvents = computed(() => {
-  let result = eventsStore.events || []
+  let result = Array.isArray(eventsStore.events) ? eventsStore.events : []
 
   // 搜索过滤
   if (searchQuery.value) {
@@ -472,7 +472,8 @@ const keydownHandler = (e: KeyboardEvent) => {
   // Ctrl+A 全选
   if (e.ctrlKey && (e.key === 'a' || e.key === 'A')) {
     e.preventDefault()
-    if (selectedEvents.value.length > 0) {
+    const currentSelection = Array.isArray(selectedEvents.value) ? selectedEvents.value : []
+    if (currentSelection.length > 0) {
       // 如果已经有选中的，则取消选择
       clearSelection()
     } else {
@@ -562,7 +563,8 @@ function clearSelection() {
 
 // 批量操作
 function batchEdit() {
-  if (selectedEvents.value.length === 0) {
+  const currentSelection = Array.isArray(selectedEvents.value) ? selectedEvents.value : []
+  if (currentSelection.length === 0) {
     ElMessage.warning('请先选择要编辑的活动')
     return
   }
@@ -570,14 +572,49 @@ function batchEdit() {
 }
 
 async function batchDelete() {
-  if (selectedEvents.value.length === 0) {
+  console.log('[DEBUG] batchDelete called')
+  const currentSelection = Array.isArray(selectedEvents.value) ? selectedEvents.value : []
+  console.log('[DEBUG] selectedEvents.value:', currentSelection)
+  console.log('[DEBUG] currentSelection.length:', currentSelection?.length)
+
+  if (currentSelection.length === 0) {
     ElMessage.warning('请先选择要删除的活动')
     return
   }
 
+  // 前置检查：识别有进行中任务的活动（仅针对执行中状态）
+  console.log('[DEBUG] Checking for in-progress tasks...')
+  const eventsWithInProgressTasks = currentSelection.filter(
+    (event: Event) => {
+      // 已取消状态允许删除，跳过检查
+      if (event.status === 'cancelled') {
+        return false
+      }
+
+      // 只检查执行中状态的活动是否有进行中任务
+      const isExecuting = event.status === 'executing'
+      const hasInProgressFlag = event.has_in_progress_tasks === true
+      const hasTaskInProgress = event.tasks && event.tasks.some((t: any) => t.status === 'in_progress')
+
+      console.log('[DEBUG] Checking event:', event.name, 'status:', event.status, 'isExecuting:', isExecuting, 'hasInProgressFlag:', hasInProgressFlag, 'hasTaskInProgress:', hasTaskInProgress)
+
+      return isExecuting && (hasInProgressFlag || hasTaskInProgress)
+    }
+  )
+  console.log('[DEBUG] eventsWithInProgressTasks:', eventsWithInProgressTasks)
+
+  if (eventsWithInProgressTasks.length > 0) {
+    const names = eventsWithInProgressTasks.map((e: Event) => e.name).join('、')
+    ElMessage.error({
+      message: `以下活动有进行中任务，无法删除：${names}`,
+      duration: 5000
+    })
+    return // 阻止批量删除
+  }
+
   try {
     await ElMessageBox.confirm(
-      `确定要删除已选中的 ${selectedEvents.value.length} 个活动吗？`,
+      `确定要删除已选中的 ${currentSelection.length} 个活动吗？`,
       '批量删除确认',
       {
         confirmButtonText: '确定删除',
@@ -586,27 +623,59 @@ async function batchDelete() {
       }
     )
 
-    for (const event of selectedEvents.value) {
-      await eventsStore.deleteEvent(String(event.id))
+    // 使用批量删除 API
+    const eventIds = currentSelection.map((e: Event) => String(e.id))
+    const result = await eventsStore.batchDeleteEvents(eventIds)
+
+    // 刷新列表
+    await eventsStore.fetchEvents()
+
+    // 清除选择
+    clearSelection()
+
+    // 显示汇总消息
+    if (result.success) {
+      const { deleted_count, failed_count, errors } = result
+      if (failed_count === 0) {
+        ElMessage.success(`成功删除 ${deleted_count} 个活动`)
+      } else if (deleted_count === 0) {
+        ElMessage.error(`${failed_count} 个活动删除失败`)
+        if (errors.length > 0) {
+          errors.forEach((err: any) => {
+            console.error('删除失败详情:', err)
+          })
+        }
+      } else {
+        ElMessage.warning(`成功删除 ${deleted_count} 个活动，${failed_count} 个失败`)
+        if (errors.length > 0) {
+          console.error('删除详情:', errors)
+        }
+      }
+    }
+  } catch (error: any) {
+    // 用户取消操作
+    if (error === 'cancel') {
+      return
     }
 
-    ElMessage.success(`成功删除 ${selectedEvents.value.length} 个活动`)
-    clearSelection()
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('Batch delete failed:', error)
-      ElMessage.error('批量删除失败')
-    }
+    // 处理其他错误
+    console.error('[DEBUG] 批量删除错误:', error)
+    ElMessage.error({
+      message: `批量删除失败: ${error?.message || String(error)}`,
+      duration: 5000
+    })
   }
 }
 
 // 导出功能
 async function exportData() {
   try {
-    const dataToExport = selectedEvents.value.length > 0 
-      ? selectedEvents.value 
-      : filteredEvents.value
-    
+    const currentSelection = Array.isArray(selectedEvents.value) ? selectedEvents.value : []
+    const currentFiltered = Array.isArray(filteredEvents.value) ? filteredEvents.value : []
+    const dataToExport = currentSelection.length > 0
+      ? currentSelection
+      : currentFiltered
+
     if (dataToExport.length === 0) {
       ElMessage.warning('没有数据可导出')
       return
@@ -651,20 +720,25 @@ function handleRowClick(row: Event) {
 }
 
 function handleViewDetails(event: Event) {
+  console.log('handleViewDetails called with event:', event)
   selectedEventId.value = String(event.id)
-  selectedEventData.value = event
+  selectedEventData.value = { ...event } // 创建副本避免引用问题
   formDialogMode.value = 'view'
   showFormDialog.value = true
+  console.log('showFormDialog set to true for view mode')
 }
 
 function handleEdit(event: Event) {
-  selectedEventData.value = event
+  console.log('handleEdit called with event:', event)
+  selectedEventData.value = { ...event } // 创建副本
   formDialogMode.value = 'edit'
   showFormDialog.value = true
+  console.log('showFormDialog set to true for edit mode')
 }
 
 function handleEditFromDrawer(eventId: string) {
-  const event = eventsStore.events.find(e => String(e.id) === eventId)
+  const events = Array.isArray(eventsStore.events) ? eventsStore.events : []
+  const event = events.find(e => String(e.id) === eventId)
   if (event) {
     handleEdit(event)
   }

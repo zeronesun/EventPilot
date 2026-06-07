@@ -244,7 +244,7 @@ class TaskCreateSerializer(serializers.Serializer):
     description = serializers.CharField(required=False, allow_blank=True)
     task_type = serializers.ChoiceField(choices=Task.TaskType.choices, default='planning')
     assignee_id = serializers.UUIDField(required=False, allow_null=True)
-    event_id = serializers.UUIDField()
+    event_id = serializers.UUIDField(required=False, allow_null=True)
     start_date = serializers.DateTimeField(required=False, allow_null=True)
     due_date = serializers.DateTimeField(required=False, allow_null=True)
     depends_on = serializers.ListField(
@@ -261,6 +261,8 @@ class TaskCreateSerializer(serializers.Serializer):
     
     def validate_event_id(self, value):
         """验证活动ID"""
+        if value is None:
+            return value
         from apps.events.models import Event
         if not Event.objects.filter(id=value).exists():
             raise serializers.ValidationError("指定的活动不存在")

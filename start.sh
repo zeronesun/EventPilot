@@ -186,7 +186,7 @@ start_backend() {
     if [ "$USE_VENV" = true ]; then
         nohup venv/bin/python manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
     else
-        nohup python manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
+        nohup /usr/bin/python3.10 manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
     fi
     
     local pid=$!

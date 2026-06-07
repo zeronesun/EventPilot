@@ -170,8 +170,10 @@
                     type="datetime"
                     placeholder="选择开始时间"
                     format="YYYY-MM-DD HH:mm:ss"
-                    value-format="YYYY-MM-DDTHH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                     style="width: 100%"
+                    :clearable="true"
+                    :disabled-date="disabledStartDate"
                   />
                 </el-form-item>
               </el-col>
@@ -182,8 +184,10 @@
                     type="datetime"
                     placeholder="选择结束时间"
                     format="YYYY-MM-DD HH:mm:ss"
-                    value-format="YYYY-MM-DDTHH:mm:ss"
+                    value-format="YYYY-MM-DD HH:mm:ss"
                     style="width: 100%"
+                    :clearable="true"
+                    :disabled-date="disabledEndDate"
                   />
                 </el-form-item>
               </el-col>
@@ -269,19 +273,19 @@
             <div class="info-list">
               <div class="info-item">
                 <label>负责人</label>
-                <value>{{ formData.owner_name || '未指定' }}</value>
+                <span>{{ formData.owner_name || '未指定' }}</span>
               </div>
               <div class="info-item">
                 <label>预算</label>
-                <value>￥{{ (formData.estimated_budget || 0).toLocaleString() }}</value>
+                <span>￥{{ (formData.estimated_budget || 0).toLocaleString() }}</span>
               </div>
               <div class="info-item">
                 <label>开始时间</label>
-                <value>{{ formatDate(formData.start_date) }}</value>
+                <span>{{ formatDate(formData.start_date) }}</span>
               </div>
               <div class="info-item">
                 <label>结束时间</label>
-                <value>{{ formatDate(formData.end_date) }}</value>
+                <span>{{ formatDate(formData.end_date) }}</span>
               </div>
             </div>
           </div>
@@ -466,8 +470,8 @@ const hasBudgetInfo = computed(() => {
 
 const formData = ref<EventData>({
   name: '',
-  type: 'conference',
-  status: 'planning',
+  type: '',
+  status: '',
   start_date: '',
   end_date: '',
   location: '',
@@ -489,10 +493,32 @@ const formRules = {
     { required: true, message: '请选择活动状态', trigger: 'change' }
   ],
   start_date: [
-    { required: true, message: '请选择开始时间', trigger: 'change' }
+    { required: true, message: '请选择开始时间', trigger: 'change' },
+    {
+      validator: (rule: any, value: string, callback: Function) => {
+        if (!value) {
+          callback(new Error('请选择开始时间'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
   ],
   end_date: [
-    { required: true, message: '请选择结束时间', trigger: 'change' }
+    { required: true, message: '请选择结束时间', trigger: 'change' },
+    {
+      validator: (rule: any, value: string, callback: Function) => {
+        if (!value) {
+          callback(new Error('请选择结束时间'))
+        } else if (formData.value.start_date && new Date(value) < new Date(formData.value.start_date)) {
+          callback(new Error('结束时间不能早于开始时间'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'change'
+    }
   ]
 }
 
@@ -639,19 +665,37 @@ async function handleSubmit() {
   if (!formRef.value) return
 
   try {
+    // 验证所有字段
     await formRef.value.validate()
 
     // 数据完整性检查
-    if (!formData.value.name || !formData.value.type || !formData.value.start_date) {
-      ElMessage.error('请填写完整信息')
+    if (!formData.value.name) {
+      ElMessage.error('请填写活动名称')
+      return
+    }
+    if (!formData.value.type) {
+      ElMessage.error('请选择活动类型')
+      return
+    }
+    if (!formData.value.status) {
+      ElMessage.error('请选择活动状态')
       return
     }
 
-    // 自动填充结束时间
-    if (!formData.value.end_date && formData.value.start_date) {
-      const startDate = new Date(formData.value.start_date)
-      startDate.setDate(startDate.getDate() + 1)
-      formData.value.end_date = startDate.toISOString().slice(0, 19).replace('T', 'T')
+    // 时间验证
+    if (!formData.value.start_date) {
+      ElMessage.error('请选择开始时间')
+      return
+    }
+    if (!formData.value.end_date) {
+      ElMessage.error('请选择结束时间')
+      return
+    }
+
+    // 检查时间逻辑
+    if (new Date(formData.value.end_date) < new Date(formData.value.start_date)) {
+      ElMessage.error('结束时间不能早于开始时间')
+      return
     }
 
     submitLoading.value = true
@@ -685,9 +729,19 @@ async function handleSubmit() {
       emit('success', formData.value)
       handleClose()
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('Submit error:', error)
-    ElMessage.error(error.message || '操作失败')
+    // 显示具体验证错误
+    if (error && Array.isArray(error)) {
+      const firstError = error[0]
+      if (firstError && firstError.message) {
+        ElMessage.error(firstError.message)
+      }
+    } else if (error && error.message) {
+      ElMessage.error(error.message)
+    } else {
+      ElMessage.error('请检查表单填写是否完整')
+    }
   } finally {
     submitLoading.value = false
   }
@@ -742,8 +796,8 @@ function handleClose() {
 function resetForm() {
   formData.value = {
     name: '',
-    type: 'conference',
-    status: 'planning',
+    type: '',
+    status: '',
     start_date: '',
     end_date: '',
     location: '',
@@ -752,6 +806,17 @@ function resetForm() {
     description: '',
     owner_name: ''
   }
+}
+
+// 禁用开始时间：不能早于当前时间
+function disabledStartDate(time: Date): boolean {
+  return time.getTime() < Date.now() - 8.64e7
+}
+
+// 禁用结束时间：不能早于开始时间
+function disabledEndDate(time: Date): boolean {
+  if (!formData.value.start_date) return false
+  return time.getTime() < new Date(formData.value.start_date).getTime()
 }
 </script>
 

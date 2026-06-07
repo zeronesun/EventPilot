@@ -52,41 +52,50 @@ class ChecklistService:
     COMPLETION_CRITICAL_THRESHOLD = 95
     
     @staticmethod
-    def validate_template_data(data: Dict) -> Tuple[bool, List[str]]:
-        """验证清单模板数据"""
+    def validate_template_data(data: Dict, partial: bool = False) -> Tuple[bool, List[str]]:
+        """验证清单模板数据
+
+        Args:
+            data: 待验证的数据字典
+            partial: 是否为部分更新（部分更新时不强制要求空字段）
+        """
         errors = []
-        
+
         # 名称验证
         name = data.get('name')
-        if not name or len(name) < 3:
-            errors.append('模板名称长度至少3位')
-        elif len(name) > 255:
-            errors.append('模板名称长度不能超过255位')
-        
+        if name:
+            if len(name) < 3:
+                errors.append('模板名称长度至少3位')
+            elif len(name) > 255:
+                errors.append('模板名称长度不能超过255位')
+        elif not partial:
+            errors.append('模板名称不能为空')
+
         # 描述验证
         description = data.get('description', '')
         if len(description) > 2000:
             errors.append('模板描述长度不能超过2000位')
-        
+
         # 类型验证
         checklist_type = data.get('checklist_type')
-        if not checklist_type:
+        if checklist_type:
+            if checklist_type not in ChecklistService.CHECKLIST_TYPES:
+                errors.append(f'清单类型无效，有效值：{", ".join(ChecklistService.CHECKLIST_TYPES.keys())}')
+        elif not partial:
             errors.append('清单类型不能为空')
-        elif checklist_type not in ChecklistService.CHECKLIST_TYPES:
-            errors.append(f'清单类型无效，有效值：{", ".join(ChecklistService.CHECKLIST_TYPES.keys())}')
-        
+
         # 活动类型验证
         event_types = data.get('event_types', [])
         if not isinstance(event_types, list):
             errors.append('活动类型必须是列表格式')
-        elif not event_types:
+        elif not event_types and not partial:
             errors.append('活动类型不能为空')
-        
+
         # 版本验证
         version = data.get('version')
         if version and len(str(version)) > 50:
             errors.append('版本号长度不能超过50位')
-        
+
         # 清单项验证
         items = data.get('items', [])
         if not isinstance(items, list):
@@ -95,7 +104,7 @@ class ChecklistService:
             for idx, item in enumerate(items):
                 item_errors = ChecklistService._validate_template_item(item, idx)
                 errors.extend(item_errors)
-        
+
         return len(errors) == 0, errors
     
     @staticmethod
@@ -140,27 +149,35 @@ class ChecklistService:
         return errors
     
     @staticmethod
-    def validate_instance_data(data: Dict) -> Tuple[bool, List[str]]:
-        """验证清单实例数据"""
+    def validate_instance_data(data: Dict, partial: bool = False) -> Tuple[bool, List[str]]:
+        """验证清单实例数据
+
+        Args:
+            data: 待验证的数据字典
+            partial: 是否为部分更新（部分更新时不强制要求空字段）
+        """
         errors = []
-        
+
         # 名称验证
         name = data.get('name')
-        if not name or len(name) < 3:
-            errors.append('实例名称长度至少3位')
-        elif len(name) > 255:
-            errors.append('实例名称长度不能超过255位')
-        
+        if name:
+            if len(name) < 3:
+                errors.append('实例名称长度至少3位')
+            elif len(name) > 255:
+                errors.append('实例名称长度不能超过255位')
+        elif not partial:
+            errors.append('实例名称不能为空')
+
         # 活动ID验证
         event_id = data.get('event_id') or data.get('event')
-        if not event_id:
+        if not event_id and not partial:
             errors.append('活动ID不能为空')
-        
+
         # 模板ID验证
         template_id = data.get('template_id') or data.get('template')
-        if not template_id:
+        if not template_id and not partial:
             errors.append('模板ID不能为空')
-        
+
         return len(errors) == 0, errors
     
     @staticmethod
@@ -226,46 +243,51 @@ class ChecklistService:
     def update_template(template: ChecklistTemplate, update_data: Dict, updated_by) -> Tuple[bool, List[str]]:
         """更新清单模板"""
         errors = []
-        
+
         try:
+            # 验证更新的数据（部分更新）
+            is_valid, validation_errors = ChecklistService.validate_template_data(update_data, partial=True)
+            if not is_valid:
+                return False, validation_errors
+
             # 状态验证
             new_status = update_data.get('status')
             if new_status and new_status not in ChecklistService.TEMPLATE_STATUS:
                 errors.append(f'模板状态无效，有效值：{", ".join(ChecklistService.TEMPLATE_STATUS)}')
                 return False, errors
-            
+
             # 版本变更验证
             current_version = template.version
             new_version = update_data.get('version')
             if new_version and new_version != current_version:
                 # 可以在这里添加版本变更的验证逻辑
                 logger.info(f"模板版本变更: {template.name} {current_version} -> {new_version}")
-            
+
             # 更新模板基本信息
-            allowed_fields = ['name', 'description', 'checklist_type', 'event_types', 
+            allowed_fields = ['name', 'description', 'checklist_type', 'event_types',
                            'status', 'is_default', 'tags', 'metadata', 'version']
-            
+
             for field in allowed_fields:
                 if field in update_data:
                     setattr(template, field, update_data[field])
-            
+
             # 处理模板项更新
             if 'items' in update_data:
                 ChecklistService._update_template_items(template, update_data['items'])
-            
+
             template.save()
-            
+
             # 记录日志
             ChecklistService._log_template_activity(template, 'updated', updated_by, {
                 'updated_fields': list(update_data.keys())
             })
-            
+
             # 清除缓存
             ChecklistService._clear_template_cache(template.id)
-            
+
             logger.info(f"清单模板更新成功: {template.name} (ID: {template.id})")
             return True, []
-            
+
         except Exception as e:
             logger.error(f"更新清单模板失败: {e}")
             errors.append(f"更新清单模板失败: {str(e)}")
@@ -394,8 +416,13 @@ class ChecklistService:
     def update_instance(instance: ChecklistInstance, update_data: Dict, updated_by) -> Tuple[bool, List[str]]:
         """更新清单实例"""
         errors = []
-        
+
         try:
+            # 验证更新的数据（部分更新）
+            is_valid, validation_errors = ChecklistService.validate_instance_data(update_data, partial=True)
+            if not is_valid:
+                return False, validation_errors
+
             # 状态验证
             new_status = update_data.get('status')
             if new_status:
@@ -404,30 +431,30 @@ class ChecklistService:
                 )
                 if not is_valid:
                     return False, status_errors
-                
+
                 # 更新完成时间
                 if new_status in ['completed', 'pending_review']:
                     instance.completed_at = timezone.now()
-            
+
             # 更新实例信息
             allowed_fields = ['name', 'status', 'metadata']
             for field in allowed_fields:
                 if field in update_data:
                     setattr(instance, field, update_data[field])
-            
+
             instance.save()
-            
+
             # 记录日志
             ChecklistService._log_instance_activity(instance, 'updated', updated_by, {
                 'updated_fields': list(update_data.keys())
             })
-            
+
             # 清除缓存
             ChecklistService._clear_instance_cache(instance.id)
-            
+
             logger.info(f"清单实例更新成功: {instance.name} (ID: {instance.id})")
             return True, []
-            
+
         except Exception as e:
             logger.error(f"更新清单实例失败: {e}")
             errors.append(f"更新清单实例失败: {str(e)}")

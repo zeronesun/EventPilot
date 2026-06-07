@@ -21,6 +21,9 @@ export interface Event {
   owner_name?: string;
   created_at?: string;
   updated_at?: string;
+  tasks?: Array<{id: string | number; status: string; [key: string]: any}>; // 关联的任务
+  task_count?: number; // 任务数量缓存
+  has_in_progress_tasks?: boolean; // 是否有进行中任务（缓存字段）
   [key: string]: any;
 }
 
@@ -129,6 +132,23 @@ export const useEventsStore = defineStore('events', () => {
     }
   }
 
+  async function batchDeleteEvents(eventIds: string[]): Promise<{success: boolean, deleted_count: number, failed_count: number, errors: any[]}> {
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const response = await apiClient.post('/events/batch_delete/', { event_ids: eventIds });
+      // 前端也需要过滤掉已删除的项
+      events.value = events.value.filter(e => !eventIds.includes(String(e.id)));
+      return response as any;
+    } catch (err) {
+      error.value = getErrorMessage(err);
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
   async function fetchEventStatistics(id: string): Promise<any> {
     try {
       return await apiClient.get(`/events/${id}/statistics/`);
@@ -149,6 +169,7 @@ export const useEventsStore = defineStore('events', () => {
     createEvent,
     updateEvent,
     deleteEvent,
+    batchDeleteEvents,
     fetchEventStatistics,
   };
 });

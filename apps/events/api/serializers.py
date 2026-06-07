@@ -3,6 +3,15 @@ from django.db.models import Count, Sum, Q
 from apps.events.models import Event, BudgetItem, EventParticipant, EventTemplate
 
 
+class EventBatchDeleteSerializer(serializers.Serializer):
+    """批量删除序列化器"""
+    
+    event_ids = serializers.ListField(
+        child=serializers.CharField(max_length=100),
+        min_length=1
+    )
+
+
 class BudgetItemSerializer(serializers.ModelSerializer):
     """预算明细序列化器"""
     responsible_name = serializers.CharField(source='responsible.username', read_only=True, allow_null=True)
@@ -209,7 +218,8 @@ class EventListSerializer(serializers.ModelSerializer):
     progress_percentage = serializers.SerializerMethodField()
     budget_usage_rate = serializers.SerializerMethodField()
     is_overdue = serializers.SerializerMethodField()
-    
+    has_in_progress_tasks = serializers.SerializerMethodField()
+
     class Meta:
         model = Event
         fields = [
@@ -217,30 +227,34 @@ class EventListSerializer(serializers.ModelSerializer):
             'estimated_budget', 'actual_budget', 'budget_variance',
             'status', 'owner_name', 'owner_email', 'tasks_count',
             'progress_percentage', 'budget_usage_rate', 'is_overdue',
-            'created_at'
+            'has_in_progress_tasks', 'created_at'
         ]
-    
+
     def get_tasks_count(self, obj):
         """获取任务数量"""
         return obj.tasks.count()
-    
+
     def get_progress_percentage(self, obj):
         """获取进度百分比"""
         tasks_count = self.get_tasks_count(obj)
         if tasks_count == 0:
             return 0
         return round((obj.tasks.filter(status='completed').count() / tasks_count) * 100, 2)
-    
+
     def get_budget_usage_rate(self, obj):
         """获取预算使用率"""
         if obj.estimated_budget and obj.estimated_budget > 0:
             return round((obj.actual_budget / obj.estimated_budget) * 100, 2)
         return 0
-    
+
     def get_is_overdue(self, obj):
         """检查是否超期"""
         from apps.events.services.event_service import EventService
         return EventService._is_overdue(obj)
+
+    def get_has_in_progress_tasks(self, obj):
+        """检查是否有关联的进行中任务（删除操作优化）"""
+        return obj.tasks.filter(status='in_progress').exists()
 
 
 class EventStatisticsSerializer(serializers.Serializer):

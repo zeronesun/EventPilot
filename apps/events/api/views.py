@@ -15,7 +15,8 @@ from apps.events.services.event_service import EventService
 from .serializers import (
     EventSerializer, EventListSerializer, EventCreateSerializer,
     EventUpdateSerializer, EventStatisticsSerializer, EventRiskAssessmentSerializer,
-    EventParticipantSerializer, BudgetItemSerializer, EventTemplateSerializer
+    EventParticipantSerializer, BudgetItemSerializer, EventTemplateSerializer,
+    EventBatchDeleteSerializer
 )
 from api.exceptions import custom_exception_handler
 
@@ -193,29 +194,39 @@ class EventViewSet(viewsets.ModelViewSet):
         """删除活动"""
         try:
             instance = self.get_object()
-            
+            event_pk = str(instance.pk)
+            user_id = request.user.id if request.user.is_authenticated else None
+
             # 默认软删除
             soft_delete = request.query_params.get('hard', 'false').lower() == 'false'
-            
+            skip_task_checks = request.query_params.get('skip_task_checks', 'false').lower() == 'true'
+
+            import time
+            start_time = time.time()
+
             success, errors = EventService.delete_event(
                 event=instance,
                 soft_delete=soft_delete,
+                skip_task_checks=skip_task_checks,
                 request=request
             )
-            
+
+            elapsed = time.time() - start_time
+            logger.info(f"删除活动操作: userId={user_id}, eventPk={event_pk}, softDelete={soft_delete}, skipChecks={skip_task_checks}, success={success}, elapsed={elapsed:.3f}s")
+
             if not success:
                 return Response(
                     {'error': {'code': 'DELETE_ERROR', 'message': errors}},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            
+
             return Response(
-                {'message': '活动删除成功'},
-                status=status.HTTP_204_NO_CONTENT
+                {'message': '活动删除成功', 'deleted': event_pk},
+                status=status.HTTP_200_OK
             )
-            
+
         except Exception as e:
-            logger.error(f"删除活动失败: {e}")
+            logger.error(f"删除活动失败: {e}", exc_info=True)
             return Response(
                 {'error': {'code': 'DELETE_ERROR', 'message': str(e)}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -524,6 +535,79 @@ class EventViewSet(viewsets.ModelViewSet):
             logger.error(f"获取活动分析数据失败: {e}")
             return Response(
                 {'error': {'code': 'ANALYTICS_ERROR', 'message': str(e)}},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    @action(detail=False, methods=['post'])
+    def batch_delete(self, request):
+        """批量删除活动"""
+        try:
+            serializer = EventBatchDeleteSerializer(data=request.data)
+            if not serializer.is_valid():
+                return Response(
+                    {'error': {'code': 'validation_error', 'message': '批量删除参数验证失败', 'details': serializer.errors}},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            
+            event_ids = serializer.validated_data['event_ids']
+            deleted_count = 0
+            failed_count = 0
+            errors = []
+            
+            for event_id in event_ids:
+                try:
+                    event = Event.objects.filter(id=event_id).first()
+                    if not event:
+                        failed_count += 1
+                        errors.append({event_id: '活动不存在'})
+                        continue
+                    
+                    # 验证权限
+                    queryset = self.get_queryset()
+                    if event not in queryset:
+                        failed_count += 1
+                        errors.append({event_id: '无权删除此活动'})
+                        continue
+                    
+                    # 前置检查：执行中且有进行中任务的活动不允许删除
+                    if event.status == 'executing':
+                        has_in_progress = event.has_in_progress_tasks or (
+                            event.tasks and event.tasks.filter(status='in_progress').exists()
+                        )
+                        if has_in_progress:
+                            failed_count += 1
+                            errors.append({event_id: '活动有进行中任务，无法删除'})
+                            continue
+                    
+                    # 删除活动（软删除）
+                    success, delete_errors = EventService.delete_event(
+                        event=event,
+                        soft_delete=True,
+                        skip_task_checks=True,  # 已在上面检查过了
+                        request=request
+                    )
+                    
+                    if success:
+                        deleted_count += 1
+                    else:
+                        failed_count += 1
+                        errors.append({event_id: delete_errors})
+                        
+                except Exception as e:
+                    failed_count += 1
+                    errors.append({event_id: str(e)})
+            
+            return Response({
+                'success': True,
+                'deleted_count': deleted_count,
+                'failed_count': failed_count,
+                'errors': errors
+            })
+            
+        except Exception as e:
+            logger.error(f"批量删除失败: {str(e)}")
+            return Response(
+                {'error': {'code': 'internal_error', 'message': '批量删除失败', 'details': {'error': str(e)}}},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 

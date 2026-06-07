@@ -5,7 +5,7 @@
 
 import { defineStore } from 'pinia';
 import { ref } from 'vue';
-import { apiClient, type ApiError } from '@/api/client';
+import { apiClient, ApiErrorHandler } from '@/api/client';
 
 export const useTasksStore = defineStore('tasks', () => {
   const tasks = ref<any[]>([]);
@@ -186,7 +186,7 @@ export const useTasksStore = defineStore('tasks', () => {
 
 // Error message helper
 function getErrorMessage(error: unknown): string {
-  if (error instanceof ApiError) {
+  if (error instanceof ApiErrorHandler) {
     const body = error.body;
     if (body && typeof body === 'object') {
       if (body instanceof Array && body.length > 0) {
@@ -221,10 +221,10 @@ function getErrorMessage(error: unknown): string {
         return '服务器错误，请稍后重试';
     }
   }
-  
+
   if (error instanceof Error) {
     return error.message;
   }
-  
+
   return '发生未知错误';
 }

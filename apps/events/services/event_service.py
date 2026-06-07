@@ -48,58 +48,69 @@ class EventService:
     }
     
     @staticmethod
-    def validate_event_data(data: Dict) -> Tuple[bool, List[str]]:
-        """验证活动数据"""
+    def validate_event_data(data: Dict, partial: bool = False) -> Tuple[bool, List[str]]:
+        """验证活动数据
+
+        Args:
+            data: 待验证的数据字典
+            partial: 是否为部分更新（部分更新时不强制要求空字段）
+        """
         errors = []
-        
+
         # 名称验证
         name = data.get('name')
-        if not name or len(name) < 3:
-            errors.append('活动名称长度至少3位')
-        elif len(name) > 255:
-            errors.append('活动名称长度不能超过255位')
-        
+        if name:
+            if len(name) < 3:
+                errors.append('活动名称长度至少3位')
+            elif len(name) > 255:
+                errors.append('活动名称长度不能超过255位')
+        elif not partial:
+            errors.append('活动名称不能为空')
+
         # 类型验证
         event_type = data.get('type')
-        if not event_type:
+        if event_type:
+            if event_type not in EventService.EVENT_TYPES:
+                errors.append(f'活动类型无效，有效值：{", ".join(EventService.EVENT_TYPES.keys())}')
+        elif not partial:
             errors.append('活动类型不能为空')
-        elif event_type not in EventService.EVENT_TYPES:
-            errors.append(f'活动类型无效，有效值：{", ".join(EventService.EVENT_TYPES.keys())}')
-        
+
         # 时间验证
         start_date = data.get('start_date')
         end_date = data.get('end_date')
-        
-        if not start_date:
-            errors.append('开始时间不能为空')
-        if not end_date:
-            errors.append('结束时间不能为空')
-        
-        if start_date and end_date:
-            try:
-                if isinstance(start_date, str):
-                    start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
-                if isinstance(end_date, str):
-                    end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
-                
-                if end_date <= start_date:
-                    errors.append('结束时间必须大于开始时间')
-                    
-            except (ValueError, TypeError) as e:
-                errors.append('时间格式不正确')
-        
+
+        # 部分更新时不强制要求时间字段
+        if not partial or (start_date or end_date):
+            if start_date and not end_date:
+                errors.append('结束时间不能为空')
+            elif end_date and not start_date:
+                errors.append('开始时间不能为空')
+
+            if start_date and end_date:
+                try:
+                    if isinstance(start_date, str):
+                        start_date = datetime.fromisoformat(start_date.replace('Z', '+00:00'))
+                    if isinstance(end_date, str):
+                        end_date = datetime.fromisoformat(end_date.replace('Z', '+00:00'))
+
+                    if end_date <= start_date:
+                        errors.append('结束时间必须大于开始时间')
+                except (ValueError, TypeError) as e:
+                    errors.append('时间格式不正确')
+
         # 预算验证
-        estimated_budget = data.get('estimated_budget', 0)
-        if estimated_budget is not None and estimated_budget < 0:
-            errors.append('预估预算不能为负数')
-        elif estimated_budget and estimated_budget > 10000000:
-            errors.append('预估预算金额过大，请确认')
-        
+        estimated_budget = data.get('estimated_budget')
+        if estimated_budget is not None:
+            if estimated_budget < 0:
+                errors.append('预估预算不能为负数')
+            elif estimated_budget > 10000000:
+                errors.append('预估预算金额过大，请确认')
+
         # 负责人验证
         owner = data.get('owner') or data.get('owner_id')
-        if not owner:
+        if not owner and not partial:
             errors.append('负责人不能为空')
-        
+
         return len(errors) == 0, errors
     
     @staticmethod
@@ -195,16 +206,19 @@ class EventService:
                     update_data.pop('status', None)  # 移除已处理的字段
             
             # 验证更新的数据
-            is_valid, validation_errors = EventService.validate_event_data({
-                **{
-                    'name': event.name,
-                    'type': event.type,
-                    'start_date': event.start_date,
-                    'end_date': event.end_date,
-                    'owner': event.owner_id,
+            is_valid, validation_errors = EventService.validate_event_data(
+                {
+                    **{
+                        'name': event.name,
+                        'type': event.type,
+                        'start_date': event.start_date,
+                        'end_date': event.end_date,
+                        'owner': event.owner_id,
+                    },
+                    **update_data
                 },
-                **update_data
-            })
+                partial=True  # 更新操作是部分更新
+            )
             if not is_valid:
                 return False, validation_errors
             
@@ -238,54 +252,67 @@ class EventService:
     
     @staticmethod
     @transaction.atomic
-    def delete_event(event: Event, soft_delete: bool = True, request=None) -> Tuple[bool, List[str]]:
+    def delete_event(event: Event, soft_delete: bool = True, skip_task_checks: bool = False, request=None) -> Tuple[bool, List[str]]:
         """删除活动"""
         errors = []
-        
+
         try:
-            # 检查是否可以删除
-            if event.status == Event.Status.EXECUTING:
-                errors.append('活动执行中，无法删除')
-                return False, errors
-            
-            if event.tasks.filter(status='in_progress').exists():
-                errors.append('活动中有正在进行的任务，无法删除')
-                return False, errors
-            
+            # 前置校验：检查是否可以删除（允许删除已取消的活动）
+            if not skip_task_checks:
+                if event.status == Event.Status.EXECUTING and event.tasks.filter(status='in_progress').exists():
+                    errors.append('活动执行中且有正在进行的任务，无法删除')
+                    logger.warning(f"删除活动失败: Event={event.pk} 在执行中且有进行中任务")
+                    return False, errors
+
+                if event.tasks.filter(status='in_progress').exists():
+                    errors.append('活动中有正在进行的任务，无法删除')
+                    logger.warning(f"删除活动失败: Event={event.pk} 有进行中任务")
+                    return False, errors
+
             if soft_delete:
                 # 软删除
                 event.status = Event.Status.CANCELLED
                 if not event.completed_at:
                     event.completed_at = timezone.now()
                 event.save()
-                
+
                 EventService._log_event_activity(event, 'soft_deleted', request)
                 logger.info(f"活动软删除成功: {event.name} (ID: {event.id})")
             else:
+                # 硬删除前再次检查任务关联（避免级联风险）
+                task_count = event.tasks.count()
+                if task_count > 0:
+                    if not skip_task_checks:
+                        errors.append(f'活动关联了 {task_count} 个任务，无法硬删除。请使用 skip_task_checks 参数明确跳过此检查（高级操作，可能导致数据不一致）。')
+                        logger.error(f"硬删除受阻: Event={event.pk} 有关联任务 {task_count} 个")
+                        return False, errors
+                    else:
+                        logger.warning(f"跳过任务检查并执行硬删除: Event={event.pk} 有关联任务 {task_count} 个")
+
                 # 硬删除
                 event_name = event.name
                 event_id = str(event.id)
-                
+
                 # 删除关联数据
                 event.budget_items.all().delete()
                 event.tasks.all().delete()
-                
+
                 # 删除活动
                 event.delete()
-                
+
                 EventService._log_event_activity(
-                    event, 'hard_deleted', request, 
+                    event, 'hard_deleted', request,
                     details={'event_name': event_name, 'event_id': event_id}
                 )
                 logger.info(f"活动硬删除成功: {event_name} (ID: {event_id})")
-            
+
             # 清除缓存
             EventService._clear_event_cache(event.id)
-            
+
             return True, []
-            
+
         except Exception as e:
-            logger.error(f"删除活动失败: {e}")
+            logger.error(f"删除活动失败: Event={event.pk if not hasattr(event, '_state') else event.id}, Error={e}", exc_info=True)
             errors.append(f"删除活动失败: {str(e)}")
             return False, errors
     

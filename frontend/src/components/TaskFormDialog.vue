@@ -517,13 +517,25 @@ async function handleSubmit() {
 
     submitLoading.value = true
 
+    // 准备提交数据，进行字段映射
+    const submitData = {
+      title: formData.value.title,
+      description: formData.value.description,
+      event_id: formData.value.event || null,
+      due_date: formData.value.due_date || null,
+      // 保持优先级和状态用于update操作
+      priority: formData.value.priority,
+      status: formData.value.status,
+      progress: formData.value.progress || 0
+    }
+
     if (props.mode === 'edit' && formData.value.id) {
-      await tasksStore.updateTask(formData.value.id, formData.value)
+      await tasksStore.updateTask(formData.value.id, submitData)
       ElMessage.success('更新成功')
       emit('success', formData.value)
       handleClose()
     } else {
-      await tasksStore.createTask(formData.value)
+      await tasksStore.createTask(submitData)
       ElMessage.success('创建成功')
       emit('success', formData.value)
       handleClose()

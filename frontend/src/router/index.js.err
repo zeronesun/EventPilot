@@ -1,7 +1,11 @@
 import { createRouter, createWebHistory } from 'vue-router'
 
+// 使用懒加载优化性能
 const routes = [
-  { path: '/', redirect: '/dashboard' },
+  {
+    path: '/',
+    redirect: '/dashboard'
+  },
   {
     path: '/dashboard',
     name: 'home',
@@ -25,10 +29,6 @@ const routes = [
     name: 'events',
     component: () => import('../views/Events.vue'),
     meta: { requiresAuth: true }
-  },
-  {
-    path: '/events/list',
-    redirect: '/events'
   },
   {
     path: '/events-kanban',
@@ -101,24 +101,39 @@ const routes = [
     name: 'reviews',
     component: () => import('../views/Reviews.vue'),
     meta: { requiresAuth: true }
-  },
+  }	,
   {
     path: '/evaluations',
     redirect: '/reviews'
   },
-  {
-    path: '/analytics',
+  {    path: '/analytics',
     name: 'analytics',
     component: () => import('../views/Analytics.vue'),
     meta: { requiresAuth: true }
   },
-  {
-    path: '/settings',
+  {    path: '/settings',
     name: 'settings',
     component: () => import('../views/Settings.vue'),
     meta: { requiresAuth: true }
   },
   {
+    path: '/contacts',
+    name: 'contacts',
+    component: () => import('../views/ContactsManager.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/interactions',
+    name: 'interactions',
+    component: () => import('../views/InteractionsManager.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/intelligent',
+    name: 'intelligent',
+    component: () => import('../views/IntelligentRecommendations.vue'),
+    meta: { requiresAuth: true }
+  }  {
     path: '/404',
     name: 'not-found',
     component: () => import('../views/NotFound.vue')
@@ -134,19 +149,24 @@ const router = createRouter({
   routes
 })
 
+// 导出路由实例
 export default router
 
+// 获取token的辅助函数
 const getToken = () => localStorage.getItem('eventpilot_token')
 
+// 路由守卫 - 实际检查认证状态
 router.beforeEach((to, from, next) => {
   const token = getToken()
   const requiresAuth = to.meta.requiresAuth !== false
 
+  // 如果页面需要认证但没有token，重定向到登录
   if (requiresAuth && !token) {
     next('/login')
     return
   }
 
+  // 如果已登录用户访问登录页，重定向到首页
   if (to.path === '/login' && token) {
     next('/dashboard')
     return

@@ -64,7 +64,7 @@
     <!-- 统一的任务表单对话框（详情/新建/编辑） -->
     <TaskFormDialog
       v-model="showFormDialog"
-      :mode="formDialogMode"
+      :mode="taskFormDialogMode"
       :task-data="selectedTaskData"
       :events-list="eventsStore.events"
       @success="handleFormSuccess"
@@ -85,7 +85,7 @@ const eventsStore = useEventsStore()
 
 // 统一的对话框状态
 const showFormDialog = ref(false)
-const formDialogMode = ref<'view' | 'create' | 'edit'>('create')
+const taskFormDialogMode = ref('create')
 const selectedTaskData = ref(null)
 
 const taskStatuses = [
@@ -145,14 +145,18 @@ function formatDate(dateString) {
 
 function viewTask(task) {
   selectedTaskData.value = task
-  formDialogMode.value = 'view'
+  taskFormDialogMode.value = 'view'
   showFormDialog.value = true
 }
 
 function openCreateDialog() {
+  console.log('openCreateDialog called')
+  console.log('taskFormDialogMode before:', taskFormDialogMode.value, typeof taskFormDialogMode.value)
   selectedTaskData.value = null
-  formDialogMode.value = 'create'
+  taskFormDialogMode.value = 'create'
+  console.log('taskFormDialogMode after:', taskFormDialogMode.value, typeof taskFormDialogMode.value)
   showFormDialog.value = true
+  console.log('showFormDialog set to true')
 }
 
 function handleFormSuccess(data) {
@@ -162,10 +166,10 @@ function handleFormSuccess(data) {
   // 如果是从查看模式切换到编辑模式
   if (data?.action === 'edit') {
     selectedTaskData.value = data.data
-    formDialogMode.value = 'edit'
+    taskFormDialogMode.value = 'edit'
     showFormDialog.value = true
   } else {
-    ElMessage.success(formDialogMode.value === 'create' ? '任务创建成功' : '任务更新成功')
+    ElMessage.success(taskFormDialogMode.value === 'create' ? '任务创建成功' : '任务更新成功')
   }
 }
 
