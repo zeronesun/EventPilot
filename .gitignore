@@ -128,3 +128,9 @@ Thumbs.db
 .DS_Store
 tests/e2e/videos/
 tests/e2e/screenshots/
+
+# WSL specific
+*.lnk
+*.url
+desktop.ini
+thumbs.db
