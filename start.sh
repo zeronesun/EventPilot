@@ -184,9 +184,9 @@ start_backend() {
     
     # 启动后端 - 使用 --noreload 避免进程 ID 变化
     if [ "$USE_VENV" = true ]; then
-        nohup venv/bin/python manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
+        nohup python manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
     else
-        nohup /usr/bin/python3.10 manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
+        nohup python manage.py runserver $BACKEND_HOST:$BACKEND_PORT --noreload > "$BACKEND_LOG" 2>&1 &
     fi
     
     local pid=$!
