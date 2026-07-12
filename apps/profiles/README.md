@@ -10,7 +10,6 @@
 2. **联系人管理**: 管理主要联系人和联系方式
 3. **交互历史**: 记录所有业务交互和合作记录
 4. **评估评级**: 信用评分、质量评分、风险评估
-5. **智能推荐**: 基于规则的档案推荐系统
 
 ## 🏗️ 架构设计
 
@@ -30,7 +29,6 @@ GET  /api/profiles/{id}/               # 档案详情
 PUT  /api/profiles/{id}/               # 更新档案
 DELETE /api/profiles/{id}/            # 删除档案
 GET  /api/profiles/search/            # 智能搜索
-POST /api/profiles/recommendations/   # 智能推荐
 ```
 
 ## 🔧 技术实现

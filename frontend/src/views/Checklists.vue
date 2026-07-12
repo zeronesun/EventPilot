@@ -434,6 +434,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Delete } from '@element-plus/icons-vue'
+import { checklistsApi } from '@/api/client'
 
 const loading = ref(false)
 const showTemplates = ref(false)
@@ -445,48 +446,8 @@ const isEditTemplate = ref(false)
 const submitting = ref(false)
 const templateFormRef = ref()
 
-// 模拟数据 - 实际应该从API获取
-const templates = ref([
-  {
-    id: '1',
-    name: '活动布置检查清单',
-    description: '活动现场布置前的完整检查清单',
-    category: '活动现场',
-    status: 'published',
-    items: [],
-    created_at: '2026-04-19T10:00:00Z'
-  },
-  {
-    id: '2',
-    name: '设备调试清单',
-    description: '活动设备调试和测试清单',
-    category: '设备管理',
-    status: 'published',
-    items: [],
-    created_at: '2026-04-19T11:00:00Z'
-  }
-])
-
-const instances = ref([
-  {
-    id: '1',
-    name: '周年庆布置检查',
-    template_id: '1',
-    template_name: '活动布置检查清单',
-    progress: 75,
-    status: 'in_progress',
-    created_at: '2026-04-20T10:00:00Z'
-  },
-  {
-    id: '2',
-    name: '设备调试实例',
-    template_id: '2',
-    template_name: '设备调试清单', 
-    progress: 100,
-    status: 'completed',
-    created_at: '2026-04-20T11:00:00Z'
-  }
-])
+const templates = ref([])
+const instances = ref([])
 
 const currentInstance = ref(null)
 const verificationItems = ref([])
@@ -591,14 +552,36 @@ function removeTemplateItem(index) {
   templateForm.items.splice(index, 1)
 }
 
-function handleInstantiate(template) {
-  ElMessage.success(`将以模板 "${template.name}" 创建清单实例`)
+async function handleInstantiate(template) {
+  try {
+    await checklistsApi.instances.instantiate(template.id)
+    ElMessage.success(`已以模板 "${template.name}" 创建清单实例`)
+    loadInstances()
+  } catch (error) {
+    console.error('Instantiate failed:', error)
+    ElMessage.error('创建清单实例失败')
+  }
 }
 
-function handleEditTemplate(template) {
+async function handleEditTemplate(template) {
   isEditTemplate.value = true
   templateDialogVisible.value = true
-  Object.assign(templateForm, template)
+  try {
+    const detail = await checklistsApi.templates.get(template.id)
+    Object.assign(templateForm, {
+      name: detail.name || '',
+      category: detail.category || '',
+      description: detail.description || '',
+      items: (detail.items || []).map(item => ({
+        title: item.title,
+        weight: item.weight || 1
+      })),
+      status: detail.status || 'draft'
+    })
+  } catch (error) {
+    console.error('Failed to get template detail:', error)
+    Object.assign(templateForm, template)
+  }
 }
 
 async function handleDeleteTemplate(template) {
@@ -606,43 +589,60 @@ async function handleDeleteTemplate(template) {
     await ElMessageBox.confirm(`确定要删除模板 "${template.name}" 吗？`, '确认删除', {
       type: 'warning'
     })
+    await checklistsApi.templates.delete(template.id)
     ElMessage.success('模板删除成功')
+    loadTemplates()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('Delete failed:', error)
+      ElMessage.error('删除失败')
     }
   }
 }
 
-function handleVerify(instance) {
+async function handleVerify(instance) {
   currentInstance.value = instance
-  verificationItems.value = [
-    {
-      id: '1',
-      title: '场地布置完成检查',
-      weight: 5,
-      checked: false,
-      checked_at: null,
-      attachment_url: ''
-    },
-    {
-      id: '2',
-      title: '设备连接检查',
-      weight: 3,
-      checked: false,
-      checked_at: null,
-      attachment_url: ''
-    },
-    {
-      id: '3',
-      title: '安全措施检查',
-      weight: 4,
-      checked: false,
-      checked_at: null,
-      attachment_url: ''
-    }
-  ]
   verificationDialogVisible.value = true
+  
+  try {
+    const response = await checklistsApi.items.list({ instance: instance.id })
+    verificationItems.value = (response.results || response.data || []).map(item => ({
+      id: item.id,
+      title: item.title,
+      weight: item.weight || 1,
+      checked: item.status === 'completed',
+      checked_at: item.checked_at,
+      attachment_url: item.attachments && item.attachments[0] ? item.attachments[0] : ''
+    }))
+  } catch (error) {
+    console.error('Failed to load checklist items:', error)
+    verificationItems.value = [
+      {
+        id: '1',
+        title: '场地布置完成检查',
+        weight: 5,
+        checked: false,
+        checked_at: null,
+        attachment_url: ''
+      },
+      {
+        id: '2',
+        title: '设备连接检查',
+        weight: 3,
+        checked: false,
+        checked_at: null,
+        attachment_url: ''
+      },
+      {
+        id: '3',
+        title: '安全措施检查',
+        weight: 4,
+        checked: false,
+        checked_at: null,
+        attachment_url: ''
+      }
+    ]
+  }
 }
 
 function handleItemCheck(item) {
@@ -654,7 +654,13 @@ function viewAttachment(url) {
 }
 
 async function handleViewDetails(instance) {
-  ElMessage.info(`查看详情: ${instance.name}`)
+  try {
+    const detail = await checklistsApi.instances.get(instance.id)
+    ElMessage.info(`查看详情: ${detail.name}`)
+  } catch (error) {
+    console.error('Failed to get instance detail:', error)
+    ElMessage.error('获取详情失败')
+  }
 }
 
 async function handleDeleteInstance(instance) {
@@ -662,10 +668,13 @@ async function handleDeleteInstance(instance) {
     await ElMessageBox.confirm(`确定要删除清单实例 "${instance.name}" 吗？`, '确认删除', {
       type: 'warning'
     })
+    await checklistsApi.instances.delete(instance.id)
     ElMessage.success('清单实例删除成功')
+    loadInstances()
   } catch (error) {
     if (error !== 'cancel') {
       console.error('Delete failed:', error)
+      ElMessage.error('删除失败')
     }
   }
 }
@@ -677,15 +686,37 @@ async function submitTemplate() {
     await templateFormRef.value.validate()
     submitting.value = true
     
-    // TODO: 实现模板提交逻辑
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const templateData = {
+      name: templateForm.name,
+      category: templateForm.category,
+      description: templateForm.description,
+      status: templateForm.status,
+      items: templateForm.items.map((item, index) => ({
+        title: item.title,
+        weight: item.weight,
+        order: index + 1,
+        required: false,
+        status: 'active'
+      }))
+    }
+    
+    if (isEditTemplate.value) {
+      const templateId = templates.value.find(t => t.name === templateForm.name)?.id
+      if (templateId) {
+        await checklistsApi.templates.update(templateId, templateData)
+      }
+    } else {
+      await checklistsApi.templates.create(templateData)
+    }
     
     ElMessage.success(isEditTemplate.value ? '更新成功' : '创建成功')
     templateDialogVisible.value = false
-    showCreateDialog() // 重置表单
+    loadTemplates()
+    showCreateDialog()
   } catch (error) {
     if (error !== false) {
-      console.error('Form validation failed:', error)
+      console.error('Submit template failed:', error)
+      ElMessage.error('提交失败')
     }
   } finally {
     submitting.value = false
@@ -696,11 +727,19 @@ async function submitVerification() {
   try {
     submitting.value = true
     
-    // TODO: 实现核验结果提交逻辑
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    const completedItems = verificationItems.value.filter(item => item.checked).map(item => item.id)
+    const pendingItems = verificationItems.value.filter(item => !item.checked).map(item => item.id)
+    
+    if (completedItems.length > 0) {
+      await checklistsApi.items.bulkUpdate(completedItems, 'completed')
+    }
+    if (pendingItems.length > 0) {
+      await checklistsApi.items.bulkUpdate(pendingItems, 'pending')
+    }
     
     ElMessage.success('核验结果提交成功')
     verificationDialogVisible.value = false
+    loadInstances()
   } catch (error) {
     console.error('Verification submit failed:', error)
     ElMessage.error('提交失败')
@@ -710,8 +749,43 @@ async function submitVerification() {
 }
 
 onMounted(() => {
-  // TODO: 从API加载数据
+  loadTemplates()
+  loadInstances()
 })
+
+async function loadTemplates() {
+  loading.value = true
+  try {
+    const params = {}
+    if (searchQuery.value) {
+      params['search'] = searchQuery.value
+    }
+    const response = await checklistsApi.templates.list(params)
+    templates.value = response.results || response.data || []
+  } catch (error) {
+    console.error('Failed to load templates:', error)
+    ElMessage.error('加载模板失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+async function loadInstances() {
+  loading.value = true
+  try {
+    const params = {}
+    if (filterStatus.value) {
+      params['status'] = filterStatus.value
+    }
+    const response = await checklistsApi.instances.list(params)
+    instances.value = response.results || response.data || []
+  } catch (error) {
+    console.error('Failed to load instances:', error)
+    ElMessage.error('加载清单实例失败')
+  } finally {
+    loading.value = false
+  }
+}
 </script>
 
 <style scoped>

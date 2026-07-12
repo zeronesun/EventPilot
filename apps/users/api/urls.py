@@ -18,10 +18,11 @@ urlpatterns = [
     path('auth/refresh/', jwt_views.jwt_refresh, name='jwt-refresh'),
     path('auth/verify/', jwt_views.jwt_verify, name='jwt-verify'),
     
-    # 用户管理端点
-    path('', include(router.urls)),
+    # 统计和报告（必须放在router之前）
+    path('statistics/', UserStatisticsView.as_view(), name='user-statistics'),
+    path('inactive/', InactiveUsersView.as_view(), name='inactive-users'),
     
-    # 批量操作端点
+    # 批量操作端点（必须放在router之前）
     path('bulk/update-status/', 
          BulkUpdateStatusView.as_view(), 
          name='bulk-update-status'),
@@ -32,13 +33,12 @@ urlpatterns = [
          BulkDeleteView.as_view(), 
          name='bulk-delete'),
     
-    # 用户导入
+    # 用户导入（必须放在router之前）
     path('import/', UserImportView.as_view(), name='user-import'),
     
-    # 统计和报告
-    path('statistics/', UserStatisticsView.as_view(), name='user-statistics'),
-    path('inactive/', InactiveUsersView.as_view(), name='inactive-users'),
-    
-    # 角色列表
+    # 角色列表（必须放在router之前）
     path('roles/', RoleListView.as_view(), name='roles'),
+    
+    # 用户管理端点（放在最后）
+    path('', include(router.urls)),
 ]

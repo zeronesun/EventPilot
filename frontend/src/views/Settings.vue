@@ -51,6 +51,7 @@ import { ref, onMounted, onActivated } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores'
 import { ElMessage } from 'element-plus'
+import { apiClient, usersApi } from '@/api/client'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -85,8 +86,28 @@ function goBack() {
   router.back()
 }
 
-function saveSettings() {
-  ElMessage.success('设置保存成功')
+async function saveSettings() {
+  try {
+    const [firstName, ...lastNameParts] = form.value.display_name.split(' ')
+    const updateData = {
+      email: form.value.email,
+      first_name: firstName,
+      last_name: lastNameParts.join(' ')
+    }
+    
+    await apiClient.patch(`/users/${authStore.user?.id || ''}/`, updateData)
+    
+    if (authStore.user) {
+      authStore.user.email = form.value.email
+      authStore.user.first_name = firstName
+      authStore.user.last_name = lastNameParts.join(' ')
+    }
+    
+    ElMessage.success('设置保存成功')
+  } catch (error) {
+    console.error('Save settings failed:', error)
+    ElMessage.error('保存失败')
+  }
 }
 </script>
 

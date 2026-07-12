@@ -20,7 +20,6 @@ from apps.profiles.api.serializers import (
     ContactProfileSerializer, ContactProfileCreateSerializer,
     ContactProfileListSerializer, ContactPersonSerializer,
     InteractionHistorySerializer, ProfileEvaluationSerializer,
-    RecommendationRequestSerializer, RecommendationResponseSerializer,
     SearchRequestSerializer, AnalyticsResponseSerializer
 )
 from apps.profiles.services import (
@@ -311,52 +310,6 @@ class ContactProfileViewSet(viewsets.ModelViewSet):
         profile = self.get_object()
         assessment = ContactProfileService.assess_profile_comprehensive(profile)
         return Response(assessment)
-
-
-class RecommendationsViewSet(viewsets.GenericViewSet):
-    """
-    智能推荐视图
-    基于规则引擎提供档案推荐
-    """
-    permission_classes = [IsAuthenticated]
-    
-    @action(detail=False, methods=['post'])
-    def suppliers(self, request):
-        """
-        智能供应商推荐
-        POST /api/profiles/recommendations/suppliers/
-        
-        请求体:
-        {
-            "event_type": "大型商务会议",
-            "min_credit_score": 60,
-            "max_risk_level": "medium",
-            "limit": 10
-        }
-        """
-        serializer = RecommendationRequestSerializer(data=request.data)
-        
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
-        event_requirements = {
-            'type': serializer.validated_data.get('event_type', ''),
-            'min_credit_score': serializer.validated_data.get('min_credit_score', 0),
-            'max_risk_level': serializer.validated_data.get('max_risk_level', 'high'),
-            'limit': serializer.validated_data.get('limit', 10)
-        }
-        
-        # 调用智能推荐引擎
-        recommendations = IntelligentRecommender.recommend_suppliers(
-            event_requirements=event_requirements,
-            limit=event_requirements['limit']
-        )
-        
-        return Response({
-            'event_requirements': event_requirements,
-            'recommendations': recommendations,
-            'count': len(recommendations)
-        })
 
 
 class SearchViewSet(viewsets.GenericViewSet):

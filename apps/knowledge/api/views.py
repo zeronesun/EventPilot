@@ -61,42 +61,6 @@ class KnowledgeEntryViewSet(viewsets.ModelViewSet):
         serializer = KnowledgeEntryListSerializer(queryset, many=True)
         return Response(serializer.data)
     
-    @action(detail=False, methods=['get'])
-    def recommendations(self, request):
-        """
-        获取推荐知识（基于相关活动）
-        """
-        event_id = request.query_params.get('event_id')
-        
-        if not event_id:
-            return Response(
-                {'message': '需要指定event_id参数'},
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        # 获取与指定事件相关的知识
-        from apps.events.models import Event
-        try:
-            Event.objects.get(id=event_id)
-        except Event.DoesNotExist:
-            return Response(
-                {'message': '活动不存在'},
-                status=status.HTTP_404_NOT_FOUND
-            )
-        
-        # 查找相关活动类型和客户的经验/问题
-        queryset = KnowledgeEntry.objects.filter(
-            Q(related_events__contains=event_id) |
-            Q(entry_type__in=['experience', 'best_practice']),
-            is_verified=True
-        ).distinct()
-        
-        # 按流行度排序
-        queryset = queryset.order_by('-popularity', '-created_at')[:5]
-        
-        serializer = KnowledgeEntryListSerializer(queryset, many=True)
-        return Response(serializer.data)
-    
     @action(detail=True, methods=['post'])
     def verify(self, request, pk=None):
         """

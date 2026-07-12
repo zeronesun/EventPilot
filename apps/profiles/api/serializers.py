@@ -200,38 +200,6 @@ class ProfileEvaluationSerializer(serializers.ModelSerializer):
         return value
 
 
-class RecommendationRequestSerializer(serializers.Serializer):
-    """智能推荐请求序列化器"""
-    
-    profile_type = serializers.ChoiceField(
-        choices=['client', 'supplier', 'partner'],
-        required=False,
-        default='supplier'
-    )
-    event_type = serializers.CharField(required=False, allow_blank=True)
-    min_credit_score = serializers.IntegerField(required=False, min_value=0, max_value=100)
-    max_risk_level = serializers.ChoiceField(
-        choices=['low', 'medium', 'high'],
-        required=False
-    )
-    limit = serializers.IntegerField(required=False, min_value=1, max_value=50, default=10)
-
-
-class RecommendationResponseSerializer(serializers.Serializer):
-    """智能推荐响应序列化器"""
-    
-    profile_id = serializers.CharField()
-    name = serializers.CharField()
-    company_name = serializers.CharField(allow_null=True)
-    profile_type = serializers.CharField()
-    recommendation_score = serializers.IntegerField()
-    reasons = serializers.ListField()
-    credit_score = serializers.IntegerField()
-    quality_score = serializers.IntegerField()
-    risk_level = serializers.CharField()
-    primary_contact = serializers.CharField(allow_null=True)
-
-
 class SearchRequestSerializer(serializers.Serializer):
     """搜索请求序列化器"""
     

@@ -202,7 +202,8 @@ const searchForm = reactive({
 
 const pagination = reactive({
   current: 1,
-  total: 1
+  total: 0,
+  pageSize: 20
 })
 
 onMounted(() => {
@@ -210,24 +211,29 @@ onMounted(() => {
 })
 
 onActivated(() => {
-  // 页面激活时刷新数据
   fetchUsers()
 })
 
-// 从后端加载用户列表
-async function fetchUsers() {
+async function fetchUsers(page = 1) {
   isLoading.value = true
   try {
-    console.log('Calling usersApi.list()...')
-    const response = await usersApi.list()
-    console.log('usersApi.list() response:', response)
-    // 后端返回格式: {count, results, ...} 不是 {data, meta}
-    users.value = response.results || response.data || []
-    pagination.total = users.value.length
-    console.log('Users loaded:', users.value)
+    const params = new URLSearchParams()
+    params.set('page', page.toString())
+    params.set('page_size', pagination.pageSize.toString())
+    
+    if (searchForm.username) {
+      params.set('search', searchForm.username)
+    }
+    if (searchForm.role) {
+      params.set('role', searchForm.role)
+    }
+    
+    const response = await apiClient.get(`/users/?${params.toString()}`)
+    users.value = response.results || []
+    pagination.total = response.count || 0
+    pagination.current = page
   } catch (error) {
     console.error('Failed to fetch users:', error)
-    console.error('Error details:', error.response)
     ElMessage.error('获取用户列表失败')
   } finally {
     isLoading.value = false
@@ -247,13 +253,15 @@ function formatDate(dateStr) {
 }
 
 function handleSearch() {
-  // TODO: 实现搜索逻辑
-  ElMessage.info('搜索功能待实现')
+  pagination.current = 1
+  fetchUsers(1)
 }
 
 function handleReset() {
   searchForm.username = ''
   searchForm.role = ''
+  pagination.current = 1
+  fetchUsers(1)
 }
 
 function handleView(row) {
@@ -410,7 +418,7 @@ async function handleDelete(row) {
 
 function handlePageChange(page) {
   pagination.current = page
-  // TODO: 实现分页逻辑
+  fetchUsers(page)
 }
 </script>
 

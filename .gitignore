@@ -39,10 +39,13 @@ test-results.json
 .env
 .env.local
 .env.*.local
+.env.production
+.env_test
 
 # IDE
 .vscode/
 .idea/
+.trae/
 *.swp
 *.swo
 *~
@@ -134,3 +137,33 @@ tests/e2e/screenshots/
 *.url
 desktop.ini
 thumbs.db
+
+# Test database
+eventpilot_test
+
+# E2E test screenshots
+tests/dogfood/screenshots/
+
+# Git hooks
+frontend/.husky/
+
+# Django debug toolbar
+debug_toolbar/
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Redis dump
+dump.rdb
+
+# Frontend build artifacts
+frontend/dist/
+frontend/dist-ssr/
+frontend/.vite/
+frontend/.cache/
+frontend/.temp/
+
+# Coverage
+htmlcov/
+.coverage.*

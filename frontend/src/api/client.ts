@@ -737,6 +737,79 @@ export const reviewsApi = {
   delete: (id: string) => apiClient.delete<void>(`/reviews/${id}/`),
 };
 
+export interface ChecklistTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  checklist_type?: string;
+  category?: string;
+  status: 'draft' | 'published' | 'archived';
+  is_default?: boolean;
+  version?: string;
+  tags?: string[];
+  items?: Array<{ id: string; title: string; description?: string; required: boolean; order: number; weight: number }>;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ChecklistInstance {
+  id: string;
+  name: string;
+  template: string;
+  template_name?: string;
+  event?: string;
+  status: 'draft' | 'in_progress' | 'completed' | 'paused' | 'cancelled';
+  progress?: number;
+  items?: Array<{ id: string; title: string; status: string; checked: boolean; checked_by?: string; checked_at?: string; notes?: string }>;
+  created_by?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export const checklistsApi = {
+  templates: {
+    list: (params?: Record<string, string>) => {
+      const query = new URLSearchParams(params).toString();
+      return apiClient.get<PaginatedResponse<ChecklistTemplate>>(`/checklists/templates/${query ? `?${query}` : ''}`);
+    },
+    get: (id: string) => apiClient.get<ChecklistTemplate>(`/checklists/templates/${id}/`),
+    create: (data: Partial<ChecklistTemplate>) => apiClient.post<ChecklistTemplate>('/checklists/templates/', data),
+    update: (id: string, data: Partial<ChecklistTemplate>) => apiClient.put<ChecklistTemplate>(`/checklists/templates/${id}/`, data),
+    delete: (id: string) => apiClient.delete<void>(`/checklists/templates/${id}/`),
+    publish: (id: string) => apiClient.post<{ message: string }>(`/checklists/templates/${id}/publish/`),
+    archive: (id: string) => apiClient.post<{ message: string }>(`/checklists/templates/${id}/archive/`),
+    duplicate: (id: string) => apiClient.post<ChecklistTemplate>(`/checklists/templates/${id}/duplicate/`),
+  },
+  instances: {
+    list: (params?: Record<string, string>) => {
+      const query = new URLSearchParams(params).toString();
+      return apiClient.get<PaginatedResponse<ChecklistInstance>>(`/checklists/instances/${query ? `?${query}` : ''}`);
+    },
+    get: (id: string) => apiClient.get<ChecklistInstance>(`/checklists/instances/${id}/`),
+    create: (data: Partial<ChecklistInstance>) => apiClient.post<ChecklistInstance>('/checklists/instances/', data),
+    update: (id: string, data: Partial<ChecklistInstance>) => apiClient.put<ChecklistInstance>(`/checklists/instances/${id}/`, data),
+    delete: (id: string) => apiClient.delete<void>(`/checklists/instances/${id}/`),
+    instantiate: (templateId: string, eventId?: string) => 
+      apiClient.post<ChecklistInstance>('/checklists/instances/instantiate_from_template/', { template_id: templateId, event_id: eventId }),
+    complete: (id: string) => apiClient.post<ChecklistInstance>(`/checklists/instances/${id}/complete/`),
+    cancel: (id: string, reason?: string) => apiClient.post<ChecklistInstance>(`/checklists/instances/${id}/cancel/`, { reason }),
+    progress: (id: string) => apiClient.get<{ progress: number; completed_count: number; total_count: number }>(`/checklists/instances/${id}/progress/`),
+  },
+  items: {
+    list: (params?: Record<string, string>) => {
+      const query = new URLSearchParams(params).toString();
+      return apiClient.get<PaginatedResponse<any>>(`/checklists/items/${query ? `?${query}` : ''}`);
+    },
+    get: (id: string) => apiClient.get<any>(`/checklists/items/${id}/`),
+    update: (id: string, data: Partial<any>) => apiClient.put<any>(`/checklists/items/${id}/`, data),
+    check: (id: string, status: string, notes?: string) => 
+      apiClient.post<any>(`/checklists/items/${id}/check/`, { status, notes }),
+    bulkUpdate: (itemIds: string[], status: string, notes?: string) =>
+      apiClient.post<any>('/checklists/items/bulk_update/', { item_ids: itemIds, status, notes }),
+  },
+};
+
 export interface Notification {
   id: string;
   type: 'info' | 'warning' | 'error' | 'success';
