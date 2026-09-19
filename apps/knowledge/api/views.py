@@ -2,16 +2,13 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
-from django.db.models import Q, F
-from django.contrib.auth import get_user_model
 
 from apps.knowledge.models import KnowledgeEntry
+from apps.knowledge.services import KnowledgeService
 from .serializers import (
     KnowledgeEntrySerializer, KnowledgeEntryListSerializer, 
     KnowledgeEntryUpdateSerializer
 )
-
-User = get_user_model()
 
 
 class KnowledgeEntryViewSet(viewsets.ModelViewSet):
@@ -37,15 +34,13 @@ class KnowledgeEntryViewSet(viewsets.ModelViewSet):
         """
         获取知识条目查询集
         """
-        queryset = KnowledgeEntry.objects.select_related('created_by')
-        return queryset
+        return KnowledgeEntry.objects.select_related('created_by')
     
     def perform_create(self, serializer):
         """
         创建条目时的额外处理
         """
-        user = User.objects.first() if User.objects.exists() else None
-        serializer.save(created_by=user, popularity=0)
+        KnowledgeService.create_entry(serializer)
     
     @action(detail=False, methods=['get'])
     def popular(self, request):
@@ -53,10 +48,7 @@ class KnowledgeEntryViewSet(viewsets.ModelViewSet):
         获取热门知识条目
         """
         limit = int(request.query_params.get('limit', 10))
-        queryset = self.get_queryset().filter(
-            is_verified=True,
-            popularity__gt=0
-        ).order_by('-popularity')[:limit]
+        queryset = KnowledgeService.get_popular(self.get_queryset(), limit)
         
         serializer = KnowledgeEntryListSerializer(queryset, many=True)
         return Response(serializer.data)
@@ -73,8 +65,7 @@ class KnowledgeEntryViewSet(viewsets.ModelViewSet):
             )
         
         entry = self.get_object()
-        entry.is_verified = True
-        entry.save()
+        entry = KnowledgeService.verify_entry(entry)
         
         serializer = self.get_serializer(entry)
         return Response(serializer.data)
@@ -85,11 +76,8 @@ class KnowledgeEntryViewSet(viewsets.ModelViewSet):
         增加查看次数
         """
         entry = self.get_object()
-        KnowledgeEntry.objects.filter(id=entry.id).update(
-            popularity=F('popularity') + 1
-        )
+        entry = KnowledgeService.increment_view(entry)
         
-        entry.refresh_from_db()
         serializer = self.get_serializer(entry)
         return Response(serializer.data)
     
@@ -98,10 +86,4 @@ class KnowledgeEntryViewSet(viewsets.ModelViewSet):
         """
         获取所有分类
         """
-        categories = KnowledgeEntry.objects.filter(
-            is_verified=True
-        ).values_list('category', flat=True).distinct().exclude(
-            category=''
-        )
-        
-        return Response(list(categories))
+        return Response(list(KnowledgeService.get_categories()))
